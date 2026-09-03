@@ -1,0 +1,14 @@
+{
+  "name": "open-skills",
+  "description": "An open collection of Claude Code skills",
+  "owner": {
+    "name": "wiasliaw"
+  },
+  "plugins": [
+    {
+      "name": "open-skills",
+      "source": "./",
+      "description": "An open collection of Claude Code skills"
+    }
+  ]
+}
