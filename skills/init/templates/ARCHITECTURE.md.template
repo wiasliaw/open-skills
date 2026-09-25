@@ -1,0 +1,25 @@
+# Architecture
+
+<!--
+Purpose: describes how this system is organized — module map, layering and dependency direction, key boundaries.
+Written by: the orchestrator (main session) only. Never written by implementor or reviewer agents.
+When: seeded here at init from the project survey and interview; updated at a merge moment only when a verified work unit changed the structure this file describes. Left untouched when a merge changed behavior but not structure.
+-->
+
+## Module Map
+
+<!-- One entry per top-level module/package: what it owns, in one line. -->
+
+- `{{module_path}}` — {{what_this_module_owns}}
+
+## Layering & Dependency Direction
+
+<!-- Named layers (if any) and the rule for which layer may depend on which. -->
+
+- {{upper_layer}} → {{lower_layer}} — {{allowed_dependency_note}}
+
+## Key Boundaries
+
+<!-- Boundaries that matter: public API surfaces, process/service edges, data-ownership lines, anything a change must not cross without deliberate justification. -->
+
+- `{{boundary}}` — {{why_it_exists_and_what_may_not_cross_it}}

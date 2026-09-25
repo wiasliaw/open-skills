@@ -1,0 +1,8 @@
+# D-{{nnn}}: {{decision_title}}
+
+- **Status**: active
+- **Date**: {{iso8601_date}}
+- **Decision**: {{what_was_decided}}
+- **Rationale**: {{why_this_was_chosen}}
+- **Rejected alternatives**: {{alternative}} — {{why_it_was_rejected}}
+- **Supersedes**: {{superseded_entry_id_or_none}}
