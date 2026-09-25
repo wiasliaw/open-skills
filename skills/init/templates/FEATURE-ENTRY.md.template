@@ -1,0 +1,9 @@
+# F-{{nnn}}: {{behavior_description}}
+
+- **Status**: active
+- **Verification command**: `{{executable_verification_command}}`
+- **Evidence**:
+  - **Reviewer verdict date**: {{iso8601_date}}
+  - **Verification output summary**: {{summary_of_what_the_command_produced}}
+  - **Work-unit identifier**: {{work_unit_identifier}}
+- **Supersedes**: {{superseded_entry_id_or_none}}

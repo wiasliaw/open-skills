@@ -1,0 +1,48 @@
+# Work Unit: {{work_unit_identifier}}
+
+<!--
+Purpose: the harness's own short-term state for one work unit — its sprint contract and the harness-flow loop state. The same format is used whether or not the project declares a work-unit tool.
+Written by: the orchestrator (main session) only. Read by the implementor and reviewer; neither may write to it.
+Location: one file per work unit at the location declared in the project's CLAUDE.md Harness section `short-term memory:` bullet; moved to that location's `archive/` subdirectory when the work unit closes.
+Ownership: when CLAUDE.md declares a work-unit tool, that tool owns what it records (e.g. scope, acceptance criteria, a task checklist) — this file points at it instead of copying it. This file owns the loop state (Features, Review Log, Notes) and any contract section the tool has no home for. Every field lives in exactly one place.
+-->
+
+- **Work-unit identifier**: {{work_unit_identifier}}
+- **Created**: {{iso8601_date}}
+- **Work-unit tool reference**: {{where_the_declared_tool_records_this_unit_or_none}}
+
+## Contract
+
+<!-- Each subsection is either inline content, or a pointer (`path` § heading) to where the declared work-unit tool records it. Inline when no tool is declared or the tool has no home for that section. -->
+
+### Scope
+
+{{what_this_work_unit_covers_nothing_more_nothing_less_or_pointer}}
+
+### Verification Standards
+
+{{executable_verification_commands_that_prove_the_scope_is_met_or_pointer}}
+
+### Exclusions
+
+{{what_is_explicitly_out_of_scope_or_pointer}}
+
+## Features
+
+<!-- One row per feature, activated strictly one at a time. Status: not_started | active | blocked | passed (F-NNN). -->
+
+| # | Behavior | Verification command | Status |
+|---|---|---|---|
+| {{n}} | {{behavior_description}} | `{{executable_verification_command}}` | {{status}} |
+
+## Review Log
+
+<!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
+
+- {{iso8601_date}} — feature {{n}}, round {{r}}: {{pass_or_fail}} — {{one_line_verdict_summary}}
+
+## Notes
+
+<!-- Dated progress notes, blockers (with the options for a major uncontracted decision), and failure attributions. -->
+
+- {{iso8601_date}} — {{note}}

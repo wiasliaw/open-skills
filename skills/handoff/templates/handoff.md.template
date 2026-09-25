@@ -1,0 +1,15 @@
+# Handoff — {{date}}
+
+> If you are picking up this work: read this file fully. Goal, completed work, and task state live in short-term memory (the work-unit state file and any declared work-unit tool), not here. This file is overwritten or deleted at the next clock-out — do not hand-edit it to track ongoing state.
+
+## Decisions & Rationale
+
+{{in_flight_decisions_and_why_not_yet_at_a_merge_moment}}
+
+## Dead Ends
+
+{{approaches_already_tried_and_why_they_failed}}
+
+## Next Steps
+
+{{concrete_ordered_cold_start_executable_next_steps}}

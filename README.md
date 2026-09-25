@@ -17,12 +17,16 @@ Inside Claude Code:
 | -- | -- |
 | [request-code-review](./docs/request-code-review.md) | Reviews your changes: three lens reviewers in parallel, adversarial verification of every finding, and an explicit verdict on the overall design. |
 | [receive-code-review](./docs/receive-code-review.md) | Processes review feedback you received: verifies every comment against the code, fixes what holds up, drafts evidence-backed rebuttals for what doesn't. |
+| [harness](./docs/harness.md) | Project harness: `init` scaffolds a CLAUDE.md plus `.harness/` long-term memory, `harness-flow` runs a reviewer-gated implementor/reviewer loop, `handoff` persists in-flight context across sessions. |
 
 Invoke by slash command or by asking in plain words:
 
 ```
 /open-skills:request-code-review
 /open-skills:receive-code-review #91
+/open-skills:init
+/open-skills:harness-flow
+/open-skills:handoff
 ```
 
 ### External tools

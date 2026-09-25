@@ -1,0 +1,14 @@
+# Constraints
+
+<!--
+Purpose: the project's non-negotiable hard constraints.
+Written by: the orchestrator (main session) only, at a merge moment (init completion, or completion of a verified work unit). Never written by implementor or reviewer agents.
+Format: each entry is phrased MUST or MUST NOT, and MUST carry a source (why it exists) and an applicability condition (when it applies).
+Budget: at most 15 entries. Adding a 16th requires removing or consolidating an existing one first — if a new constraint is warranted and the file already holds 15, the orchestrator completes the merge moment without writing it and surfaces the conflict to the user for resolution.
+-->
+
+## C-001: {{constraint_title}}
+
+- **Rule**: {{system_or_component}} MUST | MUST NOT {{requirement}}
+- **Source**: {{why_this_constraint_exists}}
+- **Applicability**: {{when_this_constraint_applies}}
