@@ -10,3 +10,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 
 | ID | Behavior | Work unit |
 |---|---|---|
+| F-001 | Structure lens carries concrete maintainability standards | 2026-09-27-thicken-lens2 |
