@@ -10,3 +10,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 
 | ID | Date | Decision |
 |---|---|---|
+| D-001 | 2026-09-27 | Adapt the thermo-nuclear rubric into Lens 2, not import it |

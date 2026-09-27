@@ -27,7 +27,33 @@ isolation produces shallow findings. Measure twice, cut once.
 Look hardest for restructurings that keep behavior but dramatically
 simplify the implementation — better abstractions, collapsed special
 cases, deleted code. One finding that removes 100 lines outranks ten
-findings that polish them.
+findings that polish them. Favor the reframing that makes a whole
+branch, helper, mode, or layer disappear over rearranging it — the
+result should feel inevitable in hindsight.
+
+Treat a change that pushes a file past roughly 1000 lines as a
+strong smell by default: flag it and propose decomposition first,
+and accept the growth only for a compelling structural reason. Be
+equally suspicious of new ad-hoc conditionals, one-off flags, or
+special cases bolted onto an otherwise unrelated flow — that is a
+design problem, not a style nit, and belongs behind a dedicated
+abstraction instead.
+
+Flag the opposite failure too: thin wrappers, identity abstractions,
+and pass-through helpers that add indirection without buying
+clarity — prefer direct, boring code. The same scrutiny applies to
+types and boundaries: question unnecessary optionality,
+`any`/`unknown`, cast-heavy code, and silent fallbacks that paper
+over an invariant nobody made explicit.
+
+Watch for feature logic leaking into canonical shared paths and
+bespoke near-duplicates of helpers that already exist — push logic
+to the module that already owns the concept. Also flag orchestration
+smells: independent work forced into unnecessary sequential order,
+and related updates that can leave state half-applied if one of them
+fails; do not let this chase micro-optimizations. A few
+high-conviction structural findings outrank a long list of cosmetic
+ones.
 
 Verify every claim against the actual code before reporting it. Open
 the files. Do not report a bug you have not traced to a concrete
