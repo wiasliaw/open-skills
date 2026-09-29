@@ -5,6 +5,7 @@
 ## Decisions & Rationale
 
 - The per-stop `Pinned at:` line in `skills/codewalk/templates/walkthrough.md.template` was kept, not dropped, despite a structural reviewer proposing removal as redundant with the header pin. Rationale: the Linear WOR-31 issue body lists a generation-time commit SHA in its per-stop content list, so removal would deviate from the spec's literal per-stop list; within one walkthrough the value can never differ from the header, so dropping it remains defensible if the user prefers — that call was deliberately left to the user.
+- The three user-approved structural restructurings landed (work unit `2026-09-30-wor-31-codewalk-structural`, F-004): stop record fully defined in Step 3 with snapshot copied at anchor-verification time, Fallback merged into Citation boundaries, Modes folded into Step 1. Reviewer's rule-preservation audit confirmed no rule weakened or dropped; SKILL.md line count 181→182 accepted because remaining cuts would have dropped rule content.
 - Three non-blocking reviewer nits from the fix round were left unfixed on purpose (among them: edited lines in `skills/codewalk/SKILL.md` not reflowed to the file's original wrap width). Reason: keeping the review-fix diff minimal outweighed cosmetic reflow.
 
 ## Dead Ends
@@ -16,10 +17,7 @@
 
 ## Next Steps
 
-1. Present these reviewer-verified structural proposals for the codewalk skill to the user; on approval, open a new work unit under harness-flow and dispatch them (all target `skills/codewalk/SKILL.md` unless noted):
-   - Stop-record consolidation: Step 3 currently defines only anchor + `file:line`, and the verbatim snapshot first appears in Step 5 — so a long walk forces snapshot reconstruction from memory. Move the snapshot capture into Step 3 (copied at anchor-verification time), make Step 5 purely "fill the template from the stop records". Confirmed by a verifier; touches `docs/codewalk.md` per-stop description too.
-   - Merge the Fallback subsection into Citation boundaries (both under Step 2, overlapping "cite only the project's own source" content).
-   - Fold the Modes section into Step 1's bullets (Modes is used only by Step 1); keep the docs page's mode list as-is.
-2. Deferred minor cleanups, directly actionable in the same work unit: deduplicate `docs/codewalk.md`'s fallback paragraph vs its `## Requirements` section (they repeat each other); optionally convert the Worktree lifecycle bullet block in `skills/codewalk/SKILL.md` to numbered steps in execution order.
-3. Ask the user whether the "ask at most one clarifying question" cap in `skills/codewalk/SKILL.md` Step 1 stays — it is not in the WOR-31 spec and has no recorded acceptance (unlike the Explore report format, accepted in the archived work unit `.project/work-units/archive/2026-09-30-wor-31-codewalk.md` Notes).
-4. PR https://github.com/wiasliaw/open-skills/pull/7 holds the whole branch (feature + fixes + harness records) and awaits the user's merge; no agent action needed beyond responding to PR feedback via `/open-skills:receive-code-review`.
+1. Deferred minor cleanups, directly actionable in a small work unit: deduplicate `docs/codewalk.md`'s fallback paragraph vs its `## Requirements` section (they repeat each other); optionally convert the Worktree lifecycle bullet block in `skills/codewalk/SKILL.md` to numbered steps in execution order.
+2. Ask the user whether the "ask at most one clarifying question" cap in `skills/codewalk/SKILL.md` Step 1 stays — it is not in the WOR-31 spec and has no recorded acceptance (unlike the Explore report format, accepted in the archived work unit `.project/work-units/archive/2026-09-30-wor-31-codewalk.md` Notes).
+3. Ask the user whether the per-stop `Pinned at:` template line stays (see Decisions & Rationale above).
+4. PR https://github.com/wiasliaw/open-skills/pull/7 holds the whole branch (feature + fixes + structural restructuring + harness records) and awaits the user's merge; no agent action needed beyond responding to PR feedback via `/open-skills:receive-code-review`.
