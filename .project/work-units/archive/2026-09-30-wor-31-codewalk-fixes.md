@@ -53,12 +53,15 @@ Run from the repo root, in order; all must succeed:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | codewalk review fixes: worktree procedure concrete and safe (exclude path, reuse checks, toplevel anchoring, exact creation command), `unknown`-pin drift notice, numbering/depth defaults, landing hygiene | `claude plugin validate .` plus contract checks 2–8 and reviewer judgment 9 | active |
+| 1 | codewalk review fixes: worktree procedure concrete and safe (exclude path, reuse checks, toplevel anchoring, exact creation command), `unknown`-pin drift notice, numbering/depth defaults, landing hygiene | `claude plugin validate .` plus contract checks 2–8 and reviewer judgment 9 | passed (F-003) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
+- 2026-09-30 — feature 1, round 1: pass — checks 1–8 exit 0; all 12 scope items present and technically accurate; diff surface exactly the three allowed files; exclusions hold (Prohibitions intact, per-stop pin kept, README untouched); three non-blocking nits (unreflowed line widths among them).
+
 ## Notes
 
 - 2026-09-30 — Opened from /open-skills:request-code-review results: 26 lens findings deduped to 12 verified candidates; 7 critical-level and the template-comment item CONFIRMED (dual verifiers for criticals); 1 dropped as refuted by both verifiers (Read-only vs Prohibition 1 "contradiction"); refuted sub-claims: delete-Prohibitions, docs mode duplication, SMIG placeholder style.
+- 2026-09-30 — Merge moment: F-003 recorded; D-002 records the git-resolved-paths deviation from WOR-31's literal wording; ARCHITECTURE.md untouched (behavior-only change); work unit closed. Pending user decision (not this unit's scope): structural proposals I (stop-record consolidation), J-surviving (Fallback/Citation merge), K (Modes fold-in), and the deferred minors listed in Exclusions.
