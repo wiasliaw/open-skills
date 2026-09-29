@@ -21,15 +21,63 @@ modify a deliverable.
 
 ## Storage modes
 
-`init` asks this first, because it decides where everything is written.
+On a first init, this is the first question `init` asks, because it
+decides where everything is written.
 
 | Mode | Where the harness lives | Choose it when |
 | -- | -- | -- |
 | Shared (default) | In the repo: root `CLAUDE.md`, `.harness/`, and `.project/`, all git-tracked. | You own the repo and want the team, and the history, to share the harness. |
 | Private | Outside the repo at `~/.open-skills/<slug>/`; nothing harness-related is committed. | The repo is maintained by others and harness files do not belong in it. |
 
-An existing adoption keeps its mode: re-running `init` updates it in
-place and never migrates between shared and private.
+An existing adoption keeps its mode: re-running `init` detects it as a
+project re-init or an external re-init, updates it in place, and never
+migrates between shared and private.
+
+### How init decides
+
+Before surveying or asking anything, `init` looks — without writing —
+at the project root (the git top level, or the current directory outside
+git) and at `~/.open-skills/`:
+
+- a root `CLAUDE.md` that carries the adoption marker, and a root
+  `.harness/` directory;
+- a root `CLAUDE.local.md`: whether it is git-tracked, and whether it
+  imports a `HARNESS.md` (the shim) that exists and names this repo;
+- the `project root:` bullet of every `~/.open-skills/*/HARNESS.md`,
+  collecting the ones that name this repo.
+
+The adoption marker is what makes a `CLAUDE.md` a harness declaration: a
+load directive naming `open-skills:harness-flow`, or a `## Harness`
+section (older adoptions' equivalents count too). An ordinary
+`CLAUDE.md` written by the repo's maintainers has none, so it is not an
+adoption: `init` treats the repo as not yet adopted, still offers private
+mode, and suggests it as the inferred answer (as it does when a root
+`AGENTS.md` exists). Choosing shared there keeps that file's content and
+adds the harness sections; choosing private leaves it untouched.
+
+`init` then names one of four cases, with its evidence, before the first
+question:
+
+| Case | When | What happens |
+| -- | -- | -- |
+| project first init | Nothing found; you choose shared. | Storage mode is asked; the harness is written into the repo. |
+| external first init | Nothing found; you choose private. | Storage mode is asked; a new `~/.open-skills/<slug>/` is created and the shim written. |
+| project re-init | A marked `CLAUDE.md` or a `.harness/` in the repo; nothing external. | Update mode, shared. Storage mode is not asked. |
+| external re-init | A shim whose `HARNESS.md` names this repo, or no shim and exactly one `~/.open-skills/` harness naming it. | Update mode against that harness, private. Storage mode is not asked; a missing shim is re-attached. |
+
+Anything ambiguous stops `init`: it reports what it found and asks you,
+writing nothing until you decide.
+
+- Both a project declaration and a private harness (two declarations).
+- No shim, and several private harnesses name this repo — pick one or
+  start fresh.
+- The shim points at a `HARNESS.md` that no longer exists — recreate a
+  private harness there, or remove the shim and start over.
+- The shim's `HARNESS.md` names a different path (the repo was moved or
+  copied) — adopt it for this path, or start fresh.
+- `CLAUDE.local.md` is git-tracked and private mode is detected or
+  chosen — private mode cannot be installed without editing a tracked
+  file.
 
 ### Private layout
 
@@ -44,17 +92,26 @@ place and never migrates between shared and private.
 
 The slug is the repo's absolute path with every character other than
 ASCII letters, digits, and `-` replaced by `-`: `/Users/wiasliaw/Github/foobar`
-becomes `-Users-wiasliaw-Github-foobar`. If that directory already exists
-and is not this repo's harness, `init` appends `-2`, `-3`, … `HARNESS.md` records the
+becomes `-Users-wiasliaw-Github-foobar`. The slug only names the
+directory at external first init: if that directory already exists, it
+belongs to another repo (a harness naming this one would have been found
+by its `project root:`), so `init` appends `-2`, `-3`, … until the name
+is free, and never overwrites an existing file. `HARNESS.md` records the
 repo path in a `project root:` bullet and uses absolute paths for the
 memory locations.
 
 The repo keeps only a `CLAUDE.local.md` shim that `@`-imports the absolute
 path of `HARNESS.md`, so Claude Code loads the declaration at session
-start. The shim is the only pointer from the repo to its harness; the slug
-is never looked up again. `init` lists `CLAUDE.local.md` in the repo's
-local `.git/info/exclude` (skipped outside a git repo) and never edits
-`.gitignore`, `CLAUDE.md`, or any tracked file.
+start. The shim is the repo's pointer to its harness; the slug is never
+used as a lookup key — `init` finds an existing private harness by its
+`project root:` bullet. If the shim is lost (for example after
+`git clean -x`, or in a fresh clone at the same path), re-run `init`: it
+finds the harness by `project root:`, re-attaches the shim, and updates
+the harness in place rather than replacing it. An existing
+`CLAUDE.local.md` keeps its content; a shim import already in it is
+replaced in place, never duplicated. `init` lists `CLAUDE.local.md` in
+the repo's local `.git/info/exclude` (skipped outside a git repo) and
+never edits `.gitignore`, `CLAUDE.md`, or any tracked file.
 
 `~/.open-skills/` is not git-managed: in private mode the harness files,
 work-unit state, and handoff file have no version history. Back the
@@ -102,8 +159,9 @@ moved to `archive/`, and dropped from the index.
 
 ## init
 
-Surveys the repo, then interviews you one question at a time about
-storage mode, VCS strategy, short-term memory, workflow phases, hard
+Detects the adoption state first (see [How init decides](#how-init-decides)),
+then surveys the repo and interviews you one question at a time about
+storage mode (first init only), VCS strategy, short-term memory, workflow phases, hard
 constraints, and repo structure. Anything inferable from files is
 confirmed rather than asked. It drafts the harness declaration — a root
 CLAUDE.md, or `HARNESS.md` in private mode — plus the four `.harness/`
@@ -111,8 +169,9 @@ files, runs a readiness gate and a fresh-session test, and writes nothing
 until you approve the draft. In private mode it also writes the
 `CLAUDE.local.md` shim and its local exclude entry.
 
-Run it again on an adopted project to enter update mode: still-correct
-content is kept, only missing or stale fields are asked, and the gaps
+Run it again on an adopted project and it classifies the run as a
+project re-init or an external re-init, which enters update mode:
+still-correct content is kept, only missing or stale fields are asked, and the gaps
 found are always reported. Update mode also migrates projects adopted
 under the former `agent-flow` name: the skill reference, the split
 short-term memory bullets, and single-file decision/feature logs.
