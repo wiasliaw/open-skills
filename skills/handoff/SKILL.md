@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Persist in-flight decisions, dead ends, and next steps into the CLAUDE.md-declared session-memory file so a cold-start agent can resume the work. Invoked from the harness-flow clock-in/clock-out loop and from the manual /open-skills:handoff command. Do not invoke automatically.
+description: Persist in-flight decisions, dead ends, and next steps into the session-memory file declared by the harness declaration (root CLAUDE.md, or the HARNESS.md imported by root CLAUDE.local.md) so a cold-start agent can resume the work. Invoked from the harness-flow clock-in/clock-out loop and from the manual /open-skills:handoff command. Do not invoke automatically.
 disable-model-invocation: true
 ---
 
@@ -12,9 +12,9 @@ Session memory is a third memory tier, distinct from `.harness/` (long-term, mer
 
 ## 1. Resolve the declared location
 
-Read the root CLAUDE.md's Harness section for a `session memory:` bullet.
+Read the harness declaration's Harness section for a `session memory:` bullet. The harness declaration is the root `CLAUDE.md` in shared mode; in private mode it is the `HARNESS.md` that the root `CLAUDE.local.md` shim imports — follow the shim's explicit `@` path, never search for it. The harness root is the project root in shared mode, and that `HARNESS.md`'s directory in private mode.
 
-- If the bullet is present, its value is the handoff file's location (the default a project's init run would have filled is `.project/handoff.md`, but always use the declared value, not this default).
+- If the bullet is present, its value is the handoff file's location (the default a project's init run would have filled is `.project/handoff.md` in shared mode, or an absolute path under the harness root in private mode, but always use the declared value, not this default). The value may be an absolute path — use it as written; resolve a relative one against the harness root.
 - If the bullet is missing, do NOT guess a path and do NOT write anywhere. Report that no session memory location is declared, suggest running `/open-skills:init` in update mode to add the bullet, and stop here.
 
 ## 2. Collect state
@@ -41,7 +41,7 @@ Check the next steps gathered above: does at least one actionable unfinished nex
 
 Fill this skill's template at `${CLAUDE_PLUGIN_ROOT}/skills/handoff/templates/handoff.md.template` and write it to the declared location, overwriting any existing file. `{{date}}` is today's date in YYYY-MM-DD format.
 
-- One file, overwritten each time. History is git's job — never create dated copies like `handoff-2026-07-07.md`.
+- One file, overwritten each time — never create dated copies like `handoff-2026-07-07.md`. In shared mode history is git's job; in private mode the harness root is not git-managed, so the handoff file is not under version control and keeps no history.
 - If the declared location's parent directory does not exist, create it.
 
 ## 5. Cold-reader self-check

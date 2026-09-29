@@ -1,6 +1,6 @@
 ---
 name: harness-flow
-description: Use when a session in a project whose root CLAUDE.md declares harness adoption is about to produce or modify a deliverable — code, docs, or configuration — or when the user runs /open-skills:harness-flow. Turns the main session into an orchestrator that runs the clock-in/dispatch/reviewer-gate/merge/clock-out loop instead of producing deliverables itself. Does not apply in a project that has not declared harness adoption unless the command is invoked explicitly.
+description: Use when a session in a project that declares harness adoption (in its root CLAUDE.md, or in a HARNESS.md imported by its root CLAUDE.local.md) is about to produce or modify a deliverable — code, docs, or configuration — or when the user runs /open-skills:harness-flow. Turns the main session into an orchestrator that runs the clock-in/dispatch/reviewer-gate/merge/clock-out loop instead of producing deliverables itself. Does not apply in a project that has not declared harness adoption unless the command is invoked explicitly.
 ---
 
 # harness-flow
@@ -11,10 +11,19 @@ Turn the main session into an orchestrator. The orchestrator reads state, decide
 
 This skill loads when either is true:
 
-- The session is in a project whose root CLAUDE.md declares harness adoption, and is about to produce or modify a deliverable.
+- The session is in a project that declares harness adoption — in its root `CLAUDE.md`, or in a `HARNESS.md` imported by its root `CLAUDE.local.md` (see below) — and is about to produce or modify a deliverable.
 - The user explicitly invokes `/open-skills:harness-flow`.
 
-If the project's CLAUDE.md does not declare harness adoption and the command was not invoked explicitly, this skill does not apply — do not load it and do not run its loop.
+If the project declares no harness adoption in either place and the command was not invoked explicitly, this skill does not apply — do not load it and do not run its loop.
+
+### Harness declaration and harness root
+
+The project's storage mode, set at init, fixes two terms used throughout this skill:
+
+- **Shared mode** — the **harness declaration** is the root `CLAUDE.md`; the **harness root** is the project root.
+- **Private mode** — the harness declaration is the `HARNESS.md` that the root `CLAUDE.local.md` shim imports via its explicit `@` path; the harness root is that `HARNESS.md`'s directory (outside the repo, under `~/.open-skills/`, not git-managed).
+
+The project root is the directory whose root `CLAUDE.md` or `CLAUDE.local.md` carries the adoption. Every read of the Workflow table or a Harness-section bullet below comes from the harness declaration; every `.harness/` path resolves against the harness root. Declared paths (the `.harness/` file bullets, `short-term memory:`, `session memory:`) may be absolute — private mode writes them so; use an absolute value as written, and resolve a relative one against the harness root.
 
 ## Orchestrator prohibitions
 
@@ -22,29 +31,30 @@ The main session, once this skill is loaded:
 
 - MUST NOT produce any deliverable itself — no writing or editing code, docs, or configuration directly. If you catch yourself about to make the change directly, stop and dispatch it to the `open-skills:implementor` agent instead.
 - MUST NOT verify its own work or the implementor's work in place of the reviewer. A feature is complete only on a `open-skills:reviewer` pass verdict — never on the orchestrator's own judgment or the implementor's self-report.
-- MAY write to the project root's `.harness/` — but only as state recording (the merge moment, below), never as a way of producing or patching a deliverable.
+- MAY write to the harness root's `.harness/` — but only as state recording (the merge moment, below), never as a way of producing or patching a deliverable.
 
 ## File-access scope
 
-The orchestrator's reads are confined to the project it is running in:
+The orchestrator's reads are confined to the project it is running in and its harness root:
 
-- Project-state paths — the project root's `.harness/`, the declared short-term memory location, the declared work-unit tool's state, the declared session-memory location, and CLAUDE.md — resolve against the consuming project's root: the directory whose root CLAUDE.md declares harness adoption.
+- Project-state paths — the harness declaration, the harness root's `.harness/`, the declared short-term memory location, the declared work-unit tool's state, and the declared session-memory location — belong to the consuming project, resolved per "Harness declaration and harness root" above. Workflow commands run from the project root in both modes.
+- In private mode the harness root is project state even though it sits outside the project root: read and write it under the same rules as in shared mode. Locate it only via the explicit `@` path in the root `CLAUDE.local.md` shim — never by searching `~/.open-skills/` or deriving a directory name from the repo path.
 - Plugin-bundled assets (skills, templates) are read only via their `${CLAUDE_PLUGIN_ROOT}`-anchored paths.
-- MUST NOT locate skills, templates, or project state by filesystem-wide search (e.g. searching under `~/.claude/plugins/` or from the filesystem root). Files that resemble `.harness/` memory files or capability specs but sit outside the project root — for example inside a plugin marketplace clone — are not project state and are not read as such.
-- MUST NOT read files outside the project root, except on explicit user direction naming the outside location — and then only that named file, not a widened scope.
+- MUST NOT locate skills, templates, or project state by filesystem-wide search (e.g. searching under `~/.claude/plugins/`, `~/.open-skills/`, or from the filesystem root). Files that resemble `.harness/` memory files or capability specs but sit outside the project root and its harness root — for example inside a plugin marketplace clone, or another project's harness root — are not project state and are not read as such.
+- MUST NOT read files outside the project root and its harness root, except on explicit user direction naming the outside location — and then only that named file, not a widened scope.
 
 ## VCS is not prescribed here
 
-This skill prescribes no version-control operations: no commit points, no commit actor, no commit format. Any commits, branches, or checkpoints around dispatch or the merge moment follow the VCS strategy the project declared at init — that declaration governs the how; this loop only requires, at clock-out, that no work is left outside version control. Do not invent a commit convention here or assume one from another workflow. Within the loop, the orchestrator is the only actor that performs VCS operations — the implementor and reviewer never do; the declared strategy governs how and when.
+This skill prescribes no version-control operations: no commit points, no commit actor, no commit format. Any commits, branches, or checkpoints around dispatch or the merge moment follow the VCS strategy the project declared at init — that declaration governs the how; this loop only requires, at clock-out, that no work is left outside version control (the private-mode harness root excepted — see Clock-out). Do not invent a commit convention here or assume one from another workflow. Within the loop, the orchestrator is the only actor that performs VCS operations — the implementor and reviewer never do; the declared strategy governs how and when.
 
 ## Clock-in
 
 At the start of the loop:
 
-1. Read the project root's `.harness/`: `ARCHITECTURE.md` and `CONSTRAINTS.md` in full, and the `DECISIONS.md` and `FEATURES.md` indexes. Do not bulk-read `.harness/decisions/` or `.harness/features/`: read a detail file only when the work at hand touches what its index row covers, and never read `archive/` entries unless a detail file points at one.
-2. List the short-term memory location (CLAUDE.md Harness section's `short-term memory:` bullet), excluding its `archive/` subdirectory, for work-unit state files. If one is found, offer to resume it before starting anything new — its Features, Review Log, and Notes show where it stopped. If a work-unit tool is declared, also scan it for in-flight work units that have no state file, and offer to adopt one (its state file is written before dispatch). A legacy contract file holding only Scope, Verification Standards, and Exclusions counts as that work unit's state file; add the missing sections from the template at its next write.
-3. Check the declared session-memory location (CLAUDE.md Harness section's `session memory:` bullet) for a handoff file. If found, read it and offer resumption informed by its content — in-flight decisions, dead ends, next steps — alongside any in-flight work unit; leave the file in place, since its disposal belongs to the next clock-out, not clock-in. If CLAUDE.md declares no session-memory location, report that no session memory is declared and proceed.
-4. Read the whole Workflow table under CLAUDE.md's Workflow heading, and infer from phase names and HOW content which phase(s) verify the work; run the inferred phases' executable commands, in table order, to confirm the starting state is clean. An inferred verification phase whose HOW is a manual prose step or TBD is skipped, never executed as if it were a command, and reported as not auto-checkable. When no phase is inferable as verification, or no inferred phase carries an executable command, skip the clean-state command run and report that no executable project-level verification is declared.
+1. Read the harness root's `.harness/`: `ARCHITECTURE.md` and `CONSTRAINTS.md` in full, and the `DECISIONS.md` and `FEATURES.md` indexes. Do not bulk-read `.harness/decisions/` or `.harness/features/`: read a detail file only when the work at hand touches what its index row covers, and never read `archive/` entries unless a detail file points at one.
+2. List the short-term memory location (the harness declaration's Harness-section `short-term memory:` bullet), excluding its `archive/` subdirectory, for work-unit state files. If one is found, offer to resume it before starting anything new — its Features, Review Log, and Notes show where it stopped. If a work-unit tool is declared, also scan it for in-flight work units that have no state file, and offer to adopt one (its state file is written before dispatch). A legacy contract file holding only Scope, Verification Standards, and Exclusions counts as that work unit's state file; add the missing sections from the template at its next write.
+3. Check the declared session-memory location (the harness declaration's Harness-section `session memory:` bullet) for a handoff file. If found, read it and offer resumption informed by its content — in-flight decisions, dead ends, next steps — alongside any in-flight work unit; leave the file in place, since its disposal belongs to the next clock-out, not clock-in. If the harness declaration declares no session-memory location, report that no session memory is declared and proceed.
+4. Read the whole Workflow table under the harness declaration's Workflow heading, and infer from phase names and HOW content which phase(s) verify the work; run the inferred phases' executable commands from the project root, in table order, to confirm the starting state is clean. An inferred verification phase whose HOW is a manual prose step or TBD is skipped, never executed as if it were a command, and reported as not auto-checkable. When no phase is inferable as verification, or no inferred phase carries an executable command, skip the clean-state command run and report that no executable project-level verification is declared.
 
 If clock-in finds a dirty starting state — failing build/tests, or an unfinished work unit — report it to the user and propose fixing it as the first work item, rather than layering the planned feature on top of it.
 
@@ -78,7 +88,7 @@ If the same feature fails review twice in a row — as recorded in the Review Lo
 
 ## The merge moment
 
-Upon a pass verdict, perform the merge moment — the only point in the loop where the orchestrator writes the project root's `.harness/`:
+Upon a pass verdict, perform the merge moment — the only point in the loop where the orchestrator writes the harness root's `.harness/`:
 
 - Record the verified behavior: write `.harness/features/F-NNN.md` from `${CLAUDE_PLUGIN_ROOT}/skills/init/templates/FEATURE-ENTRY.md.template` — behavior description, the executable verification command, and evidence (at minimum the reviewer verdict date, a verification output summary, and the work-unit identifier; never a commit hash) — and add its row to the `FEATURES.md` index. Allocate the next ID across `features/` and `features/archive/`.
 - If the work unit's contract Scope names the removal or replacement of an existing feature, retire that entry: set its Status to `superseded by F-NNN` or `retired in <work-unit identifier>`, move it to `features/archive/`, and remove its index row. Never retire a feature the Scope does not name.
@@ -103,7 +113,7 @@ Before ending a session, run the five-condition exit checklist:
 
 Then run the session-memory handoff step by invoking the `open-skills:handoff` skill's procedure: when actionable unfinished next steps exist, it writes the handoff file at the declared location; when none exist, it deletes any stale handoff file and reports there is nothing to hand off.
 
-After the handoff step, check that no work is left outside version control — including the handoff file itself — per the project's declared VCS strategy — this is separate from, and in addition to, the five conditions above.
+After the handoff step, check that no work is left outside version control — including the handoff file itself — per the project's declared VCS strategy — this is separate from, and in addition to, the five conditions above. In private mode the harness root is not git-managed by design: it — including the handoff file and work-unit state files there — is excluded from this check; repo work is still checked.
 
 Do not report the session complete while any condition fails. Fix the failing condition, or explicitly report it to the user as an unclean stop (e.g. a pre-existing test failing for unrelated reasons) — never declare completion over a known-failing condition.
 
