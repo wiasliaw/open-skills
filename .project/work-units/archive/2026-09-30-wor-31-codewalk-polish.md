@@ -40,11 +40,13 @@ Run from the repo root, in order; all must succeed:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | codewalk polish: question cap removed, per-stop pin deduplicated to the header, docs degraded mode stated once, worktree lifecycle in execution order — no rule lost | contract checks 1–9 plus reviewer judgment 10 | active |
+| 1 | codewalk polish: question cap removed, per-stop pin deduplicated to the header, docs degraded mode stated once, worktree lifecycle in execution order — no rule lost | contract checks 1–9 plus reviewer judgment 10 | passed (F-005) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
+
+- 2026-09-30 — feature 1, round 1: **pass** — checks 1–9 all exit 0; hunk audit clean (all lifecycle rules survive the renumbering, docs dedup loses no fact, restraint survives without the cap, template record = anchor + location + snapshot, every hunk maps to a scoped change). Scores 5/5, 5/5, 4/5; two non-blocking wrap-width nits (one overlong line each in docs step 1 and SKILL.md Step 5) left unfixed to keep the diff minimal.
 
 ## Notes
 

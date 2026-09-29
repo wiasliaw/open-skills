@@ -14,3 +14,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-002 | codewalk skill ships an interactive anchored walkthrough with docs and README wiring | 2026-09-30-wor-31-codewalk |
 | F-003 | codewalk worktree procedure is concrete and safe under linked worktrees, subdirectory launches, and hooked repos | 2026-09-30-wor-31-codewalk-fixes |
 | F-004 | codewalk SKILL.md defines the stop record once and carries no duplicate mode/fallback sections | 2026-09-30-wor-31-codewalk-structural |
+| F-005 | codewalk skill carries no question cap, no per-stop pin, one docs degraded-mode statement, and an execution-ordered worktree lifecycle | 2026-09-30-wor-31-codewalk-polish |
