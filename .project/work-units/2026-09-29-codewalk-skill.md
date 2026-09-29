@@ -135,6 +135,8 @@ Manual (reviewer, not auto-checkable): SKILL.md body is imperative, rules carry 
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
+- 2026-09-29 — feature 1, round 1: fail — feature cmd and VS1–13 pass, exclusions clean; but SKILL.md counts map and "what next" as stops (l.83) while exempting them from SMIG (l.87) and from file:line/anchor/snapshot, contradicting Scope "every stop passes SMIG / each stop records…", SKILL.md Steps 4–5, and docs. FIX: count only orientation + core-path stops; map/closing are framing, not stops.
+
 ## Notes
 
 <!-- Dated progress notes, blockers (with the options for a major uncontracted decision), and failure attributions. -->
