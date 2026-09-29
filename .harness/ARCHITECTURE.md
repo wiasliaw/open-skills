@@ -11,7 +11,7 @@ When: seeded here at init from the project survey and interview; updated at a me
 - `.claude-plugin/` — plugin and marketplace manifests; `plugin.json` carries the released version.
 - `skills/request-code-review/` — multi-agent review pipeline; `reviewer-prompt.md` is the lens-reviewer prompt.
 - `skills/receive-code-review/` — verify-first handling of external PR/MR feedback via `gh`/`glab`.
-- `skills/codewalk/` — anchored walkthrough: conversation-paced code tour landed as a commit-pinned, content-anchored markdown file; owns the walkthrough template.
+- `skills/codewalk/` — interactive-only anchored walkthrough: conversation-paced code tour landed as a commit-pinned, content-anchored reading record; owns the walkthrough template; not dispatched by harness-flow.
 - `skills/init/` — survey + interview producing CLAUDE.md and `.harness/`; owns all long-term-memory templates, including DECISION-ENTRY and FEATURE-ENTRY.
 - `skills/harness-flow/` — orchestrator loop (clock-in, dispatch, reviewer gate, merge moment, clock-out); owns the work-unit state template.
 - `skills/handoff/` — session-memory snapshot; owns the handoff template.
