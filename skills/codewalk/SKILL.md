@@ -35,21 +35,27 @@ it matters, what will trip you up — not in listing files.
 
 ## Step 1: Determine mode and anchor
 
-First establish whose question this walkthrough answers — the
+First check that a reader can reply in this conversation. If not,
+explain and stop — create nothing, including the worktree.
+
+Then establish whose question this walkthrough answers — the
 reader's. Infer mode and depth from their words: "how does login work"
-is a topic trace; "onboard me" is a tour. Ask at most one clarifying
-question, and only when the request is genuinely ambiguous.
+is a topic trace; "onboard me" is a tour. Depth defaults to standard
+(9–13 stops); "quick look" or "overview" means quick, "in depth" or
+"everything" means deep. Ask at most one clarifying question, and only
+when the request is genuinely ambiguous.
 
 Ask for the landing location only in this first turn — folded into the
 clarifying question or the first stop, never as its own turn. Default
-`.codewalk/<topic>.md`, with `<topic>` a kebab-case slug. The slug
+`.codewalk/<topic>.md` under the directory reported by
+`git rev-parse --show-toplevel`, with `<topic>` a kebab-case slug. The slug
 `worktree` is reserved for the worktree directory; never use it as a
 filename.
 
 ## Step 2: Recon
 
 Create the pinned worktree (below) and do all reading inside it. The
-pin is that worktree's HEAD SHA. The walkthrough describes only the
+worktree is created from HEAD, and the pin is that HEAD's full SHA. The walkthrough describes only the
 last commit; uncommitted changes appear only if the user commits and
 restarts.
 
@@ -57,23 +63,33 @@ Read progressively: structural signals (entry points, manifests,
 directory layout) → Grep to locate → read only what is needed.
 Vertical slices beat shallow overviews. If the scope is too large to
 read directly, dispatch an Explore subagent with a self-contained
-prompt (question, scope, what to skip) and a fixed report format
+prompt (question, scope, what to skip, the worktree path and the pin,
+so it reads the pinned tree, not the working tree) and a fixed report format
 (symbol, `file:line`, one-line role) — then verify what you cite.
 
 ### Worktree lifecycle
 
-- Path: `.codewalk/worktree/codewalk-<short-sha>` inside the repo, so
-  reads stay inside the session working directory (including when
-  launched from a linked worktree). The name comes from the pinned
-  commit.
+- Path: `<toplevel>/.codewalk/worktree/codewalk-<short-sha>`, where
+  `<toplevel>` is the directory reported by
+  `git rev-parse --show-toplevel` (not the current working directory),
+  so reads stay inside the repo (including when launched from a linked
+  worktree). The name comes from the pinned commit.
 - If a worktree for the same SHA already exists, reuse it — never
-  rebuild.
+  rebuild — but only if `git -C <path> rev-parse HEAD` equals the
+  repo's full HEAD SHA and the probe-read below succeeds. Otherwise
+  treat the directory as unusable: stale-registration recovery or
+  fallback.
 - Create it with hooks disabled and LFS smudge off. Never execute
-  project code.
-- On creation, add `.codewalk/worktree/` to `.git/info/exclude` if not
-  already present. Touch no tracked file.
-- Probe-read one tracked file inside the worktree before recording the
-  pin. If the probe fails, use the fallback and pin `unknown`.
+  project code. Exact invocation:
+  `GIT_LFS_SKIP_SMUDGE=1 git -c core.hooksPath=/dev/null worktree add --detach <toplevel>/.codewalk/worktree/codewalk-<short-sha> HEAD`
+- On creation, add `.codewalk/worktree/` to the file reported by
+  `git rev-parse --git-path info/exclude`: create its parent directory
+  if missing, skip the append if that exact line is already present,
+  and if the file's last line lacks a trailing newline, add one first.
+  Touch no tracked file.
+- Probe-read one tracked file inside the worktree, on reuse as well as
+  on creation, before recording the pin (the full SHA). If the probe
+  fails, use the fallback and pin `unknown`.
 - If creation fails because the path is already registered to git (a
   stale registration whose directory was deleted by hand), run
   `git worktree remove --force` on that exact path only, then retry the
@@ -100,9 +116,11 @@ are boundaries: describe them, never cite their content.
 
 Order the narrative by understanding, not by file-tree order. Fixed
 arc: orientation → high-level map → core path → next steps. End with
-next steps, not a recap.
+next steps, not a recap. The high-level map is part of stop 1, and
+"Next steps" is a closing section, not a counted stop.
 
-Stop count by depth: quick 5–8, standard 9–13, deep 14–18.
+Stop count by depth: quick 5–8, standard 9–13, deep 14–18. `deeper on
+N` sub-stops do not count toward these ranges.
 
 Every stop passes the SMIG check and must teach something the reader
 would not get from just opening the file:
@@ -113,9 +131,10 @@ would not get from just opening the file:
 - **Gotcha** — what will surprise or mislead a newcomer.
 
 A stop record is defined once: while reading the code, create the
-anchor (a symbol or pattern) and verify it — it must match uniquely in
-the cited file — then record `file:line`. Stops added by replanning or
-jumps are verified the same way.
+anchor (a symbol or pattern) and verify it — the pattern must identify
+the stop's line unambiguously, with enough surrounding context to be
+unique in the cited file — then record `file:line`. Stops added by
+replanning, jumps, or `deeper on N` are verified the same way.
 
 ## Step 4: Walk
 
@@ -135,12 +154,17 @@ After the last stop (or when the reader skips to landing), write the
 walkthrough file into the real repo — never into the worktree — by
 filling
 `${CLAUDE_PLUGIN_ROOT}/skills/codewalk/templates/walkthrough.md.template`.
+HTML comments in the template are instructions to you (including
+"repeat the per-stop section"); never copy them into the landed file.
 
-Per stop, record the content anchor, `file:line`, the commit SHA
-pinned at generation, and a verbatim code snapshot fenced with more
-backticks than the content contains. Cite only files confirmed to
-exist. Promise verifiability against the pin, not permanent
-correctness.
+Record only stops actually presented to the reader, including `deeper
+on N` sub-stops. Per stop, record the content anchor, `file:line`, the
+commit SHA pinned at generation, and a verbatim code snapshot fenced
+with more backticks than the content contains. Cite only files
+confirmed to exist. Promise verifiability against the pin, not
+permanent correctness. When the pin is `unknown`, the drift notice
+must not emit `git show unknown:<path>`; it states that no commit was
+recorded and snapshots reflect the working tree at the recorded date.
 
 If the landing file already existed before this walkthrough began,
 ask before overwriting. Re-landing the file this walkthrough itself

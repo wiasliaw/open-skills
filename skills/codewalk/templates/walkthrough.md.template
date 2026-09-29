@@ -9,6 +9,11 @@
 > drift from the current code. Verify against the pin
 > (`git show {{commit_pin}}:<path>`) before relying on a line number.
 
+<!-- If the pin is `unknown`, replace the drift notice above with: "Drift
+notice: no commit was recorded; snapshots reflect the working tree at
+the recorded date and may drift from the current code." Never emit
+`git show unknown:<path>`. -->
+
 <!-- Repeat the section below once per stop, in walk order. Sub-stops use N.1, N.2. -->
 
 ## Stop {{stop_number}} — {{stop_title}}

@@ -35,7 +35,8 @@ request-code-review.
 2. **Recon.** The agent creates a worktree of `HEAD` at
    `.codewalk/worktree/codewalk-<short-sha>` and reads only there. That
    commit is the pin. If a worktree for the same commit exists, it is
-   reused. `.codewalk/worktree/` is added to `.git/info/exclude`, so no
+   reused. `.codewalk/worktree/` is added to the git exclude file
+   (`git rev-parse --git-path info/exclude`), so no
    tracked file changes; hooks and LFS smudge are off and no project
    code is executed.
 3. **Build route.** Orientation, high-level map, core path, next steps,
