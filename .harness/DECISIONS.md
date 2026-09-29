@@ -11,4 +11,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | ID | Date | Decision |
 |---|---|---|
 | D-001 | 2026-09-27 | Adapt the thermo-nuclear rubric into Lens 2, not import it |
-| D-003 | 2026-09-29 | codewalk is interactive only; the landed walkthrough is a reading record with an honest commit pin |
+| D-004 | 2026-09-29 | codewalk reads a HEAD worktree snapshot and cites only tracked code |

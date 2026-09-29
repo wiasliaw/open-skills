@@ -11,4 +11,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | ID | Behavior | Work unit |
 |---|---|---|
 | F-001 | Structure lens carries concrete maintainability standards | 2026-09-27-thicken-lens2 |
-| F-003 | codewalk is interactive only and lands an honest, commit-pinned walkthrough from verified stop records | 2026-09-29-codewalk-fixes |
+| F-004 | codewalk reads from a temporary worktree pinned to HEAD and cites only tracked project code | 2026-09-29-codewalk-worktree |
