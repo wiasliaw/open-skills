@@ -170,6 +170,8 @@ and a linked worktree.
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
+- 2026-09-29 — feature 1, round 1: pass — feature cmd (verified to propagate early failures) and VS1–20 exit 0 (SKILL.md 173 lines); items 1–13 located; lifecycle exercised literally in a scratch repo (stale cleanup scoped to prefix+stamp, hooks off, distinct concurrent paths, probe then pin, invisible to main status, repo-relative stripping, unforced remove refuses on modified, failed add leaves no dir for hook failure and invalid ref, common dir resolves identically from a linked worktree); whitespace-normalized word diff shows only scoped changes. Observations: stale cutoff instruction does not say how to roll back month/year on the 1st (naive decrement would classify a live concurrent snapshot as stale); ~100-column rewrap matches neither sibling style (<=80 hard wrap vs unwrapped); wrap artifact at SKILL.md:77.
+
 ## Notes
 
 <!-- Dated progress notes, blockers (with the options for a major uncontracted decision), and failure attributions. -->
@@ -177,3 +179,4 @@ and a linked worktree.
 - 2026-09-29 — Opened from /request-code-review of the full branch: W1 (fixed shared path), W2 (global prune), W3 (forced removal), W4 (hooks/LFS), W5 (unreadable snapshot) kept after verification (verifiers rated Important/Minor); X3 (F-004 weaker than contract, narrow title) confirmed; X1/X2 refuted. User decisions: worktree under the git common dir; SKILL.md bound raised to 175. Orchestrator probe in a scratch repo: a worktree at `.git/codewalk-XXXXXX` is invisible to the main repo's status and root-level search, readable by Grep/Glob, and removable without force. Git versions checked from release notes: `rev-parse --path-format` is 2.31, `worktree add --reason` is 2.33 — both avoided. Scope names the replacement of F-004 and supersession of D-004. Clock-in: `claude plugin validate .` passed; tree clean.
 - 2026-09-29 — Feature row command escapes `|` as `\|` for the Markdown table; unescape before running. It is every VS except VS2.
 - 2026-09-29 — Contract fix before review: VS8 used `L=...; [ ... ]`, whose bare `;` made the joined Features-row command ignore every check before it (reported by the implementor). Rewrote VS8 and the row without `;`. Implementor rewrapped SKILL.md from ~78 to ~100 columns to fit 175 lines (186 at the old width, no text cut) — to be put to the user.
+- 2026-09-29 — Merge moment held after the round-1 pass: the month/year rollover gap in the stale cutoff can force-remove a live concurrent snapshot, and the line-width choice is pending with the user.
