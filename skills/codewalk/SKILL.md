@@ -1,68 +1,62 @@
 ---
 name: codewalk
-description: Walks a reader through code as an interactive, conversation-paced tour — an orientation to a whole codebase, or one real execution path traced end to end — then lands the route as a markdown walkthrough pinned to a commit and anchored to code content. Use whenever someone wants to understand how existing code works, even if they never say "tour" — "walk me through the checkout flow", "how does X work end to end", "give me a tour of this codebase", "onboard me", "explain how a request flows through this". Skip for single-fact questions answered directly (where is X defined, what does this flag do), and for finding defects or judging changes — send those to request-code-review.
+description: Walks a reader through code as an interactive, conversation-paced tour — an orientation to a whole codebase, or one real execution path traced end to end — then lands the route as a markdown walkthrough pinned to a commit and anchored to code content. Use whenever someone wants to understand how existing code works, even if they never say "tour" — "walk me through the checkout flow", "how does X work end to end", "give me a tour of this codebase", "onboard me", "explain how a request flows through this". Skip for single-fact questions answered directly (where is X defined, what does this flag do), for contexts where no one can reply turn by turn (subagents, headless runs), and for finding defects or judging changes — send those to request-code-review.
 ---
 
 # Codewalk
 
 An anchored walkthrough: a guided route through real code, delivered
 one stop per turn, then landed as a file a later reader can check
-against the source. The reader is learning, not auditing — every stop
-exists to move their understanding forward.
+against the source. The reader is learning, not auditing.
 
 Core loop rules — they hold in every step:
 
-- **One stop per turn.** The reader sets the pace; ten stops in one
-  message take away their chance to steer.
-- **Cite only what you have read.** Every file, symbol, and line you
-  mention was opened in this session. A citation that does not resolve
-  teaches the reader to distrust the whole route.
+- **The walk is interactive only:** it needs a reader replying here.
+  Where no one can (a subagent, a headless run), do not walk or land:
+  answer the question directly, or say the walk needs an interactive session.
+- **One stop per turn.** The reader sets the pace and keeps room to steer.
+- **Cite only what you have read** in this session. One citation that
+  does not resolve teaches the reader to distrust the whole route.
 - **Understanding order, not file order.** Present code in the order
-  the reader needs it to make sense — usually execution order, never
-  the order the directory tree happens to list it.
+  the reader needs it — usually execution order, never tree order.
 - **Explain, never judge.** Describe what the code does and why;
   verdicts on its quality belong to a review.
+- **The landed file is a reading record** of this walk, not a project
+  deliverable: the session running the walk writes it directly, even
+  where project instructions route deliverables through an orchestrator.
 
 ## Step 1: Determine mode and anchor
 
-Pick one of two modes:
-
-- **Codebase tour** — orientation to a whole repository or module. The
-  default when the user names no specific question, path, or feature.
+- **Codebase tour** — orientation to a repository or module; the
+  default when the user names no question or feature. Its anchor is the
+  system's primary path — what it does, starting from the main entry
+  point found in recon; a named directory or module scopes the tour.
 - **Topic trace** — follow one real execution path to answer one
   question ("how does a request get authenticated?"). The anchor is
   that question plus the entry point the path starts from.
 
 Infer mode, reader (new contributor, reviewer, returning author), and
 depth (quick, standard, deep; default standard) from the user's words.
-Ask at most one clarifying question, only when the request is
-genuinely ambiguous — every question delays the first stop.
-
-Ask where the landed file should go, offering a default such as
-`docs/walkthroughs/<topic>.md`, in the same message as the clarifying
-question if there is one. When an orchestrator (e.g. harness-flow)
-invoked this skill rather than the user directly, choose the location
-yourself and state it — nobody is there to answer.
+Ask at most one clarifying question, only when the request is genuinely
+ambiguous — every question delays the first stop. In the first turn only,
+ask where to land the file (default `docs/walkthroughs/<topic>.md`), with
+the clarifying question if any, else alongside the first stop — never in
+a turn of its own. No answer means the default.
 
 ## Step 2: Recon
 
-Read progressively, never front to back:
+Read progressively, never front to back: structural signals (manifests,
+entry points such as `main`, CLI definitions, route tables, package
+roots; directory shape), then Grep and Glob to locate the symbols and
+call sites the route needs, then only the files and ranges it uses.
+Trace one vertical slice end to end instead of surveying every module:
+a slice shows how the parts connect; a survey only that they exist.
 
-1. Structural signals — manifests, entry points (`main`, CLI
-   definitions, route tables, package roots), directory shape.
-2. Grep and Glob to locate the symbols and call sites the route needs.
-3. Read only the files and ranges the route will actually use.
-
-Trace one vertical slice end to end — input through each layer to
-output — instead of surveying every module shallowly. A slice shows
-how the parts connect; a survey only shows that they exist.
-
-For large scopes, dispatch Explore subagents in parallel, one per
-area, each with a self-contained prompt — it sees neither this
-conversation nor this file. Require a fixed report schema: entry
-points, the call path as `file:line` → `file:line`, key types and
-roles, and anything not found. A report is a lead, not a citation:
-re-read every file you will cite.
+For large scopes, dispatch parallel Explore subagents, one per area, with
+self-contained prompts (they see neither this conversation nor this file)
+and a fixed report schema: entry points, call path as `file:line` →
+`file:line`, key types and roles, anything not found. Reports are leads,
+not citations: re-read every file you will cite.
 
 ## Step 3: Build the route
 
@@ -70,75 +64,86 @@ Arrange the route on a fixed arc. Stops carry code; framing does not:
 
 1. **Orientation stop** — what this code is for, anchored to a real
    file (a README, the entry point), not to general knowledge.
-2. **Map** (framing) — a short high-level picture of the parts on the
-   route and how they connect. A few lines or a small diagram, not an
-   inventory. It goes in the same turn as the orientation stop.
+2. **Map** (framing) — a short picture of the parts on the route and
+   how they connect; a few lines or a small diagram, not an inventory.
 3. **Core-path stops** — in execution order.
-4. **What you can do next** (framing) — concrete follow-ups: where a
-   change of this kind would go, which test exercises the path, what
-   to read next. No recap. It comes after the last core-path stop.
+4. **What you can do next** (framing) — where a change of this kind
+   would go, which test exercises the path, what to read next. No recap.
 
-Stop count by depth covers the orientation stop plus the core-path
-stops; the map and the closing are framing and do not count: quick
-5–8, standard 9–13, deep 14–18. Past 18 the reader loses the thread —
-offer two walkthroughs instead.
+Numbering: the orientation stop is stop 1; core-path stops continue
+from 2. Stops by depth: quick 5–8, standard 9–13, deep 14–18. Past 18
+the reader loses the thread — offer two walkthroughs instead. A stop
+must teach what the file alone cannot — the connection, the reason, the
+consequence; cut any stop that does not serve the goal.
 
-Every stop passes SMIG:
+Each stop is one **stop record**, defined here and nowhere else: number,
+title, `file:line`, content anchor (a symbol name or text pattern), a
+short verbatim snapshot copied from the file (never retyped from
+memory), and the SMIG narrative:
 
 - **Situation** — where we are on the path and how we got here.
-- **Mechanism** — what this code does and how, at the level the
-  reader's goal needs.
+- **Mechanism** — what this code does and how, at the depth needed.
 - **Implication** — why it matters for the next stop or the goal.
-- **Gotcha** — the non-obvious part: an ordering constraint, a hidden
-  side effect, a misleading name. If there is none, omit it.
+- **Gotcha** — the non-obvious part (ordering, side effect, naming), if any.
 
-A stop must teach something the reader could not get by reading the
-file alone — the connection, the reason, the consequence. Cut any stop
-that does not serve the reader's goal, however interesting.
-
-Before presenting the first stop, verify every anchor: each cited file
-was read, and each symbol or text pattern is found by Grep at the
-cited location. Fix or drop anything that does not resolve.
+Capture each record while reading its code and verify its anchor then:
+matched as a literal string (escape regex metacharacters for Grep), it
+occurs exactly once in the cited file, and the record's `file:line` comes
+from that match. If a symbol is not unique, use a longer pattern such as
+the full signature line, never a bare line number (lines drift). Fix or
+drop a record that fails, including stops added by a re-plan or `skip to`.
 
 ## Step 4: Walk
 
-Present one stop per turn: title, `file:line`, a short code excerpt,
-then the SMIG narrative. The first turn adds the map after the
-orientation stop; the closing follows the last core-path stop. End
-each turn with the controls in one line:
+Present one stop record per turn: `N. title`, `file:line`, the snapshot
+as the code excerpt, then the SMIG narrative. Fence each snapshot, and
+any backtick-wrapped anchor, with a backtick run longer than any inside
+it, so embedded fences cannot break it.
+
+Turn placement: the map follows stop 1, in the same turn. The closing
+follows the last core-path stop, and Step 5 runs in that same turn — the
+reader never has to type `land`. In the closing, name a file or test
+only if you read it in this session (locate it with Glob/Grep first; a
+Glob hit proves existence, not behavior), and call a test one that
+exercises the path only if it references a symbol on the route;
+otherwise describe it without a path. End each stop turn except the
+last (which lands) with the controls in one line:
 
 - `next` — the following stop.
-- `deeper on N` — expand stop N with more of its code or callees, then
-  return to the route.
-- `skip to X` — jump to the named stop or topic.
-- `land` — end the walk at any time: give the closing, then land the
-  full planned route (already verified) per Step 5.
+- `deeper on N` — expand stop N, then return; landed only if asked.
+- `skip to X` — jump to the named stop, or to an off-route topic:
+  capture and verify its record, insert it right after the current stop
+  with the next number, and renumber unshown stops after it (shown stops
+  keep theirs; inserted stops count toward the depth cap).
+- `land` — end the walk now: the closing, then Step 5 for every record.
 
-Answer side questions in place, then offer to resume; if one shows the
-route is wrong for this reader, re-plan the remaining stops and say so.
+Answer side questions in place, then offer to resume. If one shows the
+route is wrong, say so and re-plan the rest; shown stops keep numbers.
 
 ## Step 5: Land
 
+If the landing path already exists, say so and ask whether to
+overwrite it or choose a new name; write nothing until they answer.
+Before pinning, confirm each record's snapshot still appears verbatim
+in its file and its anchor still matches exactly once; re-capture any
+record that drifted during the walk, or drop it and say so.
+
+Pin the commit honestly with `git rev-parse HEAD`; if it fails for any
+reason (git unavailable, not a repository, no commits yet), record
+`unknown` — never invent a SHA. A cited file is uncovered if it lies
+outside the repository root (no git needed), if
+`git status --porcelain --ignored -- <in-repo cited files>` lists it or a
+parent directory covering it (modified, `??`, `!!`), or if that command fails.
+List every uncovered file in `<sha> + uncommitted changes in <files>`
+and fill the notice's working-tree note to say the snapshots come from
+the working tree; if every cited file is covered, leave the note empty.
+
 Fill `${CLAUDE_PLUGIN_ROOT}/skills/codewalk/templates/walkthrough.md.template`
-and write it to the agreed location, creating parent directories as
-needed. Repeat the core-path stop block once per core-path stop, in
-route order.
-
-- **Header** — topic or question, mode, depth, the repo commit SHA at
-  generation time (`git rev-parse HEAD`), and today's date
-  (YYYY-MM-DD). If git is unavailable or this is not a repository,
-  record the SHA as `unknown` and say so — never invent one.
-- **Each stop** (orientation and core path) — title; `file:line`
-  display reference; a content anchor (a symbol name or unique text
-  pattern Grep can find); a short verbatim code snapshot copied from
-  the file, not retyped from memory; the narrative. Line numbers drift
-  with every edit, so a bare line number is never the only anchor.
-- **Map** and **What you can do next** — framing sections: prose only,
-  no anchor or snapshot.
-- Keep the template's notice that the file describes that commit and
-  may drift afterward — it is what keeps the file honest.
-
-Report the written path.
+and write it, creating parent directories. Header: topic, mode, depth,
+commit pin, today's date (YYYY-MM-DD). Write every stop record in route
+order (stop 1 in the orientation block, then one core-path block each)
+with the Step 4 backtick rule; map and closing are prose only. Keep the
+notice that the file may drift afterward, and report the written path.
 
 ## Prohibitions
 

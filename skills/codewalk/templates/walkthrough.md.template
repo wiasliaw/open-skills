@@ -1,16 +1,16 @@
 # Walkthrough — {{topic_or_question}}
 
-> This walkthrough describes the code at commit `{{commit_sha_or_unknown}}` and may drift afterward. Line numbers are display references only: to relocate a stop, search for its content anchor (a symbol name or unique text pattern), and compare the code snapshot with what you find.
+> This walkthrough describes the code at commit `{{commit_sha_plus_uncommitted_changes_or_unknown}}` and may drift afterward. {{working_tree_note_if_uncommitted_changes}} Line numbers are display references only: to relocate a stop, search for its content anchor (a symbol name or unique text pattern), and compare the code snapshot with what you find.
 
 - **Topic**: {{topic_or_question}}
 - **Mode**: {{codebase_tour_or_topic_trace}}
 - **Depth**: {{quick_standard_or_deep}}
-- **Commit**: `{{commit_sha_or_unknown}}`
+- **Commit**: `{{commit_sha_plus_uncommitted_changes_or_unknown}}`
 - **Date**: {{date}}
 
 ## Orientation
 
-### {{orientation_stop_title}}
+### 1. {{orientation_stop_title}}
 
 - **Location**: `{{orientation_file_path_and_line}}`
 - **Anchor**: `{{orientation_symbol_or_unique_text_pattern}}`
