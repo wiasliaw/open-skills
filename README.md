@@ -17,6 +17,7 @@ Inside Claude Code:
 | -- | -- |
 | [request-code-review](./docs/request-code-review.md) | Reviews your changes: three lens reviewers in parallel, adversarial verification of every finding, and an explicit verdict on the overall design. |
 | [receive-code-review](./docs/receive-code-review.md) | Processes review feedback you received: verifies every comment against the code, fixes what holds up, drafts evidence-backed rebuttals for what doesn't. |
+| [codewalk](./docs/codewalk.md) | Interactive guided walkthrough of a codebase or one execution path, one verified `file:line` stop at a time, pinned to a commit and landed as a reading record. |
 | [harness](./docs/harness.md) | Project harness: `init` scaffolds a CLAUDE.md plus `.harness/` long-term memory, `harness-flow` runs a reviewer-gated implementor/reviewer loop, `handoff` persists in-flight context across sessions. |
 
 Invoke by slash command or by asking in plain words:
@@ -24,6 +25,7 @@ Invoke by slash command or by asking in plain words:
 ```
 /open-skills:request-code-review
 /open-skills:receive-code-review #91
+/open-skills:codewalk
 /open-skills:init
 /open-skills:harness-flow
 /open-skills:handoff
@@ -32,7 +34,9 @@ Invoke by slash command or by asking in plain words:
 ### External tools
 
 - `git` — used by request-code-review to detect the review scope;
-  without it you are asked which files to review.
+  without it you are asked which files to review. Also used by
+  codewalk to pin a walkthrough to a commit in a worktree; without it
+  the pin is recorded as `unknown`.
 - `gh` (GitHub) or `glab` (GitLab) — used by receive-code-review to
   fetch PR/MR comments; without them, paste the review text instead.
 

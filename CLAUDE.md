@@ -13,10 +13,15 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 │   ├── implementor.md
 │   └── reviewer.md
 ├── docs/                         # user-facing docs, linked from README's Skills table
+│   ├── codewalk.md
 │   ├── harness.md                # one page covering init, harness-flow, and handoff
 │   ├── receive-code-review.md
 │   └── request-code-review.md
 ├── skills/
+│   ├── codewalk/
+│   │   ├── SKILL.md
+│   │   └── templates/
+│   │       └── walkthrough.md.template
 │   ├── handoff/
 │   │   ├── SKILL.md
 │   │   └── templates/
