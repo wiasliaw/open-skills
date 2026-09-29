@@ -12,3 +12,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 |---|---|---|
 | F-001 | Structure lens carries concrete maintainability standards | 2026-09-27-thicken-lens2 |
 | F-002 | codewalk skill ships an interactive anchored walkthrough with docs and README wiring | 2026-09-30-wor-31-codewalk |
+| F-003 | codewalk worktree procedure is concrete and safe under linked worktrees, subdirectory launches, and hooked repos | 2026-09-30-wor-31-codewalk-fixes |
