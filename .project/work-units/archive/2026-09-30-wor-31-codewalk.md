@@ -50,12 +50,16 @@ Run from the repo root, in order; all must succeed:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | codewalk skill: interactive anchored-walkthrough skill with worktree-pinned recon, five-step flow, landing template, docs page, and README wiring | `claude plugin validate .` plus contract checks 2–7 | active |
+| 1 | codewalk skill: interactive anchored-walkthrough skill with worktree-pinned recon, five-step flow, landing template, docs page, and README wiring | `claude plugin validate .` plus contract checks 2–7 | passed (F-002) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
+- 2026-09-30 — feature 1, round 1: pass — all seven verification commands succeeded; spec fidelity confirmed for interactive-only rule, modes, five-step flow, worktree lifecycle, fallback, citation discipline, depth/SMIG rules, and all six Prohibitions; no constraint violations.
+
 ## Notes
 
 - 2026-09-30 — Work unit opened on branch `feature/wor-31-codewalk` from up-to-date main. Prior branch `feature/wor-31-code-walk-skill` and PR #6 are abandoned; clean start, no reuse of their work units or harness entries.
+- 2026-09-30 — Implementor judgment calls accepted at review: depth labels quick/standard/deep for 5–8/9–13/14–18; Explore report format symbol + `file:line` + one-line role with re-verify rule; `deeper on N` sub-stops numbered N.1, N.2…; template snapshot fences as placeholders; drift notice carries a `git show {{commit_pin}}:<path>` hint.
+- 2026-09-30 — Merge moment recorded F-002; ARCHITECTURE.md Module Map and CLAUDE.md Repo Structure updated; work unit closed.
