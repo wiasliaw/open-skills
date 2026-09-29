@@ -1,0 +1,28 @@
+# Walkthrough — {{topic}}
+
+- Mode: {{mode}}
+- Depth: {{depth}}
+- Commit pin: {{commit_pin}}
+- Date: {{date}}
+
+> Drift notice: every snapshot below reflects the pinned commit and may
+> drift from the current code. Verify against the pin
+> (`git show {{commit_pin}}:<path>`) before relying on a line number.
+
+<!-- Repeat the section below once per stop, in walk order. Sub-stops use N.1, N.2. -->
+
+## Stop {{stop_number}} — {{stop_title}}
+
+- Anchor: `{{content_anchor}}`
+- Location: `{{file_path}}:{{line_number}}`
+- Pinned at: {{commit_pin}}
+
+{{stop_explanation_situation_mechanism_implication_gotcha}}
+
+{{snapshot_fence_more_backticks_than_content}}
+{{verbatim_code_snapshot}}
+{{snapshot_fence_more_backticks_than_content}}
+
+## Next steps
+
+{{where_to_read_next}}
