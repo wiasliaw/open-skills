@@ -104,6 +104,52 @@ contradict the skill).
 
 All content in English (C-001). SKILL.md stays within 90–160 lines.
 
+Amendment (2026-09-29, after /request-code-review of this unit's diff;
+round 2 of feature 1). Items 1–11 stay in force; add:
+
+12. **Pin coverage.** For cited files inside the repository run
+    `git status --porcelain --ignored -- <files>` and treat any `??`
+    or `!!` entry — including an ignored parent directory that covers
+    a cited file — as not in the commit. Classify cited files outside
+    the repository root as not in the commit without running git on
+    them. If `git status` itself fails, treat every cited file as not
+    covered. All of these are listed in
+    `<sha> + uncommitted changes in <files>`. The phrases `--ignored`
+    and `outside the repository` MUST appear in SKILL.md; docs
+    Requirements/Land text matches.
+13. **Snapshot re-check at landing.** Before pinning, confirm each
+    record's snapshot still appears verbatim in its file and its
+    anchor still matches exactly once; re-capture any record that
+    drifted during the walk (or drop it and say so). The phrase
+    `still appears verbatim` MUST appear in SKILL.md.
+14. **Closing citations.** Name a file or test in the closing only if
+    you read it in this session (locate it with Glob/Grep first; a
+    Glob hit proves existence, not behavior); call a test one that
+    exercises the path only if it references a symbol on the route.
+    Otherwise describe it without a path.
+15. **Off-route insert.** A stop added by `skip to` an off-route topic
+    goes right after the current stop and takes the next number;
+    unshown stops renumber after it; shown stops keep their numbers;
+    inserted stops count toward the depth cap. The phrase
+    `right after the current stop` MUST appear in SKILL.md.
+16. **Anchor matching.** Match anchors as a literal string (escape
+    regex metacharacters when using Grep), and take the record's
+    `file:line` from the anchor's match. The phrase
+    `as a literal string` MUST appear in SKILL.md.
+17. **Working-tree note.** SKILL.md says to leave the note empty when
+    every cited file is covered; the template puts a space before the
+    note's placeholder so a filled note reads as its own sentence.
+18. **No-reader contexts.** The description gains a skip condition for
+    contexts where no one can reply (e.g. subagents, headless runs).
+    The interactive-only rule says: do not walk or land; answer the
+    question directly, or say the walk needs an interactive session.
+19. **Turn wording.** The controls line ends each stop turn except the
+    last (which lands); "the map follows stop 1, in the same turn".
+
+SKILL.md stays within 90–160 lines: pay for items 12–19 by tightening
+wording, never by dropping a mandated item (six Prohibitions, core
+loop rules near the top, SMIG, depth counts, fixed arc).
+
 ### Verification Standards
 
 Run from the repo root; all must pass:
@@ -126,6 +172,9 @@ Run from the repo root; all must pass:
 16. `grep -q "stop record" skills/codewalk/SKILL.md && ! grep -q "already verified" skills/codewalk/SKILL.md` — single stop record; no stale verification claim.
 17. `grep -q "the orientation stop is stop 1" skills/codewalk/SKILL.md && grep -qF '### 1. {{orientation_stop_title}}' skills/codewalk/templates/walkthrough.md.template` — stop numbering defined.
 18. `grep -q "already exists" skills/codewalk/SKILL.md && grep -q "primary path" skills/codewalk/SKILL.md && grep -qi "backtick" skills/codewalk/SKILL.md` — existing-file prompt, tour anchor, snapshot fencing.
+19. `grep -q -- "--ignored" skills/codewalk/SKILL.md && grep -q "outside the repository" skills/codewalk/SKILL.md && grep -q "still appears verbatim" skills/codewalk/SKILL.md` — pin coverage and landing re-check.
+20. `grep -q "right after the current stop" skills/codewalk/SKILL.md && grep -q "as a literal string" skills/codewalk/SKILL.md` — insert position and literal anchor matching.
+21. `grep -qE '\. \{\{working_tree_note' skills/codewalk/templates/walkthrough.md.template` — working-tree note placeholder preceded by a space.
 
 Manual (reviewer, not auto-checkable): every Scope item 1–11 is present
 and mutually consistent across SKILL.md, the template, and the docs;
@@ -154,13 +203,14 @@ stays imperative with brief rationale and core loop rules near the top.
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | codewalk is interactive only, lands an honest commit-pinned walkthrough built from verified, numbered stop records, and ships with its template, docs page, and README entry (replaces F-002) | `claude plugin validate . && head -5 skills/codewalk/SKILL.md \| grep -q '^name: codewalk$' && grep -qi "walk me through" skills/codewalk/SKILL.md && grep -q "request-code-review" skills/codewalk/SKILL.md && grep -q "SMIG" skills/codewalk/SKILL.md && grep -q "14–18\|14-18" skills/codewalk/SKILL.md && grep -q '${CLAUDE_PLUGIN_ROOT}/skills/codewalk/templates/walkthrough.md.template' skills/codewalk/SKILL.md && grep -q "^## Prohibitions" skills/codewalk/SKILL.md && grep -q "interactive only" skills/codewalk/SKILL.md && grep -q "reading record" skills/codewalk/SKILL.md && grep -q "git status --porcelain" skills/codewalk/SKILL.md && grep -q "stop record" skills/codewalk/SKILL.md && grep -q "the orientation stop is stop 1" skills/codewalk/SKILL.md && grep -q "already exists" skills/codewalk/SKILL.md && grep -q "may drift" skills/codewalk/templates/walkthrough.md.template && grep -qF '### 1. {{orientation_stop_title}}' skills/codewalk/templates/walkthrough.md.template && grep -q "^## Usage" docs/codewalk.md && grep -q '^\| \[codewalk\](./docs/codewalk.md) \|' README.md && grep -q '^/open-skills:codewalk' README.md` | active |
+| 1 | codewalk is interactive only, lands an honest commit-pinned walkthrough (covering untracked, ignored, and out-of-repo citations and re-checking snapshots at landing) built from verified, numbered stop records, and ships with its template, docs page, and README entry (replaces F-002) | `claude plugin validate . && head -5 skills/codewalk/SKILL.md \| grep -q '^name: codewalk$' && grep -qi "walk me through" skills/codewalk/SKILL.md && grep -q "request-code-review" skills/codewalk/SKILL.md && grep -q "SMIG" skills/codewalk/SKILL.md && grep -q "14–18\\\|14-18" skills/codewalk/SKILL.md && grep -q '${CLAUDE_PLUGIN_ROOT}/skills/codewalk/templates/walkthrough.md.template' skills/codewalk/SKILL.md && grep -q "^## Prohibitions" skills/codewalk/SKILL.md && grep -q "interactive only" skills/codewalk/SKILL.md && grep -q "reading record" skills/codewalk/SKILL.md && grep -q "git status --porcelain" skills/codewalk/SKILL.md && grep -q "uncommitted changes" skills/codewalk/SKILL.md && grep -q -- "--ignored" skills/codewalk/SKILL.md && grep -q "outside the repository" skills/codewalk/SKILL.md && grep -q "still appears verbatim" skills/codewalk/SKILL.md && grep -q "stop record" skills/codewalk/SKILL.md && grep -q "the orientation stop is stop 1" skills/codewalk/SKILL.md && grep -q "right after the current stop" skills/codewalk/SKILL.md && grep -q "as a literal string" skills/codewalk/SKILL.md && grep -q "already exists" skills/codewalk/SKILL.md && grep -q "primary path" skills/codewalk/SKILL.md && grep -qi "backtick" skills/codewalk/SKILL.md && grep -q "may drift" skills/codewalk/templates/walkthrough.md.template && grep -qF '### 1. {{orientation_stop_title}}' skills/codewalk/templates/walkthrough.md.template && grep -q "^## Usage" docs/codewalk.md && grep -qi "uncommitted" docs/codewalk.md && grep -q '^\| \[codewalk\](./docs/codewalk.md) \|' README.md && grep -q '^/open-skills:codewalk' README.md` | active |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
 - 2026-09-29 — feature 1, round 1: pass — feature cmd and VS1–18 exit 0 (SKILL.md 159 lines); Scope items 1–11 located; archived Step 1–5 items and six Prohibitions intact except the removed orchestrator clause; SKILL.md/template/docs/README consistent; only the three in-scope files changed. Optional polish noted (docs l.64-66 auto-land vs existing-file prompt; docs Requirements omits "not a repository").
+- 2026-09-29 — feature 1, reopened (not a reviewer fail): user-invoked /request-code-review of this diff confirmed pin-coverage (K1), capture-vs-pin drift (K2), closing-citation ambiguity (K3), off-route insert numbering (K4), and Features-row coverage gap (T3); contract amended with items 12–19 and VS19–21 before the merge moment.
 
 ## Notes
 
@@ -168,3 +218,4 @@ stays imperative with brief rationale and core loop rules near the top.
 
 - 2026-09-29 — Opened after /request-code-review of branch feature/wor-31-code-walk-skill (4 Critical, 5 Structural candidates; S2/S3 refuted as proposed). User decision: drop harness-flow trigger compatibility; landed file is a reading record, not a deliverable. Scope names the replacement of F-002 (by the new F-NNN) and supersession of D-002 at this unit's merge moment. Clock-in: `claude plugin validate .` passed; eval TBD skipped; no handoff file.
 - 2026-09-29 — Feature row command escapes `|` as `\|` for the Markdown table; when running it, unescape to `|` (the pipes after `head -5` and inside the README grep pattern).
+- 2026-09-29 — Held the merge moment after the round-1 pass because the user requested /request-code-review. Review: 3 lenses, 27 raw findings → 16 after dedup; K1–K4 kept (K4 narrowed; verifiers rated all four Important/Minor rather than Critical), T3 confirmed narrowed, T1/T2/T4/T5 refuted. Amended Scope (items 12–19), VS19–21, and the Features row (adds the MUST-string checks T3 found missing). Round 2 dispatched.
