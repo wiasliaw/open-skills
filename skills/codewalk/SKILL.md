@@ -25,25 +25,24 @@ it matters, what will trip you up — not in listing files.
 - **Read-only.** Any code change made during a walkthrough goes to the
   real repo, never into the worktree.
 
-## Modes
-
-- **Codebase tour** — the default when there is no clear anchor. The
-  anchor defaults to the system's primary execution path. A directory
-  or module the user names narrows the scope.
-- **Topic trace** — follow one real execution path (a request, a
-  command, an event) from its entry point through the code it touches.
-
 ## Step 1: Determine mode and anchor
 
 First check that a reader can reply in this conversation. If not,
 explain and stop — create nothing, including the worktree.
 
 Then establish whose question this walkthrough answers — the
-reader's. Infer mode and depth from their words: "how does login work"
-is a topic trace; "onboard me" is a tour. Depth defaults to standard
-(9–13 stops); "quick look" or "overview" means quick, "in depth" or
-"everything" means deep. Ask at most one clarifying question, and only
-when the request is genuinely ambiguous.
+reader's. Infer mode and depth from their words:
+
+- **Codebase tour** — the default when there is no clear anchor. The
+  anchor defaults to the system's primary execution path. A directory
+  or module the user names narrows the scope. "Onboard me" is a tour.
+- **Topic trace** — follow one real execution path (a request, a
+  command, an event) from its entry point through the code it touches.
+  "How does login work" is a topic trace.
+
+Depth defaults to standard (9–13 stops); "quick look" or "overview"
+means quick, "in depth" or "everything" means deep. Ask at most one
+clarifying question, and only when the request is genuinely ambiguous.
 
 Ask for the landing location only in this first turn — folded into the
 clarifying question or the first stop, never as its own turn. Default
@@ -98,19 +97,18 @@ so it reads the pinned tree, not the working tree) and a fixed report format
   prefix marks their purpose. Removal is the user's, via
   `git worktree remove .codewalk/worktree/codewalk-<sha>`.
 
-### Fallback
+### Citation boundaries and fallback
 
-If there is no git, no repository, no commits, or the worktree cannot
-be created or read, read the working tree directly and pin `unknown`.
 Read and cite only the project's own source — never dependencies,
 build output, or vendored code. Apply that as judgment; do not write a
-`.gitignore` parser.
+`.gitignore` parser. Never cite gitignored or out-of-repo code. When a
+path reaches a dependency, describe the boundary without citing its
+code. Submodules are boundaries: describe them, never cite their
+content.
 
-### Citation boundaries
-
-Never cite gitignored or out-of-repo code. When a path reaches a
-dependency, describe the boundary without citing its code. Submodules
-are boundaries: describe them, never cite their content.
+Fallback: if there is no git, no repository, no commits, or the
+worktree cannot be created or read, read the working tree directly and
+pin `unknown`.
 
 ## Step 3: Build the route
 
@@ -130,11 +128,14 @@ would not get from just opening the file:
 - **Implication** — what this means for the rest of the path.
 - **Gotcha** — what will surprise or mislead a newcomer.
 
-A stop record is defined once: while reading the code, create the
-anchor (a symbol or pattern) and verify it — the pattern must identify
-the stop's line unambiguously, with enough surrounding context to be
-unique in the cited file — then record `file:line`. Stops added by
-replanning, jumps, or `deeper on N` are verified the same way.
+A stop record is defined once, here: anchor, `file:line`, and a
+verbatim code snapshot. While reading, create the anchor (a symbol or
+pattern) and verify it — the pattern must identify the stop's line
+unambiguously, with enough surrounding context to be unique in the
+cited file. Then record `file:line` and copy the snapshot at that
+moment, never reconstructing it later. The pin is walk-level: one HEAD
+per walk. Stops added by replanning, jumps, or `deeper on N` are
+verified and recorded the same way.
 
 ## Step 4: Walk
 
@@ -157,10 +158,10 @@ filling
 HTML comments in the template are instructions to you (including
 "repeat the per-stop section"); never copy them into the landed file.
 
-Record only stops actually presented to the reader, including `deeper
-on N` sub-stops. Per stop, record the content anchor, `file:line`, the
-commit SHA pinned at generation, and a verbatim code snapshot fenced
-with more backticks than the content contains. Cite only files
+Fill the template from the Step 3 stop records. Record only stops
+actually presented to the reader, including `deeper on N` sub-stops.
+The per-stop `Pinned at:` line carries the walk's pin; fence each
+snapshot with more backticks than its content contains. Cite only files
 confirmed to exist. Promise verifiability against the pin, not
 permanent correctness. When the pin is `unknown`, the drift notice
 must not emit `git show unknown:<path>`; it states that no commit was
