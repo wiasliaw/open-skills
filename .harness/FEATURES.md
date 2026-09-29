@@ -13,3 +13,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-001 | Structure lens carries concrete maintainability standards | 2026-09-27-thicken-lens2 |
 | F-002 | init offers a private, out-of-repo harness storage mode | 2026-09-29-private-harness-storage |
 | F-003 | harness-flow and handoff resolve the harness declaration and harness root in both storage modes | 2026-09-29-private-harness-storage |
+| F-004 | Harness docs describe shared and private storage modes | 2026-09-29-private-harness-storage |

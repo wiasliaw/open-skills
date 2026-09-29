@@ -168,7 +168,7 @@ Run from the repo root; all must pass:
 |---|---|---|---|
 | 1 | init offers shared/private storage; private mode scaffolds `~/.open-skills/<slug>/` with `HARNESS.md` + `.harness/`, writes the `CLAUDE.local.md` import shim and the local git exclude, and detects existing private adoptions for update mode | `claude plugin validate . && test -f skills/init/templates/CLAUDE.local.md.template && grep -q "HARNESS.md" skills/init/templates/CLAUDE.local.md.template && grep -q "~/.open-skills/" skills/init/SKILL.md && grep -q "CLAUDE.local.md" skills/init/SKILL.md && grep -q "info/exclude" skills/init/SKILL.md && grep -q "project root:" skills/init/SKILL.md && grep -q "not git-managed" skills/init/SKILL.md && grep -qi "private" skills/init/SKILL.md && grep -q "project root:" skills/init/templates/CLAUDE.md.template` | passed (F-002) |
 | 2 | harness-flow and handoff resolve the harness declaration and harness root through the `CLAUDE.local.md` → `HARNESS.md` chain, accept absolute declared paths, and exempt the private harness root from the version-control clock-out check | `claude plugin validate . && sed -n 1,5p skills/harness-flow/SKILL.md \| grep -q "CLAUDE.local.md" && grep -q "HARNESS.md" skills/harness-flow/SKILL.md && grep -q "harness root" skills/harness-flow/SKILL.md && grep -qi "absolute" skills/harness-flow/SKILL.md && grep -q "CLAUDE.local.md" skills/handoff/SKILL.md && grep -q "HARNESS.md" skills/handoff/SKILL.md && grep -qi "absolute" skills/handoff/SKILL.md` | passed (F-003) |
-| 3 | docs/harness.md and README describe the two storage modes, the private layout, the shim and local exclude, that `~/.open-skills/` is not git-managed, the external-import approval, and the AGENTS.md side effect | `grep -q "~/.open-skills/" docs/harness.md && grep -q "CLAUDE.local.md" docs/harness.md && grep -q "not git-managed" docs/harness.md && grep -q "info/exclude" docs/harness.md && grep -q "AGENTS.md" docs/harness.md && grep -qi "private" README.md` | active |
+| 3 | docs/harness.md and README describe the two storage modes, the private layout, the shim and local exclude, that `~/.open-skills/` is not git-managed, the external-import approval, and the AGENTS.md side effect | `grep -q "~/.open-skills/" docs/harness.md && grep -q "CLAUDE.local.md" docs/harness.md && grep -q "not git-managed" docs/harness.md && grep -q "info/exclude" docs/harness.md && grep -q "AGENTS.md" docs/harness.md && grep -qi "private" README.md` | passed (F-004) |
 
 ## Review Log
 
@@ -176,6 +176,7 @@ Run from the repo root; all must pass:
 
 - 2026-09-29 — feature 1, round 1: pass — feature chain PASS, validate exit 0, diff within init files; all Scope item-1 bullets and D-a..D-d implemented; shared-mode output unchanged; exclusions untouched.
 - 2026-09-29 — feature 2, round 1: pass — feature chain PASS, validate exit 0, diff within harness-flow/handoff; declaration/harness-root resolution, shim-only location, absolute paths, clock-out VCS exemption, handoff step 1 chain all verified; shared mode unchanged.
+- 2026-09-29 — feature 3, round 1: pass — feature chain PASS, validate exit 0, diff within docs/harness.md and README row; every Scope item-4 point covered and each docs claim checked against the committed skills.
 
 ## Notes
 
@@ -185,3 +186,4 @@ Run from the repo root; all must pass:
 - 2026-09-29 — `open-skills:implementor` / `open-skills:reviewer` agent types are not installed in this session; they are dispatched as general-purpose agents carrying the verbatim `agents/implementor.md` / `agents/reviewer.md` instructions.
 - 2026-09-29 — Feature 1 merged as F-002; D-002 recorded. Reviewer non-blocking notes: init step 3 still says "alongside CLAUDE.md" for the `.harness/` drafts; a missing shim with an existing matching `~/.open-skills/<slug>/HARNESS.md` is only recognized as update mode at step 3. Carried to the final request-code-review.
 - 2026-09-29 — Feature 2 merged as F-003; ARCHITECTURE.md module map, layering, and key boundary updated for the harness declaration / harness root split.
+- 2026-09-29 — Feature 3 merged as F-004 (reviewer style notes: README row "—," punctuation; docs/harness.md collision sentence missing a full stop after the ellipsis). All features passed; work unit closed. Final request-code-review requested by the user follows as a separate step.
