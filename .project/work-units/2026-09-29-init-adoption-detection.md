@@ -168,15 +168,18 @@ Run from the repo root; all must pass:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | init detects the adoption state first (project files + `~/.open-skills/*/HARNESS.md` `project root:` scan), classifies it as project/external × first init/re-init or a stop-and-ask anomaly, and only then interviews; writes follow the classification (re-attach, suffix, no overwrite, in-place shim) | `claude plugin validate . && grep -q "project first init" skills/init/SKILL.md && grep -q "project re-init" skills/init/SKILL.md && grep -q "external first init" skills/init/SKILL.md && grep -q "external re-init" skills/init/SKILL.md && grep -q "adoption marker" skills/init/SKILL.md && grep -q "~/.open-skills/\*/HARNESS.md" skills/init/SKILL.md && grep -q "git ls-files --error-unmatch" skills/init/SKILL.md && grep -q "git rev-parse --show-toplevel" skills/init/SKILL.md && ! grep -q "that is update mode" skills/init/SKILL.md && ! grep -q "alongside CLAUDE.md" skills/init/SKILL.md` + manual scenario walk A–L | active |
-| 2 | docs/harness.md describes the detection-first flow, the four cases and anomalies, the adoption marker, and shim re-attachment | `grep -q "re-init" docs/harness.md && grep -q "first init" docs/harness.md && grep -qi "adoption marker" docs/harness.md && grep -qi "re-attach" docs/harness.md` | not_started |
+| 1 | init detects the adoption state first (project files + `~/.open-skills/*/HARNESS.md` `project root:` scan), classifies it as project/external × first init/re-init or a stop-and-ask anomaly, and only then interviews; writes follow the classification (re-attach, suffix, no overwrite, in-place shim) | `claude plugin validate . && grep -q "project first init" skills/init/SKILL.md && grep -q "project re-init" skills/init/SKILL.md && grep -q "external first init" skills/init/SKILL.md && grep -q "external re-init" skills/init/SKILL.md && grep -q "adoption marker" skills/init/SKILL.md && grep -q "~/.open-skills/\*/HARNESS.md" skills/init/SKILL.md && grep -q "git ls-files --error-unmatch" skills/init/SKILL.md && grep -q "git rev-parse --show-toplevel" skills/init/SKILL.md && ! grep -q "that is update mode" skills/init/SKILL.md && ! grep -q "alongside CLAUDE.md" skills/init/SKILL.md` + manual scenario walk A–L | passed (F-005) |
+| 2 | docs/harness.md describes the detection-first flow, the four cases and anomalies, the adoption marker, and shim re-attachment | `grep -q "re-init" docs/harness.md && grep -q "first init" docs/harness.md && grep -qi "adoption marker" docs/harness.md && grep -qi "re-attach" docs/harness.md` | active |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
+
+- 2026-09-29 — feature 1, round 1: pass — chain PASS, validate exit 0, diff only skills/init/SKILL.md; independent A–L walk all matched E-c..E-g; classification ordered and total; step refs correct.
 
 ## Notes
 
 <!-- Dated progress notes, blockers (with the options for a major uncontracted decision), and failure attributions. -->
 
 - 2026-09-29 — Opened after the user reviewed the request-code-review report and directed: handle the init flow first; make the check thorough — inspect `~/.open-skills` and the project's Claude files — then classify into project vs external × first init vs re-init. Orchestrator chose to find existing private harnesses by scanning `~/.open-skills/*/HARNESS.md` `project root:` bullets (the listing mechanism D-002 already names) rather than by slug lookup, so D-002 needs no revision.
+- 2026-09-29 — Feature 1 merged as F-005; D-003 recorded. Reviewer non-blocking notes: the dangling-shim "recreate" path does not say whether topic 1 is still asked; a "start fresh" answer to the root-mismatch anomaly followed by shared mode leaves the stale shim unaddressed. Implementor note: keeping a large unmarked upstream CLAUDE.md in project first init may collide with the 50–200 line budget.

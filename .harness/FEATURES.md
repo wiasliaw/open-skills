@@ -14,3 +14,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-002 | init offers a private, out-of-repo harness storage mode | 2026-09-29-private-harness-storage |
 | F-003 | harness-flow and handoff resolve the harness declaration and harness root in both storage modes | 2026-09-29-private-harness-storage |
 | F-004 | Harness docs describe shared and private storage modes | 2026-09-29-private-harness-storage |
+| F-005 | init detects and classifies the adoption state before interviewing | 2026-09-29-init-adoption-detection |

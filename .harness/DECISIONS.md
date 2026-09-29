@@ -12,3 +12,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 |---|---|---|
 | D-001 | 2026-09-27 | Adapt the thermo-nuclear rubric into Lens 2, not import it |
 | D-002 | 2026-09-29 | Private harness mode: ~/.open-skills/<slug>/ reached by a CLAUDE.local.md import shim |
+| D-003 | 2026-09-29 | init detects the adoption state first; classifies project/external × first init/re-init, anomalies stop and ask |
