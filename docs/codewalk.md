@@ -30,17 +30,29 @@ topic trace: one real execution path followed from its entry point to
 the answer. Depth — quick, standard, or deep — is inferred from your
 words and defaults to standard. In the first turn only, you are asked
 at most one clarifying question and where to save the walkthrough
-(default suggestion: `docs/walkthroughs/<topic>.md`); with no answer,
-the default is used.
+(default: `.codewalk/<topic>.md` — a dot directory for tool output, so
+you decide whether to commit it or gitignore it); with no answer, the
+default is used. The first turn also tells you that the walk describes
+the last commit (by short SHA) and leaves out uncommitted changes —
+commit first if you want them included.
 
 ## What happens
 
-1. **Recon.** The code is read progressively — manifests and entry
-   points first, then search to locate, then only the files the route
-   needs. One vertical slice is traced end to end instead of skimming
-   every module. Large scopes are split across parallel exploration
-   subagents, and every file they report is re-read before it is
-   cited.
+1. **Recon.** First, the last commit is checked out into a temporary
+   git worktree outside the repository (under the system temp
+   directory); all code is read there, so the walkthrough matches that
+   commit exactly, and the worktree is removed when the walk ends. A
+   stale copy left by an interrupted run at the same commit is replaced
+   on the next run.
+   The code is then read progressively — manifests and entry points
+   first, then search to locate, then only the files the route needs.
+   One vertical slice is traced end to end instead of skimming every
+   module. Large scopes are split across parallel exploration
+   subagents that read the same worktree, and every file they report
+   is re-read before it is cited. Only tracked project code is cited:
+   gitignored paths (dependencies such as `node_modules`, build output)
+   and files outside the repository are not, and where the path crosses
+   into one, the walk names the boundary in prose instead.
 2. **Route.** The route is ordered for understanding, not by file
    tree: an orientation stop anchored to a real file, a short map, the
    core-path stops in execution order, and a closing "what you can do
@@ -72,23 +84,21 @@ the default is used.
    the inserted stop counts toward the depth. Side questions are
    answered in place. After the last stop, the closing follows and the
    walkthrough is saved in the same turn; you do not need to type
-   `land` (you are asked first only if the save path already exists).
-4. **Land.** If a file already exists at the save path, you are asked
-   whether to overwrite it or pick a new name before anything is
-   written. Every snapshot is re-checked against its file first; a stop
-   whose code changed during the walk is re-captured, or dropped with a
-   note to you. The walkthrough records the topic, mode, depth, commit,
-   and date. Each stop has its number, a title, a `file:line`
+   `land` (you are asked first only if a file already existed at the
+   save path before the walk).
+4. **Land.** The walkthrough is written into your repository, never
+   into the temporary worktree. If a file already existed at the save
+   path before the walk, you are asked whether to overwrite it or pick
+   a new name before anything is written; saving again to the file this
+   walk already wrote — for example to keep a `deeper on N` expansion,
+   which is appended to that stop's narrative — overwrites it without
+   asking. The walkthrough records the topic, mode, depth, commit, and
+   date. Each stop has its number, a title, a repo-relative `file:line`
    reference, a content anchor (a symbol or unique text pattern that
    survives line drift), a short verbatim code snapshot, and the
    narrative; the map and the closing are plain prose sections.
    `deeper on N` expansions are included only if you ask. The file
-   says which commit it describes and that it may drift afterward. If
-   any cited file is not in that commit — it has uncommitted changes,
-   is untracked or gitignored, or lies outside the repository — the
-   commit is recorded as `<sha> + uncommitted changes in <files>`,
-   listing every such file, and the walkthrough notes that its
-   snapshots come from the working tree.
+   says which commit it describes and that it may drift afterward.
 
 The saved walkthrough is a reading record of your walk, not a project
 deliverable, so it is written directly even in projects that route
@@ -99,10 +109,9 @@ findings and verdicts, use [request-code-review](./request-code-review.md).
 
 ## Requirements
 
-None beyond Claude Code. `git` is optional: it is used only to record
-the commit in the landed file and to detect cited files that commit
-does not contain (modified, untracked, or gitignored; files outside the
-repository always count as not contained). Without it — outside a
-repository, or in one with no commits yet — the commit is recorded as
-`unknown` and the walkthrough is otherwise the same. If the status
-check itself fails, every cited file is listed as uncommitted.
+None beyond Claude Code. `git` is optional: it is used to check out
+the last commit into a temporary worktree, removed afterwards, and to
+record that commit in the landed file. Without it — or outside a
+repository, in one with no commits yet, or when the worktree cannot be
+created — the working tree is read directly, the commit is recorded as
+`unknown`, and the walkthrough is otherwise the same.

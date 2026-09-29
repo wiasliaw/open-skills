@@ -35,6 +35,9 @@ Invoke by slash command or by asking in plain words:
 
 - `git` — used by request-code-review to detect the review scope;
   without it you are asked which files to review.
+- `git` — used by codewalk to read the last commit from a temporary
+  worktree; without it the working tree is read and the commit is
+  recorded as `unknown`.
 - `gh` (GitHub) or `glab` (GitLab) — used by receive-code-review to
   fetch PR/MR comments; without them, paste the review text instead.
 
