@@ -20,7 +20,6 @@ the recorded date and may drift from the current code." Never emit
 
 - Anchor: `{{content_anchor}}`
 - Location: `{{file_path}}:{{line_number}}`
-- Pinned at: {{commit_pin}}
 
 {{stop_explanation_situation_mechanism_implication_gotcha}}
 

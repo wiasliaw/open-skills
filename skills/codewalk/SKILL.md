@@ -41,10 +41,10 @@ reader's. Infer mode and depth from their words:
   "How does login work" is a topic trace.
 
 Depth defaults to standard (9–13 stops); "quick look" or "overview"
-means quick, "in depth" or "everything" means deep. Ask at most one
-clarifying question, and only when the request is genuinely ambiguous.
+means quick, "in depth" or "everything" means deep. Ask clarifying
+questions only when the request is genuinely ambiguous.
 
-Ask for the landing location only in this first turn — folded into the
+Ask for the landing location only in this first turn — folded into a
 clarifying question or the first stop, never as its own turn. Default
 `.codewalk/<topic>.md` under the directory reported by
 `git rev-parse --show-toplevel`, with `<topic>` a kebab-case slug. The slug
@@ -68,34 +68,35 @@ so it reads the pinned tree, not the working tree) and a fixed report format
 
 ### Worktree lifecycle
 
-- Path: `<toplevel>/.codewalk/worktree/codewalk-<short-sha>`, where
-  `<toplevel>` is the directory reported by
-  `git rev-parse --show-toplevel` (not the current working directory),
-  so reads stay inside the repo (including when launched from a linked
-  worktree). The name comes from the pinned commit.
-- If a worktree for the same SHA already exists, reuse it — never
-  rebuild — but only if `git -C <path> rev-parse HEAD` equals the
-  repo's full HEAD SHA and the probe-read below succeeds. Otherwise
-  treat the directory as unusable: stale-registration recovery or
-  fallback.
-- Create it with hooks disabled and LFS smudge off. Never execute
-  project code. Exact invocation:
-  `GIT_LFS_SKIP_SMUDGE=1 git -c core.hooksPath=/dev/null worktree add --detach <toplevel>/.codewalk/worktree/codewalk-<short-sha> HEAD`
-- On creation, add `.codewalk/worktree/` to the file reported by
-  `git rev-parse --git-path info/exclude`: create its parent directory
-  if missing, skip the append if that exact line is already present,
-  and if the file's last line lacks a trailing newline, add one first.
-  Touch no tracked file.
-- Probe-read one tracked file inside the worktree, on reuse as well as
-  on creation, before recording the pin (the full SHA). If the probe
-  fails, use the fallback and pin `unknown`.
-- If creation fails because the path is already registered to git (a
-  stale registration whose directory was deleted by hand), run
-  `git worktree remove --force` on that exact path only, then retry the
-  add once. NEVER run global `git worktree prune`.
-- No automatic cleanup. Worktrees persist for reuse; the `codewalk-`
-  prefix marks their purpose. Removal is the user's, via
-  `git worktree remove .codewalk/worktree/codewalk-<sha>`.
+1. Resolve the path: `<toplevel>/.codewalk/worktree/codewalk-<short-sha>`,
+   where `<toplevel>` is the directory reported by
+   `git rev-parse --show-toplevel` (not the current working directory),
+   so reads stay inside the repo (including when launched from a linked
+   worktree). The name comes from the pinned commit.
+2. If a worktree for the same SHA already exists, reuse it — never
+   rebuild — but only if `git -C <path> rev-parse HEAD` equals the
+   repo's full HEAD SHA and the probe-read (step 5) succeeds. Otherwise
+   treat the directory as unusable: stale-registration recovery
+   (step 3) or fallback.
+3. Otherwise create it with hooks disabled and LFS smudge off. Never
+   execute project code. Exact invocation:
+   `GIT_LFS_SKIP_SMUDGE=1 git -c core.hooksPath=/dev/null worktree add --detach <toplevel>/.codewalk/worktree/codewalk-<short-sha> HEAD`
+   If creation fails because the path is already registered to git (a
+   stale registration whose directory was deleted by hand), run
+   `git worktree remove --force` on that exact path only, then retry the
+   add once. NEVER run global `git worktree prune`.
+4. On creation, add `.codewalk/worktree/` to the file reported by
+   `git rev-parse --git-path info/exclude`: create its parent directory
+   if missing, skip the append if that exact line is already present,
+   and if the file's last line lacks a trailing newline, add one first.
+   Touch no tracked file.
+5. Probe-read one tracked file inside the worktree, on reuse as well as
+   on creation, before recording the pin (the full SHA). If the probe
+   fails, use the fallback and pin `unknown`.
+
+No automatic cleanup. Worktrees persist for reuse; the `codewalk-`
+prefix marks their purpose. Removal is the user's, via
+`git worktree remove .codewalk/worktree/codewalk-<sha>`.
 
 ### Citation boundaries and fallback
 
@@ -160,9 +161,8 @@ HTML comments in the template are instructions to you (including
 
 Fill the template from the Step 3 stop records. Record only stops
 actually presented to the reader, including `deeper on N` sub-stops.
-The per-stop `Pinned at:` line carries the walk's pin; fence each
-snapshot with more backticks than its content contains. Cite only files
-confirmed to exist. Promise verifiability against the pin, not
+Fence each snapshot with more backticks than its content contains.
+Cite only files confirmed to exist. Promise verifiability against the pin, not
 permanent correctness. When the pin is `unknown`, the drift notice
 must not emit `git show unknown:<path>`; it states that no commit was
 recorded and snapshots reflect the working tree at the recorded date.

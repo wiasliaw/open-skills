@@ -29,8 +29,8 @@ request-code-review.
 ## What happens
 
 1. **Determine mode and anchor.** The agent infers mode and depth from
-   your words and asks at most one clarifying question. The landing
-   location is asked once, in this first turn; the default is
+   your words and asks clarifying questions only when the request is
+   genuinely ambiguous. The landing location is asked once, in this first turn; the default is
    `.codewalk/<topic>.md`.
 2. **Recon.** The agent creates a worktree of `HEAD` at
    `.codewalk/worktree/codewalk-<short-sha>` and reads only there. That
@@ -45,16 +45,14 @@ request-code-review.
 4. **Walk.** One stop at a time, at your pace: `next`, `deeper on N`,
    `skip to X`. You can skip to landing at any time.
 5. **Land.** The walkthrough is written to your repo (never the
-   worktree) with, per stop, an anchor, `file:line`, the pinned SHA,
-   and a verbatim code snapshot. If the file already existed before
+   worktree) with, per stop, an anchor, `file:line`, and a verbatim
+   code snapshot. If the file already existed before
    the walk, you are asked before it is overwritten.
 
 Only the last commit is described; commit your changes and restart to
 include them. The record promises verifiability against the pin, not
 permanent correctness — snapshots may drift from the current code.
 
-Without git, without commits, or if the worktree cannot be created or
-read, the agent reads the working tree directly and pins `unknown`.
 Dependencies, build output, and vendored code are never cited, and
 submodules are described as boundaries.
 
@@ -69,6 +67,7 @@ git worktree remove .codewalk/worktree/codewalk-<sha>
 
 ## Requirements
 
-`git`, for pinning to a commit. Without it the walk still works in a
-degraded mode that reads the working tree and records the pin as
-`unknown`.
+`git`, for pinning to a commit — the only requirement. Without git,
+without commits, or if the worktree cannot be created or read, the walk
+still works in a degraded mode: the agent reads the working tree
+directly and records the pin as `unknown`.
