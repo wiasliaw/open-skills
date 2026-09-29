@@ -11,3 +11,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | ID | Date | Decision |
 |---|---|---|
 | D-001 | 2026-09-27 | Adapt the thermo-nuclear rubric into Lens 2, not import it |
+| D-002 | 2026-09-29 | codewalk v1 is a standalone anchored walkthrough; PR and refresh modes deferred |

@@ -129,13 +129,14 @@ Manual (reviewer, not auto-checkable): SKILL.md body is imperative, rules carry 
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | The `codewalk` skill ships with SKILL.md, a walkthrough landing template, a docs page, and a README entry | `claude plugin validate . && test -f skills/codewalk/SKILL.md && test -f skills/codewalk/templates/walkthrough.md.template && grep -q "^name: codewalk$" skills/codewalk/SKILL.md && grep -q "SMIG" skills/codewalk/SKILL.md && grep -q "^## Prohibitions" skills/codewalk/SKILL.md && grep -q "^## Usage" docs/codewalk.md && grep -q '^| \[codewalk\](./docs/codewalk.md) |' README.md && grep -q '^/open-skills:codewalk' README.md` | active |
+| 1 | The `codewalk` skill ships with SKILL.md, a walkthrough landing template, a docs page, and a README entry | `claude plugin validate . && test -f skills/codewalk/SKILL.md && test -f skills/codewalk/templates/walkthrough.md.template && grep -q "^name: codewalk$" skills/codewalk/SKILL.md && grep -q "SMIG" skills/codewalk/SKILL.md && grep -q "^## Prohibitions" skills/codewalk/SKILL.md && grep -q "^## Usage" docs/codewalk.md && grep -q '^| \[codewalk\](./docs/codewalk.md) |' README.md && grep -q '^/open-skills:codewalk' README.md` | passed (F-002) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
 - 2026-09-29 — feature 1, round 1: fail — feature cmd and VS1–13 pass, exclusions clean; but SKILL.md counts map and "what next" as stops (l.83) while exempting them from SMIG (l.87) and from file:line/anchor/snapshot, contradicting Scope "every stop passes SMIG / each stop records…", SKILL.md Steps 4–5, and docs. FIX: count only orientation + core-path stops; map/closing are framing, not stops.
+- 2026-09-29 — feature 1, round 2: pass — feature cmd and VS1–13 exit 0 (SKILL.md 154 lines); stops = orientation + core path, map/closing framing; SKILL.md, template, docs, README consistent; all Scope steps and prohibitions present; no excluded path changed.
 
 ## Notes
 
@@ -143,3 +144,4 @@ Manual (reviewer, not auto-checkable): SKILL.md body is imperative, rules carry 
 
 - 2026-09-29 — Work unit created from Linear WOR-31 (design v1 + INIT_PROMPT). Clock-in: `claude plugin validate .` passed; Workflow "eval: TBD" skipped as not auto-checkable; no handoff file present. Branch `feature/wor-31-code-walk-skill`.
 - 2026-09-29 — The `open-skills:implementor` / `open-skills:reviewer` agent types are not registered in this session (plugin not installed here), so dispatch uses general-purpose subagents carrying the full `agents/implementor.md` / `agents/reviewer.md` instructions; the reviewer is instructed to stay read-only.
+- 2026-09-29 — Round 1 fail relayed; orchestrator decision: keep Scope wording, treat map and closing as framing (not stops). Round 2 passed. Merge moment: F-002, D-002, ARCHITECTURE Module Map and CLAUDE.md Repo Structure updated. Work unit closed.

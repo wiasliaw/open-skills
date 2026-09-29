@@ -11,3 +11,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | ID | Behavior | Work unit |
 |---|---|---|
 | F-001 | Structure lens carries concrete maintainability standards | 2026-09-27-thicken-lens2 |
+| F-002 | codewalk skill ships with SKILL.md, walkthrough template, docs page, and README entry | 2026-09-29-codewalk-skill |
