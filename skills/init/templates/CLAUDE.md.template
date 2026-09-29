@@ -33,7 +33,7 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 
 ## Harness
 
-<!-- COMMENT MUST DELETE: bullet list only — version bullet, four .harness/ file links each with a one-line applicability note, a short-term memory bullet (work-unit state file location, default .project/work-units/), a work-unit tool bullet (declared tool, or none), a session memory bullet (handoff file location, default .project/handoff.md), and the merge-moment write-discipline note pointing at the harness-flow skill. -->
+<!-- COMMENT MUST DELETE: bullet list only — version bullet, four .harness/ file links each with a one-line applicability note, a short-term memory bullet (work-unit state file location, default .project/work-units/), a work-unit tool bullet (declared tool, or none), a session memory bullet (handoff file location, default .project/handoff.md), and the merge-moment write-discipline note pointing at the harness-flow skill. Private mode (this file filled as ~/.open-skills/<slug>/HARNESS.md) only: add a `project root: <absolute repo path>` bullet after the version bullet, and write the four .harness/ file bullets, short-term memory, and session memory as absolute paths under the harness root. -->
 
 - open-skills plugin version: v{{open_skills_plugin_version}}
 - `.harness/ARCHITECTURE.md` — module map, layering, key boundaries; read before making a structural change.
