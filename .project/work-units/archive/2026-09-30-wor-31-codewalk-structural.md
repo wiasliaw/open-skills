@@ -21,8 +21,8 @@ Run from the repo root, in order; all must succeed:
 1. `claude plugin validate .`
 2. `[ "$(sed -n '2,/^---$/p' skills/codewalk/SKILL.md | grep -E '^[A-Za-z_-]+:' | cut -d: -f1 | sort | tr '\n' ' ')" = "description name " ]`
 3. `grep -qi 'unknown' skills/codewalk/SKILL.md && grep -q 'topic trace' skills/codewalk/SKILL.md` — fallback pin and mode definitions survive relocation.
-4. `grep -q 'Prohibitions' skills/codewalk/SKILL.md`
-5. `git diff 67a481a --name-only | grep -vqx 'skills/codewalk/SKILL.md'; [ $? -ne 0 ]` — this round touches exactly `skills/codewalk/SKILL.md`.
+4. `grep -qi 'prohibitions' skills/codewalk/SKILL.md`
+5. `git diff 2e1bb56 --name-only | grep -vqx 'skills/codewalk/SKILL.md'; [ $? -ne 0 ]` — this round touches exactly `skills/codewalk/SKILL.md` (baseline: the commit that opened this work unit).
 6. `git diff main --name-only | grep -qx 'skills/request-code-review/reviewer-prompt.md'; [ $? -ne 0 ]`
 7. `git diff main --name-only | grep -qx '.claude-plugin/plugin.json'; [ $? -ne 0 ]`
 8. Reviewer judgment: each relocated rule survives verbatim-or-equivalent (six Prohibitions, worktree lifecycle, fallback triggers and judgment rule, citation boundaries, mode definitions and defaults, all Step 1–5 rules); the file reads as one coherent procedure; no behavior change.
@@ -38,12 +38,15 @@ Run from the repo root, in order; all must succeed:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | codewalk SKILL.md restructured: stop record defined once in Step 3 (snapshot at verification time), Fallback merged into Citation boundaries, Modes folded into Step 1 — all rules preserved | `claude plugin validate .` plus contract checks 2–7 and reviewer judgment 8 | active |
+| 1 | codewalk SKILL.md restructured: stop record defined once in Step 3 (snapshot at verification time), Fallback merged into Citation boundaries, Modes folded into Step 1 — all rules preserved | `claude plugin validate .` plus contract checks 2–7 and reviewer judgment 8 | passed (F-004) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
+- 2026-09-30 — feature 1, round 1: **pass** — checks 1–7 all exit 0; rule-preservation audit clean (diff vs `2e1bb56` is exactly three hunks in `skills/codewalk/SKILL.md`, all relocated rules survive verbatim-or-equivalent, six prohibitions untouched). Caveat: check 5 exited 0 but was unreliable while the orchestrator's contract correction sat uncommitted; resolved by committing the correction at the merge moment.
+
 ## Notes
 
 - 2026-09-30 — Opened on user approval of the three structural proposals ("Structural 也可以修，修復完成後 PR"); minors and the two pending judgment calls remain excluded.
+- 2026-09-30 — Implementor reported blocked on checks 4 and 5; both were contract defects (orchestrator attribution: verification spec), not edit defects — check 4 was case-sensitive against the actual heading "The six prohibitions", check 5's baseline predated this work unit's own opening commit. Contract corrected (grep -qi; baseline 2e1bb56); edit accepted as ready-for-review. Line count 181→182 (+1): accepted — remaining cuts would have dropped rule content.
