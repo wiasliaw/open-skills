@@ -19,3 +19,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-007 | OpenSpec adoption declared in repo bookkeeping (.gitignore, CLAUDE.md structure + work-unit tool) | 2026-09-30-wor-33-node-specs |
 | F-008 | OpenSpec change `graph-plugin-architecture` specifies the plugin realization (3 actors, spec-driven dispatch, review gating, work-unit.json) | 2026-09-30-wor-33-plugin-architecture |
 | F-009 | Advisor tier integrated across both WOR-33 change proposals (new node + 4th actor + rewired escalation, 26 edges) | 2026-09-30-wor-33-advisor-node |
+| F-010 | work-unit.json field-level schema complete in `graph-plugin-work-unit-state` (fields, enums, invariants, example) | 2026-09-30-wor-33-work-unit-schema |

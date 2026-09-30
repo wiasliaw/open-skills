@@ -15,6 +15,6 @@
 
 ## Next Steps
 
-1. Push and open the PR: `git push -u origin feature/wor-33-node-specs`, then `gh pr create --base main --title "feat: WOR-33 graph-engineering specs via OpenSpec"` with a body summarizing F-002 through F-005 and linking Linear WOR-33.
+1. Push and open the PR: `git push -u origin feature/wor-33-node-specs`, then `gh pr create --base main --title "feat: WOR-33 graph-engineering specs via OpenSpec"` with a body summarizing F-006 through F-010 and linking Linear WOR-33.
 3. After merge: start the implementation work unit — `openspec validate --all --strict --no-interactive` to confirm both proposals still pass, then follow `.claude/skills/openspec-apply-change/SKILL.md` (or `/opsx:apply` after restart) through both changes' `tasks.md`.
 4. Optional Linear hygiene: move WOR-33 out of Backlog; link the PR; comment that the plugin-architecture change landed.
