@@ -8,7 +8,7 @@ The Build step SHALL be defined as a LLM loop. Purpose: Implement one ticket at 
 - **THEN** Build SHALL be typed as LLM loop
 
 ### Requirement: Build state inputs
-Build SHALL read only the following from state and the environment: the spec, constraints, and the current ticket in `work-unit.json`; any review log from a failed Review or CI failure. Build reads only the spec and constraints as its contract.
+Build SHALL read only the following from state and the environment: the spec, constraints, and the current ticket in `work-unit.json`; any review log from a failed Review or CI failure; any Advisor guidance issued for the current problem. Build reads only the spec and constraints as its contract.
 
 #### Scenario: Inputs available
 - **WHEN** Build starts
@@ -25,7 +25,7 @@ Build SHALL produce the following: code changes in the isolated worktree and a s
 Build SHALL route only by the following guard conditions:
 
 - ready-for-review -> Review
-- blocked -> Human Escalation
+- blocked -> Advisor
 
 #### Scenario: Ready-for-review
 - **WHEN** ready-for-review
@@ -33,7 +33,7 @@ Build SHALL route only by the following guard conditions:
 
 #### Scenario: Blocked
 - **WHEN** blocked
-- **THEN** the next step SHALL be Human Escalation
+- **THEN** the next step SHALL be Advisor
 
 ### Requirement: Build mounted skills
 The skills mounted on Build SHALL be: use-worktree skill. Skills are capabilities mounted on a node and MUST NOT be modeled as nodes.
@@ -50,15 +50,15 @@ Build SHALL write only code within the isolated worktree and MUST NOT write `.ha
 - **THEN** no `.harness/` file SHALL have been modified by Build
 
 ### Requirement: Blocked state has a destination
-When Build cannot proceed, it SHALL record blocked and route to Human Escalation.
+When Build cannot proceed, it SHALL record blocked, the orchestrator SHALL record `blocked_at` as Build, and Build SHALL route to Advisor.
 
-#### Scenario: Blocked routes to escalation
+#### Scenario: Blocked routes to Advisor
 - **WHEN** Build is blocked
-- **THEN** the next node SHALL be Human Escalation
+- **THEN** the next node SHALL be Advisor
 
 ### Requirement: Build has no synchronous human wait
-Build MUST NOT wait synchronously for a human; human input arises only via Human Escalation.
+Build MUST NOT wait synchronously for a human; human input arises only via Human Escalation, which is reached only through Advisor.
 
 #### Scenario: No inline human wait
 - **WHEN** Build needs a human decision
-- **THEN** it SHALL route to Human Escalation instead of pausing
+- **THEN** it SHALL route to Advisor (and to Human Escalation only after Advisor is exhausted) instead of pausing

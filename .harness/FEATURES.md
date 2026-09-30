@@ -16,7 +16,6 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-004 | codewalk SKILL.md defines the stop record once and carries no duplicate mode/fallback sections | 2026-09-30-wor-31-codewalk-structural |
 | F-005 | codewalk skill carries no question cap, no per-stop pin, one docs degraded-mode statement, and an execution-ordered worktree lifecycle | 2026-09-30-wor-31-codewalk-polish |
 | F-006 | OpenSpec change `graph-engineering-node-specs` specifies the WOR-33 execution graph (12 nodes + init bootstrap + execution model) | 2026-09-30-wor-33-node-specs |
-| F-002 | OpenSpec change `graph-engineering-node-specs` specifies the WOR-33 execution graph (12 nodes + init bootstrap + execution model) | 2026-09-30-wor-33-node-specs |
 | F-007 | OpenSpec adoption declared in repo bookkeeping (.gitignore, CLAUDE.md structure + work-unit tool) | 2026-09-30-wor-33-node-specs |
-| F-003 | OpenSpec adoption declared in repo bookkeeping (.gitignore, CLAUDE.md structure + work-unit tool) | 2026-09-30-wor-33-node-specs |
 | F-008 | OpenSpec change `graph-plugin-architecture` specifies the plugin realization (3 actors, spec-driven dispatch, review gating, work-unit.json) | 2026-09-30-wor-33-plugin-architecture |
+| F-009 | Advisor tier integrated across both WOR-33 change proposals (new node + 4th actor + rewired escalation, 26 edges) | 2026-09-30-wor-33-advisor-node |

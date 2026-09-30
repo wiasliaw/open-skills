@@ -26,6 +26,8 @@ Wrap SHALL route only by the following guard conditions:
 
 - CI green -> Ship
 - CI red -> Build
+- blocked -> Advisor
+- in-node review loop fails a second time -> Advisor
 
 #### Scenario: CI green
 - **WHEN** CI green
@@ -34,6 +36,14 @@ Wrap SHALL route only by the following guard conditions:
 #### Scenario: CI red
 - **WHEN** CI red
 - **THEN** the next step SHALL be Build
+
+#### Scenario: Blocked
+- **WHEN** blocked
+- **THEN** the orchestrator SHALL record `blocked_at` as Wrap AND the next step SHALL be Advisor
+
+#### Scenario: Second in-node review failure
+- **WHEN** the in-node review loop fails a second time
+- **THEN** the next step SHALL be Advisor
 
 ### Requirement: Wrap mounted skills
 The skills mounted on Wrap SHALL be: none. Skills are capabilities mounted on a node and MUST NOT be modeled as nodes.

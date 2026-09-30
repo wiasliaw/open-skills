@@ -25,10 +25,20 @@ Spec SHALL produce the following: the specification (goals, scope, acceptance cr
 Spec SHALL route only by the following guard conditions:
 
 - submit for review -> Human Gate (spec)
+- blocked -> Advisor
+- in-node review loop fails a second time -> Advisor
 
 #### Scenario: Submit for review
 - **WHEN** submit for review
 - **THEN** the next step SHALL be Human Gate (spec)
+
+#### Scenario: Blocked
+- **WHEN** blocked
+- **THEN** the orchestrator SHALL record `blocked_at` as Spec AND the next step SHALL be Advisor
+
+#### Scenario: Second in-node review failure
+- **WHEN** the in-node review loop fails a second time
+- **THEN** the next step SHALL be Advisor
 
 ### Requirement: Spec mounted skills
 The skills mounted on Spec SHALL be: SDD skill. Skills are capabilities mounted on a node and MUST NOT be modeled as nodes.

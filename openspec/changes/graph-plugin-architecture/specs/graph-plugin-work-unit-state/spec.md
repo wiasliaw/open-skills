@@ -8,7 +8,7 @@ Graph execution SHALL keep its work-unit state in a single file `work-unit.json`
 - **THEN** `work-unit.json` SHALL be the only record of its execution state
 
 ### Requirement: Orchestrator is the only writer
-Only the orchestrator SHALL write `work-unit.json`. The implementor and reviewer SHALL read state and return their results in their reports, and MUST NOT write it.
+Only the orchestrator SHALL write `work-unit.json`. The implementor, reviewer, and advisor SHALL read state and return their results in their reports, and MUST NOT write it.
 
 #### Scenario: Actor result recorded
 - **WHEN** the implementor returns a report
@@ -24,16 +24,18 @@ Only the orchestrator SHALL write `work-unit.json`. The implementor and reviewer
 - `fast_path`: boolean, true when grading is `trivial`.
 - `tickets`: ordered list; each entry has `id`, `title`, `status` (`pending`, `in-progress`, `passed`, `failed`, `blocked`), and `verification_command`.
 - `fail_counters`: map from ticket or node id to a non-negative integer failure count.
+- `blocked_at`: id of the node that is blocked or repeatedly failing and is under Advisor or Human Escalation handling; null when not blocked.
+- `advisor_consults`: list of per-problem consultation records; each entry has a problem key, a consultation count, and the advice summaries issued.
 - `reviews`: list of verdicts; each entry has `node`, `target` (ticket or artifact id), `verdict` (`pass` or `fail`), per-dimension results, and `evidence_refs` (paths, command outputs, or log entry ids).
 - `human_decisions`: list of gate and escalation answers with node, decision, and feedback.
 - `log`: append-only execution log.
 
 #### Scenario: Minimal valid state
 - **WHEN** Trigger creates `work-unit.json`
-- **THEN** it SHALL contain every required field, with empty lists and zero counters where no data exists
+- **THEN** it SHALL contain every required field, with empty lists, zero counters, and `blocked_at` null where no data exists
 
 ### Requirement: Append-only execution log
-`log` SHALL be append-only. Each entry SHALL have a timestamp, the node, the event (dispatch, report, verdict, human decision, or route), and a reference to its source (actor report or human answer). Entries MUST NOT be edited or removed.
+`log` SHALL be append-only. Each entry SHALL have a timestamp, the node, the event (dispatch, report, verdict, advisor consultation, human decision, or route), and a reference to its source (actor report or human answer). Entries MUST NOT be edited or removed.
 
 #### Scenario: Route recorded
 - **WHEN** the orchestrator routes from Build to Review
@@ -52,3 +54,14 @@ Dispatches SHALL give actors read access to the state they need per their node s
 #### Scenario: Trivial grading
 - **WHEN** the human approves a trivial grading
 - **THEN** the orchestrator SHALL set `grading` to `trivial` and `fast_path` to true before routing to Build
+
+### Requirement: Blocked and advisor state is maintained by the orchestrator
+The orchestrator SHALL set `blocked_at` to the originating node id before routing to the Advisor, and SHALL clear it to null when the blocked problem is resolved. It SHALL update `advisor_consults` on each Advisor consultation (increment the count for the problem key and append the advice summary) and SHALL append an advisor-consultation entry to the append-only `log`.
+
+#### Scenario: Consultation recorded
+- **WHEN** the advisor returns guidance for a blocked Build
+- **THEN** the orchestrator SHALL set `blocked_at` to Build, increment the count for that problem in `advisor_consults` with the advice summary, and append an advisor-consultation log entry citing the advisor report
+
+#### Scenario: Problem resolved
+- **WHEN** the retried stage passes after advice
+- **THEN** the orchestrator SHALL set `blocked_at` to null

@@ -26,6 +26,8 @@ Ticket SHALL route only by the following guard conditions:
 
 - spec contradiction -> Spec
 - next ticket -> Build
+- blocked -> Advisor
+- in-node review loop fails a second time -> Advisor
 
 #### Scenario: Spec contradiction
 - **WHEN** spec contradiction
@@ -34,6 +36,14 @@ Ticket SHALL route only by the following guard conditions:
 #### Scenario: Next ticket
 - **WHEN** next ticket
 - **THEN** the next step SHALL be Build
+
+#### Scenario: Blocked
+- **WHEN** blocked
+- **THEN** the orchestrator SHALL record `blocked_at` as Ticket AND the next step SHALL be Advisor
+
+#### Scenario: Second in-node review failure
+- **WHEN** the in-node review loop fails a second time
+- **THEN** the next step SHALL be Advisor
 
 ### Requirement: Ticket mounted skills
 The skills mounted on Ticket SHALL be: TDD skill. Skills are capabilities mounted on a node and MUST NOT be modeled as nodes.

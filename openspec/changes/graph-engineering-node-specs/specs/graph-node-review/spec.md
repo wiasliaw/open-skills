@@ -8,7 +8,7 @@ The Review step SHALL be defined as a validator. Purpose: Independently re-run e
 - **THEN** Review SHALL be typed as validator
 
 ### Requirement: Review state inputs
-Review SHALL read only the following from state and the environment: the current ticket's declared verification commands, the spec, and the Build output; the failure counter for the ticket; the grading path (fast path or not).
+Review SHALL read only the following from state and the environment: the current ticket's declared verification commands, the spec, and the Build output; the failure counter for the ticket; the grading path (fast path or not); any Advisor guidance issued for the current problem.
 
 #### Scenario: Inputs available
 - **WHEN** Review starts
@@ -25,7 +25,8 @@ Review SHALL produce the following: per-dimension pass/fail with evidence, the r
 Review SHALL route only by the following guard conditions:
 
 - fail count < 2 on a non-fast path (with review log) -> Build
-- fail count >= 2 (same error recurring) -> Human Escalation
+- fail count >= 2 (same error recurring) -> Advisor
+- blocked (cannot run or complete verification) -> Advisor
 - 1 fail on the fast path (guard: upgrade to full) -> Spec
 - pass and tickets remain -> Ticket
 - pass and no tickets remain -> Wrap
@@ -36,7 +37,11 @@ Review SHALL route only by the following guard conditions:
 
 #### Scenario: Fail count >= 2 (same error recurring)
 - **WHEN** fail count >= 2 (same error recurring)
-- **THEN** the next step SHALL be Human Escalation
+- **THEN** the next step SHALL be Advisor
+
+#### Scenario: Blocked
+- **WHEN** Review is blocked
+- **THEN** the orchestrator SHALL record `blocked_at` as Review AND the next step SHALL be Advisor
 
 #### Scenario: 1 fail on the fast path (guard: upgrade to full)
 - **WHEN** 1 fail on the fast path (guard: upgrade to full)
@@ -65,7 +70,7 @@ Review SHALL execute each ticket's declared verification commands itself and MUS
 - **THEN** every declared verification command SHALL be executed by Review and its evidence recorded
 
 ### Requirement: Failure loop is capped
-Review SHALL escalate when the same failure recurs, so that no loop is uncapped.
+Review SHALL escalate to Advisor when the same failure recurs, so that no loop is uncapped.
 
 #### Scenario: First failure
 - **WHEN** Review fails a ticket for the first time on a non-fast path
@@ -73,7 +78,7 @@ Review SHALL escalate when the same failure recurs, so that no loop is uncapped.
 
 #### Scenario: Second failure
 - **WHEN** a ticket has failed Review at least twice with the same error recurring
-- **THEN** the next node SHALL be Human Escalation
+- **THEN** the next node SHALL be Advisor
 
 ### Requirement: Fast-path guard
 A single Review failure on the trivial fast path SHALL force an upgrade to the full path via Spec.

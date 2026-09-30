@@ -52,3 +52,10 @@ The reviewer's dispatch SHALL include the implementor's restrictions so that the
 #### Scenario: Violation detected
 - **WHEN** the reviewer finds a file changed that the implementor's restrictions forbade
 - **THEN** the verdict SHALL be fail with that evidence
+
+### Requirement: Advisor dispatch
+The orchestrator SHALL dispatch the advisor with the failure history, the review logs and verdicts, the blocked stage's node spec, and the relevant constraints, and no skills. The prompt SHALL carry the restrictions that the advisor MUST NOT edit deliverables and MUST NOT write `work-unit.json` or `.harness/`, and SHALL ask for analysis plus retry guidance. The advisor's guidance SHALL be included in the payload of the retried stage.
+
+#### Scenario: Retry with guidance
+- **WHEN** the advisor returns retry guidance for a blocked Build
+- **THEN** the orchestrator SHALL include that guidance in the Build implementor's next dispatch payload

@@ -25,10 +25,20 @@ Research & Explore SHALL produce the following: findings written to `work-unit.j
 Research & Explore SHALL route only by the following guard conditions:
 
 - grading proposal produced -> Human Gate (grading)
+- blocked -> Advisor
+- in-node review loop fails a second time -> Advisor
 
 #### Scenario: Grading proposal produced
 - **WHEN** grading proposal produced
 - **THEN** the next step SHALL be Human Gate (grading)
+
+#### Scenario: Blocked
+- **WHEN** blocked
+- **THEN** the orchestrator SHALL record `blocked_at` as Research & Explore AND the next step SHALL be Advisor
+
+#### Scenario: Second in-node review failure
+- **WHEN** the in-node review loop fails a second time
+- **THEN** the next step SHALL be Advisor
 
 ### Requirement: Research & Explore mounted skills
 The skills mounted on Research & Explore SHALL be: deep-research (external data); receive-code-review (external review feedback). Skills are capabilities mounted on a node and MUST NOT be modeled as nodes.
