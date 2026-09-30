@@ -6,6 +6,7 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 
 ```tree
 .
+├── .claude/                      # generated opsx commands/skills from `openspec init`
 ├── .claude-plugin/
 │   ├── marketplace.json          # marketplace listing; single plugin with source "./"
 │   └── plugin.json               # plugin manifest; carries the released version
@@ -17,6 +18,7 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 │   ├── harness.md                # one page covering init, harness-flow, and handoff
 │   ├── receive-code-review.md
 │   └── request-code-review.md
+├── openspec/                     # OpenSpec spec-driven changes; `changes/` holds proposals, `config.yaml` the schema
 ├── skills/
 │   ├── codewalk/
 │   │   ├── SKILL.md
@@ -67,6 +69,6 @@ This project uses GitHub flow — feature branches merged into `main` via pull r
 - `.harness/DECISIONS.md` — index of active decisions (details in `.harness/decisions/`); read before revisiting a past call.
 - `.harness/FEATURES.md` — passing-only index of verified behavior (details in `.harness/features/`); read to see what already works and how it was verified.
 - short-term memory: `.project/work-units/`
-- work-unit tool: none
+- work-unit tool: OpenSpec — a work-unit contract's sections may point to an OpenSpec change under `openspec/changes/<change-id>/` (proposal = scope, specs = verification targets)
 - session memory: `.project/handoff.md`
 - `.harness/` is read-anytime and written only by the orchestrator at merge moments — see the harness-flow skill (or run `/open-skills:harness-flow`) for the loop that enforces this.

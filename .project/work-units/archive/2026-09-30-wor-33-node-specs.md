@@ -44,13 +44,14 @@ Run from the project root, in order:
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
 | 1 | OpenSpec change `graph-engineering-node-specs` defines specs for all 12 graph nodes + init bootstrap per WOR-33 finalized design | `openspec validate graph-engineering-node-specs --strict --no-interactive && claude plugin validate .` | passed (F-006) |
-| 2 | OpenSpec adoption declared: `.gitignore` covers `.claude/settings.local.json`; CLAUDE.md Repo Structure and Harness declare `openspec/` and the work-unit tool | `git check-ignore .claude/settings.local.json && grep -n "openspec" CLAUDE.md && claude plugin validate .` | not_started |
+| 2 | OpenSpec adoption declared: `.gitignore` covers `.claude/settings.local.json`; CLAUDE.md Repo Structure and Harness declare `openspec/` and the work-unit tool | `git check-ignore .claude/settings.local.json && grep -n "openspec" CLAUDE.md && claude plugin validate .` | passed (F-007) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
 - 2026-09-30 — feature 1, round 1: pass — strict openspec validate + plugin validate re-run pass; 23 edges verified individually; guard precedence coherent; C-001 clean; exclusions clean.
+- 2026-09-30 — feature 2, round 1: pass — check-ignore/grep/plugin-validate re-run pass; only .gitignore + CLAUDE.md modified among tracked files; tree coherent; C-001/C-002 clean.
 
 ## Notes
 

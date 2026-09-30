@@ -17,6 +17,7 @@ When: seeded here at init from the project survey and interview; updated at a me
 - `skills/handoff/` — session-memory snapshot; owns the handoff template.
 - `agents/` — `implementor` and `reviewer` subagents dispatched by harness-flow.
 - `docs/` — user-facing documentation, linked from README.
+- `openspec/` — OpenSpec spec-driven changes (declared work-unit tool, D-004); `changes/` holds proposals, `config.yaml` the schema. `.claude/` holds the opsx commands/skills `openspec init` generated.
 
 ## Layering & Dependency Direction
 
