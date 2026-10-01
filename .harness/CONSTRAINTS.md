@@ -18,3 +18,9 @@ Budget: at most 15 entries. Adding a 16th requires removing or consolidating an 
 - **Rule**: Every user-facing skill MUST be covered by a `docs/` page and a row in README's Skills table, and those MUST be updated in the same change that adds, renames, removes, or changes the usage of the skill.
 - **Source**: Declared by the project owner at init; README and `docs/` are the plugin's only user-facing discovery path.
 - **Applicability**: Changes to `skills/` or `agents/` that alter a skill's existence, name, invocation, or user-visible behavior.
+
+## C-003: Skill scripts are zero-dependency Node.js, owned per skill
+
+- **Rule**: Executable scripts shipped with a skill MUST be zero-third-party-dependency Node.js (directly runnable `.mjs`/`.cjs`; no `package.json`, `node_modules`, or build step), MUST live under the owning skill's `scripts/` directory, and MUST NOT be merged into a shared package or bundle across skills.
+- **Source**: Declared by the project owner, 2026-10-01 (D-008); the plugin must stay installable with no package manager, and standalone skills must stay standalone.
+- **Applicability**: Any change that adds or modifies executable script code under `skills/`.
