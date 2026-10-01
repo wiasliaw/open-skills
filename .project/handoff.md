@@ -6,7 +6,7 @@
 
 - Both OpenSpec changes (`graph-engineering-node-specs`, `graph-plugin-architecture`) are deliberately left as proposals in `openspec/changes/` — not applied, not archived. Applying (syncing delta specs into `openspec/specs/`) is reserved for the implementation work unit.
 - The former escalation-resume gap is closed: an Advisor tier (4th generic actor, ≤ 2 consultations per problem, then Human Escalation; resume at `blocked_at`) is now specified in both changes — edge set is 26, node count 13 (F-009; the actor decision now lives in D-007, which absorbed D-005/D-006).
-- Work-unit state is now a folder, not a single JSON: `state.json` (routing, orchestrator-only) + `log.ndjson` (append-only events) + per-stage artifact dirs written by the producing actors (F-011/D-007). An optional later cleanup noted by the reviewer: reword the advisor node spec to "report written to the addressed stage directory".
+- Work-unit state is now a folder, not a single JSON: `state.json` (routing, orchestrator-only) + `log.ndjson` (append-only events) + per-stage artifact dirs written by the producing actors (F-011/D-007); the advisor node spec's output wording was aligned to the folder design in a follow-up (F-012).
 - The design source of truth remains Linear WOR-33 (設計定案 body, 2026-09-30); whiteboard: local tldraw file `~/Documents/WOR-33 graph-engineering.tldraw`. Repo specs are the English rendering; on drift, WOR-33 wins.
 - opsx slash commands (`.claude/commands/opsx/`) need a session restart; the skill files under `.claude/skills/` are readable without it.
 

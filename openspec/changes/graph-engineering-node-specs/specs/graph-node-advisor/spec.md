@@ -15,11 +15,11 @@ Advisor SHALL read only the following from state and the environment: the `block
 - **THEN** the inputs listed for Advisor SHALL be available to it
 
 ### Requirement: Advisor state outputs
-Advisor SHALL produce the following: a root-cause analysis and concrete retry guidance, returned as a report. The orchestrator SHALL record the consultation (problem key, consultation count, advice summary) in the work-unit folder.
+Advisor SHALL produce the following: a root-cause analysis and concrete retry guidance, which it SHALL write itself as `advice-<n>.md` in the stage directory of the stage it addresses (the `blocked_at` node's directory). The orchestrator SHALL record the consultation (problem key, consultation count, advice summary) in the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Advisor completes
-- **THEN** its outputs SHALL be recorded as specified
+- **THEN** its analysis and guidance SHALL be in `advice-<n>.md` in the `blocked_at` node's stage directory, and the consultation SHALL be recorded by the orchestrator as specified
 
 ### Requirement: Advisor outgoing edges
 Advisor SHALL route only by the following guard conditions:
@@ -43,11 +43,11 @@ The skills mounted on Advisor SHALL be: none. Skills are capabilities mounted on
 - **THEN** it SHALL use only the mounted skills: none
 
 ### Requirement: Advisor is read-only analysis
-Advisor SHALL perform analysis only. It MUST NOT edit deliverables, MUST NOT write `state.json` or `log.ndjson`, and MUST NOT write `.harness/`.
+Advisor SHALL perform analysis only. It MUST NOT edit deliverables, MUST NOT write `state.json` or `log.ndjson`, and MUST NOT write `.harness/`; its `advice-<n>.md` file in the addressed stage directory is its only write.
 
 #### Scenario: No writes
 - **WHEN** Advisor finishes
-- **THEN** no deliverable, `state.json`, `log.ndjson`, or `.harness/` file SHALL have been modified by Advisor
+- **THEN** no deliverable, `state.json`, `log.ndjson`, or `.harness/` file SHALL have been modified by Advisor, and the only file it wrote SHALL be its `advice-<n>.md` in the addressed stage directory
 
 ### Requirement: Advisor is the destination of every blocked state and repeated failure
 Advisor SHALL receive blocked outcomes from every stage (Research, Spec, Ticket, Build, Review, Wrap), repeated failures from Review, and second failures of the in-node review loops of Research, Spec, Ticket, and Wrap. The orchestrator SHALL record `blocked_at` before routing to Advisor.
