@@ -1,15 +1,15 @@
 ## Context
 
-WOR-33 defines skills as capabilities mounted on a node, not nodes. Build is mounted with `use-worktree`; Wrap owns cleanup (`graph-node-wrap`: "Wrap cleans residue"). Claude Code natively supports agent worktree isolation and `EnterWorktree`, so the skill adds policy only. The work-unit folder (`graph-plugin-work-unit-state`) gives each stage a directory written by its actor, and only the orchestrator writes `state.json`.
+WOR-33 defines skills as capabilities mounted on a node, not nodes. Build is mounted with `use-worktree`; Wrap owns cleanup (`graph-node-wrap`: "Wrap cleans residue"). The skill has the agent create and manage the worktree itself with plain `git worktree` commands, so it adds both policy and the concrete commands. The work-unit folder (`graph-plugin-work-unit-state`) gives each stage a directory written by its actor, and only the orchestrator writes `state.json`.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Fix what the one-page skill must state: when to open, how often, what to name it, what Build leaves behind, who removes it.
+- Fix what the skill page must state, including concrete `git worktree` commands and guardrails: when to open, how often, what to name it, what Build leaves behind, who removes it.
 - Stay consistent with the Build and Wrap node specs and the work-unit state layout.
 
 **Non-Goals:**
-- Reimplementing, wrapping, or scripting the platform worktree mechanism.
+- Depending on any Claude Code-specific mechanism (native worktree isolation, `EnterWorktree`, sandbox), or shipping helper scripts.
 - Writing the skill itself, or updating docs and README.
 - Adding fields to the `state.json` schema.
 
@@ -20,7 +20,12 @@ WOR-33 defines skills as capabilities mounted on a node, not nodes. Build is mou
 - **Name is the work-unit id.** The worktree name and its branch name derive from the work-unit id (`id` matches `^[a-z0-9][a-z0-9-]*$`), so the name is deterministic, unique per unit, valid for paths and refs, and traceable back to the folder. Ticket ids are deliberately not in the name because the worktree spans tickets. Alternatives: include the ticket id (contradicts the per-unit cadence); random or timestamp names (not reconstructable by Wrap or a human).
 - **Record the location in a Build stage artifact, not in `state.json`.** Build writes `build/worktree.md` in its stage directory, which the work-unit state spec already allows the implementor to write. Adding a `state.json` field would change a schema owned by another change, and the schema forbids unknown top-level fields. Wrap reads it as part of "the worktree and temporary artifacts" it already takes as input. Alternative: orchestrator transcribes the path into `state.json`; rejected as a cross-change schema edit for a value only Wrap needs.
 - **Wrap removes; the skill and Build never do.** This follows `graph-node-wrap` directly; Wrap removes the worktree, not the branch. Build's failure paths (blocked, retry) therefore leave the worktree in place, so Advisor guidance and Build retries can still use it. If Wrap cannot find or remove the worktree it reports blocked like any Wrap failure.
-- **The skill defers to the platform.** The page tells Build to use native isolation and names only the policy inputs (name, cadence, record, ownership). It does not describe flags or internals, which would go stale.
+- **The skill is self-managed plain git.** The page instructs the agent to run `git worktree add` (and nothing platform-specific) with the prescribed name and branch `wu/<id>`, and states the guardrails: collision and missing-worktree handling, no nested worktrees, write only inside the worktree. Plain git is stable and the same for every agent, so the page can state exact commands without going stale.
+- **Rejected alternative: Claude Code native worktree isolation (agent worktree isolation / `EnterWorktree`).** Rationale (design ruling, Linear WOR-37, 2026-10-01):
+  - (a) The spec's own requirements are only implementable self-managed. Deterministic naming is harness-controlled under the native mechanism, not chosen by the skill; native auto-cleanup of unchanged worktrees contradicts "only Wrap removes"; the CI-red reopen needs separate control of the branch lifecycle and the worktree lifecycle.
+  - (b) Portability. Build is a dispatched actor; a Claude Code-only mechanism would lock the vendor into the node spec, whereas self-managed plain git supports other agents (for example codex).
+  - (c) Stability. Native behavior depends on settings, sandbox, and version and is not contract-stable; in practice the sandbox has interfered enough to be disabled.
+  - Accepted trade-off: there is no runtime isolation enforcement. "Write only inside the worktree" becomes contractual and reviewer-verified, consistent with the existing contractual-restriction-over-mechanical-whitelist ruling in `openspec/changes/graph-plugin-architecture/design.md`.
 
 ## Risks / Trade-offs
 

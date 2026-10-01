@@ -1,13 +1,17 @@
 ## ADDED Requirements
 
-### Requirement: Thin norm over the native mechanism
-The `use-worktree` skill page SHALL be a single page that states policy only and defers the isolation mechanism to Claude Code's native worktree support (agent worktree isolation and `EnterWorktree`). The page MUST NOT reimplement, wrap, or script worktree creation, and MUST NOT duplicate platform flags or internals. The skill SHALL be mounted on Build as a capability and MUST NOT be modeled as a node.
+### Requirement: Self-managed, agent-agnostic worktree page
+The `use-worktree` skill page SHALL instruct the agent executing Build to create and manage the worktree itself by running plain `git worktree` commands directly. The skill MUST be agent-agnostic: the page MUST NOT rely on any Claude Code-specific mechanism (no native worktree isolation, no `EnterWorktree`, no sandbox) and MUST NOT require any particular agent runtime. The page SHALL state concrete commands and guardrails, at minimum: (1) creating the worktree with `git worktree add` using the prescribed worktree name and branch `wu/<id>`; (2) the name-collision handling and the missing-worktree handling specified below; (3) no nested worktrees, so Build MUST NOT create a worktree from inside another worktree of the work unit; (4) Build writes only inside the worktree. The page MAY be longer than one page to carry these commands and guardrails. The skill SHALL be mounted on Build as a capability and MUST NOT be modeled as a node.
 
-#### Scenario: Page defers to the platform
+#### Scenario: Page states commands, not a platform mechanism
 - **WHEN** the skill page is read
-- **THEN** it SHALL direct Build to use the native worktree isolation and SHALL state only the norms for when, how often, what name, what record, and who cleans
+- **THEN** it SHALL direct the agent to create the worktree with `git worktree add` and SHALL NOT reference native worktree isolation, `EnterWorktree`, or the sandbox
 
-#### Scenario: One page
+#### Scenario: Guardrails stated
+- **WHEN** the skill page is read
+- **THEN** it SHALL state the prescribed name and branch `wu/<id>`, the collision and missing-worktree handling, the no-nested-worktrees rule, and the write-only-inside-the-worktree rule
+
+#### Scenario: Self-contained
 - **WHEN** the skill is implemented from this spec
 - **THEN** its page SHALL cover every requirement below without needing supporting scripts
 
@@ -75,7 +79,7 @@ The page SHALL state that Wrap removes the worktree (not the branch) before open
 - **THEN** the worktree named in `build/worktree.md` SHALL already have been removed by Wrap
 
 ### Requirement: Scope boundary with long-term memory
-The page SHALL restate that code is the only thing Build writes in the worktree, consistent with the Build node's writes-only-code rule, and that the worktree MUST NOT be used to write `.harness/`.
+The page SHALL restate that Build writes only inside the worktree and that code is the only thing it writes there, consistent with the Build node's writes-only-code rule, and that the worktree MUST NOT be used to write `.harness/`. This restriction is contractual and verified by the reviewer; the skill does not depend on runtime enforcement.
 
 #### Scenario: Harness untouched
 - **WHEN** Build finishes in the worktree
