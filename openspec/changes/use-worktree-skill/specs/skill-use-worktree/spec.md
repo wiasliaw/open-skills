@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Self-managed, agent-agnostic worktree page
-The `use-worktree` skill page SHALL instruct the agent executing Build to create and manage the worktree itself by running plain `git worktree` commands directly. The skill MUST be agent-agnostic: the page MUST NOT rely on any Claude Code-specific mechanism (no native worktree isolation, no `EnterWorktree`, no sandbox) and MUST NOT require any particular agent runtime. The page SHALL state concrete commands and guardrails, at minimum: (1) creating the worktree with `git worktree add` using the prescribed worktree name and branch `wu/<id>`; (2) the name-collision handling and the missing-worktree handling specified below; (3) no nested worktrees, so Build MUST NOT create a worktree from inside another worktree of the work unit; (4) Build writes only inside the worktree. The page MAY be longer than one page to carry these commands and guardrails. The skill SHALL be mounted on Build as a capability and MUST NOT be modeled as a node.
+The `use-worktree` skill page SHALL instruct the agent executing Build to create and manage the worktree itself by running plain `git worktree` commands directly. The skill MUST be agent-agnostic: the page MUST NOT rely on any Claude Code-specific mechanism (no native worktree isolation, no `EnterWorktree`, no sandbox) and MUST NOT require any particular agent runtime. The page SHALL state concrete commands and guardrails, at minimum: (1) creating the worktree with `git worktree add` using the single prescribed name `wu/<id>` (the branch name, which also names the worktree); (2) the name-collision handling and the missing-worktree handling specified below; (3) no nested worktrees, so Build MUST NOT create a worktree from inside another worktree of the work unit; (4) Build writes only inside the worktree. The page MAY be longer than one page to carry these commands and guardrails. The skill SHALL be mounted on Build as a capability and MUST NOT be modeled as a node.
 
 #### Scenario: Page states commands, not a platform mechanism
 - **WHEN** the skill page is read
@@ -9,7 +9,7 @@ The `use-worktree` skill page SHALL instruct the agent executing Build to create
 
 #### Scenario: Guardrails stated
 - **WHEN** the skill page is read
-- **THEN** it SHALL state the prescribed name and branch `wu/<id>`, the collision and missing-worktree handling, the no-nested-worktrees rule, and the write-only-inside-the-worktree rule
+- **THEN** it SHALL state the single prescribed name `wu/<id>`, the collision and missing-worktree handling, the no-nested-worktrees rule, and the write-only-inside-the-worktree rule
 
 #### Scenario: Self-contained
 - **WHEN** the skill is implemented from this spec
@@ -42,26 +42,26 @@ The page SHALL state that one worktree serves the whole work unit and is reused 
 - **THEN** it SHALL keep working in the same worktree
 
 ### Requirement: Deterministic naming
-The page SHALL fix the worktree name as the work-unit id, and the branch name as the work-unit id with the prefix `wu/`, for example work unit `2026-10-01-wor-37-use-worktree-spec` gives worktree `2026-10-01-wor-37-use-worktree-spec` and branch `wu/2026-10-01-wor-37-use-worktree-spec`. The name MUST NOT contain a ticket id, a timestamp, or random characters. If a worktree of that name already exists and no Build record names it, Build SHALL report blocked instead of reusing or overwriting it.
+The page SHALL fix a single identifier for the work unit's worktree: the branch name `wu/<id>`, where `<id>` is the work-unit id. The worktree is named by the branch name verbatim, so its path ends in `wu/<id>`, for example `git worktree add ../wu/<id> wu/<id>`; there is no separate worktree-name rule. For example, work unit `2026-10-01-wor-37-use-worktree-spec` gives branch `wu/2026-10-01-wor-37-use-worktree-spec` and a worktree whose path ends in `wu/2026-10-01-wor-37-use-worktree-spec`. The name MUST NOT contain a ticket id, a timestamp, or random characters. If a worktree at that name already exists and no Build record names it, Build SHALL report blocked instead of reusing or overwriting it.
 
 #### Scenario: Name derived from id
 - **WHEN** Build opens a worktree for work unit `<id>`
-- **THEN** the worktree SHALL be named `<id>` and its branch `wu/<id>`
+- **THEN** the branch SHALL be `wu/<id>` and the worktree SHALL be named by that same branch name, its path ending in `wu/<id>`
 
 #### Scenario: Missing worktree, branch still exists
 - **WHEN** `build/worktree.md` names a worktree that is no longer present and branch `wu/<id>` still exists
 - **THEN** Build SHALL treat this as CI-red re-entry, reopen a worktree on that branch, and SHALL NOT create a different branch or report a collision
 
 #### Scenario: Name collision without a record
-- **WHEN** a worktree named `<id>` exists but `build/worktree.md` does not record it
+- **WHEN** a worktree named `wu/<id>` exists but `build/worktree.md` does not record it
 - **THEN** Build SHALL record blocked and SHALL NOT use or remove that worktree
 
 ### Requirement: Build leaves a record for Wrap
-When Build opens the worktree, the page SHALL require Build to write `build/worktree.md` in the work-unit folder's `build/` stage directory, stating the worktree name, its filesystem path, and its branch name. The record SHALL be written by Build itself as a stage artifact and SHALL NOT be a new `state.json` field. The record SHALL remain in place after Build completes so Wrap can read it.
+When Build opens the worktree, the page SHALL require Build to write `build/worktree.md` in the work-unit folder's `build/` stage directory, stating the branch name `wu/<id>` (which is also the worktree's name) and the worktree's filesystem path. The record SHALL be written by Build itself as a stage artifact and SHALL NOT be a new `state.json` field. The record SHALL remain in place after Build completes so Wrap can read it.
 
 #### Scenario: Record written
 - **WHEN** Build opens a worktree
-- **THEN** `build/worktree.md` SHALL exist with the name, path, and branch before Build writes code
+- **THEN** `build/worktree.md` SHALL exist with the branch name and path before Build writes code
 
 #### Scenario: Wrap finds the worktree
 - **WHEN** Wrap starts

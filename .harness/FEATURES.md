@@ -22,4 +22,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-010 | work-unit.json field-level schema complete in `graph-plugin-work-unit-state` (fields, enums, invariants, example) | 2026-09-30-wor-33-work-unit-schema |
 | F-011 | Work-unit state specified as a per-unit folder (state.json + log.ndjson + per-stage artifact dirs) | 2026-10-01-wor-33-work-unit-folder |
 | F-012 | Advisor node spec: advice file written by the advisor into the addressed stage directory | 2026-10-01-wor-33-advisor-wording |
-| F-014 | OpenSpec change `use-worktree-skill` specifies a self-managed, agent-agnostic use-worktree skill (plain `git worktree`, guardrails stated, Wrap-owned cleanup) | 2026-10-01-wor-37-self-managed-worktree |
+| F-015 | OpenSpec change `use-worktree-skill` specifies a self-managed, agent-agnostic use-worktree skill (plain `git worktree`, single branch-derived name `wu/<id>`, Wrap-owned cleanup) | 2026-10-01-wor-37-branch-named-worktree |
