@@ -8,14 +8,14 @@ The Wrap step SHALL be defined as a LLM merge moment. Purpose: Consolidate passi
 - **THEN** Wrap SHALL be typed as LLM merge moment
 
 ### Requirement: Wrap state inputs
-Wrap SHALL read only the following from state and the environment: all verified results, decisions, and progress in `work-unit.json`; the worktree and temporary artifacts; `.harness/` current contents.
+Wrap SHALL read only the following from state and the environment: all verified results, decisions, and progress in the work-unit folder; the worktree and temporary artifacts; `.harness/` current contents.
 
 #### Scenario: Inputs available
 - **WHEN** Wrap starts
 - **THEN** the inputs listed for Wrap SHALL be available to it
 
 ### Requirement: Wrap state outputs
-Wrap SHALL produce the following: updates to `.harness/` (DECISIONS, FEATURES), the handoff record, a cleaned workspace (worktree, temp files, intermediate artifacts removed), an opened PR, and the CI result recorded in `work-unit.json`.
+Wrap SHALL produce the following: updates to `.harness/` (DECISIONS, FEATURES), the handoff record, a cleaned workspace (worktree, temp files, intermediate artifacts removed), an opened PR, and the CI result recorded in the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Wrap completes

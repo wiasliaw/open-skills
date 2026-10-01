@@ -8,14 +8,14 @@ The Spec step SHALL be defined as a LLM. Purpose: Converge research into a speci
 - **THEN** Spec SHALL be typed as LLM
 
 ### Requirement: Spec state inputs
-Spec SHALL read only the following from state and the environment: the findings and any rejection feedback in `work-unit.json`; `.harness/` constraints referenced by the findings.
+Spec SHALL read only the following from state and the environment: the findings and any rejection feedback in the work-unit folder; `.harness/` constraints referenced by the findings.
 
 #### Scenario: Inputs available
 - **WHEN** Spec starts
 - **THEN** the inputs listed for Spec SHALL be available to it
 
 ### Requirement: Spec state outputs
-Spec SHALL produce the following: the specification (goals, scope, acceptance criteria) written into `work-unit.json`.
+Spec SHALL produce the following: the specification (goals, scope, acceptance criteria) written into the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Spec completes
@@ -48,11 +48,11 @@ The skills mounted on Spec SHALL be: SDD skill. Skills are capabilities mounted 
 - **THEN** it SHALL use only the mounted skills: SDD skill
 
 ### Requirement: Spec is the downstream contract
-The Spec node SHALL write goals, scope, and acceptance criteria into `work-unit.json`, and later nodes SHALL treat that spec as their contract.
+The Spec node SHALL write goals, scope, and acceptance criteria into the work-unit folder, and later nodes SHALL treat that spec as their contract.
 
 #### Scenario: Spec written to state
 - **WHEN** Spec completes
-- **THEN** `work-unit.json` SHALL contain goals, scope, and acceptance criteria
+- **THEN** the work-unit folder SHALL contain goals, scope, and acceptance criteria
 
 ### Requirement: Spec is re-entered on contradiction or upgrade
 Spec SHALL accept re-entry from Ticket (spec contradiction), Review (fast-path upgrade), and Human Gate (grading, full), and SHALL revise the spec accordingly.

@@ -8,14 +8,14 @@ The Human Gate (grading approval) step SHALL be defined as a human. Purpose: Rev
 - **THEN** Human Gate (grading approval) SHALL be typed as human
 
 ### Requirement: Human Gate (grading approval) state inputs
-Human Gate (grading approval) SHALL read only the following from state and the environment: the findings and grading proposal in `work-unit.json`.
+Human Gate (grading approval) SHALL read only the following from state and the environment: the findings and grading proposal in the work-unit folder.
 
 #### Scenario: Inputs available
 - **WHEN** Human Gate (grading approval) starts
 - **THEN** the inputs listed for Human Gate (grading approval) SHALL be available to it
 
 ### Requirement: Human Gate (grading approval) state outputs
-Human Gate (grading approval) SHALL produce the following: the approved grading (full, small, trivial, or end) or the rejection with feedback, recorded in `work-unit.json`.
+Human Gate (grading approval) SHALL produce the following: the approved grading (full, small, trivial, or end) or the rejection with feedback, recorded in the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Human Gate (grading approval) completes

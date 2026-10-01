@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Trigger purpose and type
-The Trigger step SHALL be defined as a entry. Purpose: Receive the incoming work (user prompt, issue, CI failure, or data analysis request), create `work-unit.json`, and initialize state. It performs no grading.
+The Trigger step SHALL be defined as a entry. Purpose: Receive the incoming work (user prompt, issue, CI failure, or data analysis request), create the work-unit folder (with `state.json` and `log.ndjson`), and initialize state. It performs no grading.
 
 #### Scenario: Node identity
 - **WHEN** the graph definition is read
@@ -15,7 +15,7 @@ Trigger SHALL read only the following from state and the environment: the raw tr
 - **THEN** the inputs listed for Trigger SHALL be available to it
 
 ### Requirement: Trigger state outputs
-Trigger SHALL produce the following: a newly created `work-unit.json` holding the trigger source, the original request, and initialized empty state (task list, per-item progress, verification results).
+Trigger SHALL produce the following: a newly created work-unit folder whose `state.json` holds the trigger source, the original request, and initialized empty state (task list, per-item progress, verification results).
 
 #### Scenario: Outputs recorded
 - **WHEN** Trigger completes
@@ -41,5 +41,5 @@ The skills mounted on Trigger SHALL be: none. Skills are capabilities mounted on
 The Trigger node SHALL always hand off to Research & Explore and MUST NOT assign a grading or skip any node.
 
 #### Scenario: Unconditional hand-off
-- **WHEN** Trigger has created `work-unit.json`
+- **WHEN** Trigger has created the work-unit folder
 - **THEN** the only outgoing edge SHALL lead to Research & Explore regardless of task size

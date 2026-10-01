@@ -8,14 +8,14 @@ The Human Gate (spec approval) step SHALL be defined as a human. Purpose: Review
 - **THEN** Human Gate (spec approval) SHALL be typed as human
 
 ### Requirement: Human Gate (spec approval) state inputs
-Human Gate (spec approval) SHALL read only the following from state and the environment: the spec in `work-unit.json`.
+Human Gate (spec approval) SHALL read only the following from state and the environment: the spec in the work-unit folder.
 
 #### Scenario: Inputs available
 - **WHEN** Human Gate (spec approval) starts
 - **THEN** the inputs listed for Human Gate (spec approval) SHALL be available to it
 
 ### Requirement: Human Gate (spec approval) state outputs
-Human Gate (spec approval) SHALL produce the following: the approval decision, or the rejection feedback, recorded in `work-unit.json`.
+Human Gate (spec approval) SHALL produce the following: the approval decision, or the rejection feedback, recorded in the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Human Gate (spec approval) completes

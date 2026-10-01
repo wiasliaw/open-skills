@@ -1,6 +1,6 @@
 ## Context
 
-WOR-33 finalized an execution graph for coding work: nodes (units of work), edges (routing conditions over state), state (`work-unit.json`), and skills mounted on nodes. This change turns that design into specs.
+WOR-33 finalized an execution graph for coding work: nodes (units of work), edges (routing conditions over state), state (the work-unit folder, with `state.json` as routing state), and skills mounted on nodes. This change turns that design into specs.
 
 ## Goals / Non-Goals
 
@@ -10,7 +10,7 @@ WOR-33 finalized an execution graph for coding work: nodes (units of work), edge
 
 **Non-Goals:**
 - Implementing the graph or altering existing skills, agents, or docs.
-- Defining the JSON schema of `work-unit.json` beyond the fields each node reads and writes.
+- Defining the schema of the work-unit folder and its `state.json` beyond the fields each node reads and writes.
 
 ## Decisions
 

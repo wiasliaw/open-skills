@@ -8,14 +8,14 @@ The Advisor step SHALL be defined as an LLM. Purpose: Perform root-cause analysi
 - **THEN** Advisor SHALL be typed as LLM and SHALL NOT be typed as human
 
 ### Requirement: Advisor state inputs
-Advisor SHALL read only the following from state and the environment: the `blocked_at` node, the failure history and review logs for the problem, the blocked stage's node spec, the relevant constraints, and any earlier Advisor consultation records for the same problem in `work-unit.json`.
+Advisor SHALL read only the following from state and the environment: the `blocked_at` node, the failure history and review logs for the problem, the blocked stage's node spec, the relevant constraints, and any earlier Advisor consultation records for the same problem in the work-unit folder.
 
 #### Scenario: Inputs available
 - **WHEN** Advisor starts
 - **THEN** the inputs listed for Advisor SHALL be available to it
 
 ### Requirement: Advisor state outputs
-Advisor SHALL produce the following: a root-cause analysis and concrete retry guidance, returned as a report. The orchestrator SHALL record the consultation (problem key, consultation count, advice summary) in `work-unit.json`.
+Advisor SHALL produce the following: a root-cause analysis and concrete retry guidance, returned as a report. The orchestrator SHALL record the consultation (problem key, consultation count, advice summary) in the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Advisor completes
@@ -43,11 +43,11 @@ The skills mounted on Advisor SHALL be: none. Skills are capabilities mounted on
 - **THEN** it SHALL use only the mounted skills: none
 
 ### Requirement: Advisor is read-only analysis
-Advisor SHALL perform analysis only. It MUST NOT edit deliverables, MUST NOT write `work-unit.json`, and MUST NOT write `.harness/`.
+Advisor SHALL perform analysis only. It MUST NOT edit deliverables, MUST NOT write `state.json` or `log.ndjson`, and MUST NOT write `.harness/`.
 
 #### Scenario: No writes
 - **WHEN** Advisor finishes
-- **THEN** no deliverable, state file, or `.harness/` file SHALL have been modified by Advisor
+- **THEN** no deliverable, `state.json`, `log.ndjson`, or `.harness/` file SHALL have been modified by Advisor
 
 ### Requirement: Advisor is the destination of every blocked state and repeated failure
 Advisor SHALL receive blocked outcomes from every stage (Research, Spec, Ticket, Build, Review, Wrap), repeated failures from Review, and second failures of the in-node review loops of Research, Spec, Ticket, and Wrap. The orchestrator SHALL record `blocked_at` before routing to Advisor.

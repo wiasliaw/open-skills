@@ -8,14 +8,14 @@ The Research & Explore step SHALL be defined as a LLM loop with tools. Purpose: 
 - **THEN** Research & Explore SHALL be typed as LLM loop with tools
 
 ### Requirement: Research & Explore state inputs
-Research & Explore SHALL read only the following from state and the environment: the request and any rejection feedback in `work-unit.json`; the codebase; `.harness/` long-term memory; external data; external review feedback.
+Research & Explore SHALL read only the following from state and the environment: the request and any rejection feedback in the work-unit folder; the codebase; `.harness/` long-term memory; external data; external review feedback.
 
 #### Scenario: Inputs available
 - **WHEN** Research & Explore starts
 - **THEN** the inputs listed for Research & Explore SHALL be available to it
 
 ### Requirement: Research & Explore state outputs
-Research & Explore SHALL produce the following: findings written to `work-unit.json`, and a grading proposal (one of full, small, trivial, no-op) with its rationale.
+Research & Explore SHALL produce the following: findings written to the work-unit folder, and a grading proposal (one of full, small, trivial, no-op) with its rationale.
 
 #### Scenario: Outputs recorded
 - **WHEN** Research & Explore completes

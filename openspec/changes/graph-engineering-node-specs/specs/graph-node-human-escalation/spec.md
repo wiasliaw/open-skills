@@ -8,14 +8,14 @@ The Human Escalation step SHALL be defined as a human. Purpose: Serve as the las
 - **THEN** Human Escalation SHALL be typed as human
 
 ### Requirement: Human Escalation state inputs
-Human Escalation SHALL read only the following from state and the environment: the `blocked_at` node, the blocked reason or repeated-failure review log, and the Advisor consultation records for the problem in `work-unit.json`.
+Human Escalation SHALL read only the following from state and the environment: the `blocked_at` node, the blocked reason or repeated-failure review log, and the Advisor consultation records for the problem in the work-unit folder.
 
 #### Scenario: Inputs available
 - **WHEN** Human Escalation starts
 - **THEN** the inputs listed for Human Escalation SHALL be available to it
 
 ### Requirement: Human Escalation state outputs
-Human Escalation SHALL produce the following: the human's resolution (unblock guidance or cancellation) recorded in `work-unit.json`.
+Human Escalation SHALL produce the following: the human's resolution (unblock guidance or cancellation) recorded in the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Human Escalation completes

@@ -8,14 +8,14 @@ The init bootstrap step SHALL be defined as a deterministic pre-graph step (not 
 - **THEN** init bootstrap SHALL be typed as deterministic pre-graph step (not a node)
 
 ### Requirement: init bootstrap state inputs
-init bootstrap SHALL read only the following from state and the environment: the repository itself: root CLAUDE.md, `.harness/`, repo structure; local tool availability (CLI, test runner, deploy tooling). It reads no `work-unit.json` because none exists yet.
+init bootstrap SHALL read only the following from state and the environment: the repository itself: root CLAUDE.md, `.harness/`, repo structure; local tool availability (CLI, test runner, deploy tooling). It reads no work-unit folder because none exists yet.
 
 #### Scenario: Inputs available
 - **WHEN** init bootstrap starts
 - **THEN** the inputs listed for init bootstrap SHALL be available to it
 
 ### Requirement: init bootstrap state outputs
-init bootstrap SHALL produce the following: an init report delivered to the human and to the Trigger node: repo survey summary and tool availability result. It writes no `work-unit.json`.
+init bootstrap SHALL produce the following: an init report delivered to the human and to the Trigger node: repo survey summary and tool availability result. It creates no work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** init bootstrap completes

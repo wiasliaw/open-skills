@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Graph vocabulary
-The graph SHALL use these definitions: a node is a unit of work typed as LLM call, deterministic function, tool call, validator, or human gate, and may itself be a loop; an edge is routing, a condition function that reads state and decides what runs next; state is `work-unit.json`, shared across the whole graph; a skill is a capability mounted on a node and is not a node.
+The graph SHALL use these definitions: a node is a unit of work typed as LLM call, deterministic function, tool call, validator, or human gate, and may itself be a loop; an edge is routing, a condition function that reads state and decides what runs next; state is the work-unit folder (with `state.json` as its routing state), shared across the whole graph; a skill is a capability mounted on a node and is not a node.
 
 #### Scenario: Skills are not nodes
 - **WHEN** a capability such as SDD or TDD is attached to a step

@@ -8,14 +8,14 @@ The Ticket step SHALL be defined as a LLM decomposition / fan-out. Purpose: Spli
 - **THEN** Ticket SHALL be typed as LLM decomposition / fan-out
 
 ### Requirement: Ticket state inputs
-Ticket SHALL read only the following from state and the environment: the approved spec and constraints in `work-unit.json`; the task list and per-ticket progress.
+Ticket SHALL read only the following from state and the environment: the approved spec and constraints in the work-unit folder; the task list and per-ticket progress.
 
 #### Scenario: Inputs available
 - **WHEN** Ticket starts
 - **THEN** the inputs listed for Ticket SHALL be available to it
 
 ### Requirement: Ticket state outputs
-Ticket SHALL produce the following: the task list in `work-unit.json`, each ticket carrying its scope and declared verification commands; the selection of the next ticket.
+Ticket SHALL produce the following: the task list in the work-unit folder, each ticket carrying its scope and declared verification commands; the selection of the next ticket.
 
 #### Scenario: Outputs recorded
 - **WHEN** Ticket completes

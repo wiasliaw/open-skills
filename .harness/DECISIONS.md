@@ -14,4 +14,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | D-002 | 2026-09-30 | codewalk resolves git paths dynamically instead of using WOR-31's literal path wording |
 | D-003 | 2026-09-30 | Walkthrough template pins per walk in the header only, dropping WOR-31's per-stop SHA |
 | D-004 | 2026-09-30 | Adopt OpenSpec as the declared work-unit tool |
-| D-006 | 2026-09-30 | Four fixed actors — a generic Advisor tier sits before Human Escalation |
+| D-007 | 2026-10-01 | Work-unit state is a folder — state.json routing, log.ndjson events, per-stage artifact dirs |

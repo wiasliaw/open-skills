@@ -1,21 +1,21 @@
 ## ADDED Requirements
 
 ### Requirement: Ship purpose and type
-The Ship step SHALL be defined as a deterministic / tool calls. Purpose: Complete delivery: merge the PR, deploy or release, close the issue, and archive `work-unit.json`. It is the success terminal.
+The Ship step SHALL be defined as a deterministic / tool calls. Purpose: Complete delivery: merge the PR, deploy or release, close the issue, and archive the work-unit folder. It is the success terminal.
 
 #### Scenario: Node identity
 - **WHEN** the graph definition is read
 - **THEN** Ship SHALL be typed as deterministic / tool calls
 
 ### Requirement: Ship state inputs
-Ship SHALL read only the following from state and the environment: the green CI result, PR reference, and issue reference in `work-unit.json`.
+Ship SHALL read only the following from state and the environment: the green CI result, PR reference, and issue reference in the work-unit folder.
 
 #### Scenario: Inputs available
 - **WHEN** Ship starts
 - **THEN** the inputs listed for Ship SHALL be available to it
 
 ### Requirement: Ship state outputs
-Ship SHALL produce the following: the merged PR, release/deploy outcome, closed issue, and `work-unit.json` archived.
+Ship SHALL produce the following: the merged PR, release/deploy outcome, closed issue, and the work-unit folder archived.
 
 #### Scenario: Outputs recorded
 - **WHEN** Ship completes
@@ -46,4 +46,4 @@ Ship SHALL be a terminal node with no outgoing edges and SHALL run only after Wr
 
 #### Scenario: Work unit archived
 - **WHEN** Ship completes
-- **THEN** `work-unit.json` SHALL be archived
+- **THEN** the work-unit folder SHALL be archived

@@ -8,7 +8,7 @@ The End step SHALL be defined as a terminal. Purpose: Provide the abandonment ex
 - **THEN** End SHALL be typed as terminal
 
 ### Requirement: End state inputs
-End SHALL read only the following from state and the environment: the abandonment reason from Human Gate (grading) or Human Escalation, and the conclusions so far in `work-unit.json`.
+End SHALL read only the following from state and the environment: the abandonment reason from Human Gate (grading) or Human Escalation, and the conclusions so far in the work-unit folder.
 
 #### Scenario: Inputs available
 - **WHEN** End starts

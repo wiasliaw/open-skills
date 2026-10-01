@@ -8,14 +8,14 @@ The Build step SHALL be defined as a LLM loop. Purpose: Implement one ticket at 
 - **THEN** Build SHALL be typed as LLM loop
 
 ### Requirement: Build state inputs
-Build SHALL read only the following from state and the environment: the spec, constraints, and the current ticket in `work-unit.json`; any review log from a failed Review or CI failure; any Advisor guidance issued for the current problem. Build reads only the spec and constraints as its contract.
+Build SHALL read only the following from state and the environment: the spec, constraints, and the current ticket in the work-unit folder; any review log from a failed Review or CI failure; any Advisor guidance issued for the current problem. Build reads only the spec and constraints as its contract.
 
 #### Scenario: Inputs available
 - **WHEN** Build starts
 - **THEN** the inputs listed for Build SHALL be available to it
 
 ### Requirement: Build state outputs
-Build SHALL produce the following: code changes in the isolated worktree and a status of ready-for-review or blocked recorded in `work-unit.json`. Build MUST NOT write `.harness/`.
+Build SHALL produce the following: code changes in the isolated worktree and a status of ready-for-review or blocked recorded in the work-unit folder. Build MUST NOT write `.harness/`.
 
 #### Scenario: Outputs recorded
 - **WHEN** Build completes

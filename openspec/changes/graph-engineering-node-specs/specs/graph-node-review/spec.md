@@ -15,7 +15,7 @@ Review SHALL read only the following from state and the environment: the current
 - **THEN** the inputs listed for Review SHALL be available to it
 
 ### Requirement: Review state outputs
-Review SHALL produce the following: per-dimension pass/fail with evidence, the review log, and the updated failure count, written to `work-unit.json`.
+Review SHALL produce the following: per-dimension pass/fail with evidence, the review log, and the updated failure count, written to the work-unit folder.
 
 #### Scenario: Outputs recorded
 - **WHEN** Review completes
