@@ -22,3 +22,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-010 | work-unit.json field-level schema complete in `graph-plugin-work-unit-state` (fields, enums, invariants, example) | 2026-09-30-wor-33-work-unit-schema |
 | F-011 | Work-unit state specified as a per-unit folder (state.json + log.ndjson + per-stage artifact dirs) | 2026-10-01-wor-33-work-unit-folder |
 | F-012 | Advisor node spec: advice file written by the advisor into the addressed stage directory | 2026-10-01-wor-33-advisor-wording |
+| F-013 | OpenSpec change `use-worktree-skill` specifies the Build-mounted use-worktree skill (lazy per-work-unit open, live-worktree reuse, Wrap-owned cleanup) | 2026-10-01-wor-37-use-worktree-spec |
