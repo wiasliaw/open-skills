@@ -39,13 +39,14 @@ In order:
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
 | 1 | `worktree.mjs` implements the worktree-script spec with a committed passing `node --test` suite | `node --test "skills/use-worktree/scripts/*.test.mjs"` | passed (F-018) |
-| 2 | `skills/use-worktree/SKILL.md` policy page shipped with docs page, README row, and CLAUDE.md toolchain/verify updates | `claude plugin validate . && node --test "skills/use-worktree/scripts/*.test.mjs"` | active |
+| 2 | `skills/use-worktree/SKILL.md` policy page shipped with docs page, README row, and CLAUDE.md toolchain/verify updates | `claude plugin validate . && node --test "skills/use-worktree/scripts/*.test.mjs"` | passed (F-019) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
 - 2026-10-01 — feature 1, round 1: pass — 57/57 tests, both validations pass; spec-to-code fidelity confirmed per requirement; usage/config shared exit code adjudicated spec-conformant (one failure class at spec line 30); tests non-vacuous (positive controls + mutation checks); exclusions held.
+- 2026-10-01 — feature 2, round 1: pass — all five checks green; SKILL.md conformant to every skill-use-worktree requirement (prohibition-context `git worktree` mentions adjudicated fine); docs accurate against script behavior; C-002 wiring confirmed. Two non-blocking findings (stale CLAUDE.md tree, forward-looking codewalk claim) fixed post-verdict, validations re-run green.
 
 ## Notes
 

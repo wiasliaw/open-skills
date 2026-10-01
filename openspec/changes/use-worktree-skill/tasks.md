@@ -13,6 +13,6 @@
 
 ## 3. Later changes (not part of this change; separate changes and work units)
 
-- [ ] 3.1 Implement `skills/use-worktree/scripts/worktree.mjs` with committed `node --test` tests
-- [ ] 3.2 Write `skills/use-worktree/SKILL.md` and its docs entry
+- [x] 3.1 Implement `skills/use-worktree/scripts/worktree.mjs` with committed `node --test` tests
+- [x] 3.2 Write `skills/use-worktree/SKILL.md` and its docs entry
 - [ ] 3.3 Rewrite `skills/codewalk/SKILL.md` Step 2 to call the script's detach mode
