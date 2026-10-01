@@ -14,7 +14,6 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-002 | codewalk skill ships an interactive anchored walkthrough with docs and README wiring | 2026-09-30-wor-31-codewalk |
 | F-003 | codewalk worktree procedure is concrete and safe under linked worktrees, subdirectory launches, and hooked repos | 2026-09-30-wor-31-codewalk-fixes |
 | F-004 | codewalk SKILL.md defines the stop record once and carries no duplicate mode/fallback sections | 2026-09-30-wor-31-codewalk-structural |
-| F-005 | codewalk skill carries no question cap, no per-stop pin, one docs degraded-mode statement, and an execution-ordered worktree lifecycle | 2026-09-30-wor-31-codewalk-polish |
 | F-006 | OpenSpec change `graph-engineering-node-specs` specifies the WOR-33 execution graph (12 nodes + init bootstrap + execution model) | 2026-09-30-wor-33-node-specs |
 | F-007 | OpenSpec adoption declared in repo bookkeeping (.gitignore, CLAUDE.md structure + work-unit tool) | 2026-09-30-wor-33-node-specs |
 | F-008 | OpenSpec change `graph-plugin-architecture` specifies the plugin realization (3 actors, spec-driven dispatch, review gating, work-unit.json) | 2026-09-30-wor-33-plugin-architecture |
@@ -25,3 +24,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-017 | OpenSpec change `use-worktree-skill` specifies script-owned worktree mechanics (zero-dep Node `worktree.mjs` contract: ensure --branch / ensure --detach / setup; policy-only skill page) | 2026-10-01-wor-37-worktree-script-spec |
 | F-018 | `worktree.mjs` implements the worktree-script spec with a committed passing node:test suite (57 tests) | 2026-10-01-wor-37-worktree-script-impl |
 | F-019 | use-worktree skill ships as a policy-only page with docs, README, and toolchain wiring | 2026-10-01-wor-37-worktree-script-impl |
+| F-020 | codewalk Step 2 delegates worktree mechanics to `worktree.mjs ensure --detach`, behavior-preserving | 2026-10-01-wor-37-codewalk-wiring |

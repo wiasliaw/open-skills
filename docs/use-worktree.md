@@ -23,7 +23,7 @@ directory:
 | -- | -- |
 | `ensure --branch wu/<id>` | Creates the worktree and branch from the main checkout's `HEAD`, reuses a live one, or reopens an existing branch whose worktree was removed. Path: `<parent>/<project>.worktrees/wu/<id>`. |
 | `setup --worktree <path>` | Runs the commands and copies declared in `.harness/worktree-setup.json` (read from the main checkout). Only `readonly` entries are symlinked; everything else is copied. |
-| `ensure --detach <sha>` | Intended for codewalk (not yet wired): a hooks-off, LFS-off detached worktree under `.codewalk/worktree/`. Never runs setup. |
+| `ensure --detach <sha>` | Used by codewalk: a hooks-off, LFS-off detached worktree under `.codewalk/worktree/`. Never runs setup. |
 
 Each call prints one JSON object on stdout (`"ok"`, `"action"` or
 `"error"` plus `"message"`) and diagnostics on stderr. Each failure

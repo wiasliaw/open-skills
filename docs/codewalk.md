@@ -32,13 +32,13 @@ request-code-review.
    your words and asks clarifying questions only when the request is
    genuinely ambiguous. The landing location is asked once, in this first turn; the default is
    `.codewalk/<topic>.md`.
-2. **Recon.** The agent creates a worktree of `HEAD` at
-   `.codewalk/worktree/codewalk-<short-sha>` and reads only there. That
-   commit is the pin. If a worktree for the same commit exists, it is
-   reused. `.codewalk/worktree/` is added to the git exclude file
-   (`git rev-parse --git-path info/exclude`), so no
-   tracked file changes; hooks and LFS smudge are off and no project
-   code is executed.
+2. **Recon.** The agent runs the use-worktree script's detached mode
+   (`worktree.mjs ensure --detach <full-sha>`), which creates a worktree
+   of `HEAD` at `.codewalk/worktree/codewalk-<short-sha>`; the agent
+   reads only there. That commit is the pin. If a worktree for the same
+   commit exists, it is reused. The script adds `.codewalk/worktree/`
+   to the git exclude file, so no tracked file changes; hooks and LFS
+   smudge are off and no project code is executed.
 3. **Build route.** Orientation, high-level map, core path, next steps,
    in 5–8, 9–13, or 14–18 stops depending on depth. Every stop must
    teach something beyond opening the file.
@@ -67,7 +67,8 @@ git worktree remove .codewalk/worktree/codewalk-<sha>
 
 ## Requirements
 
-`git`, for pinning to a commit — the only requirement. Without git,
-without commits, or if the worktree cannot be created or read, the walk
-still works in a degraded mode: the agent reads the working tree
-directly and records the pin as `unknown`.
+`git` and Node.js >= 20, for pinning to a commit: the worktree is
+created by a bundled Node script. Without git, without commits, without
+Node.js (or with an older version), or if the worktree cannot be
+created or read, the walk still works in a degraded mode: the agent
+reads the working tree directly and records the pin as `unknown`.

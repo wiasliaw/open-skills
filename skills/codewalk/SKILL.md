@@ -68,35 +68,25 @@ so it reads the pinned tree, not the working tree) and a fixed report format
 
 ### Worktree lifecycle
 
-1. Resolve the path: `<toplevel>/.codewalk/worktree/codewalk-<short-sha>`,
-   where `<toplevel>` is the directory reported by
-   `git rev-parse --show-toplevel` (not the current working directory),
-   so reads stay inside the repo (including when launched from a linked
-   worktree). The name comes from the pinned commit.
-2. If a worktree for the same SHA already exists, reuse it — never
-   rebuild — but only if `git -C <path> rev-parse HEAD` equals the
-   repo's full HEAD SHA and the probe-read (step 5) succeeds. Otherwise
-   treat the directory as unusable: stale-registration recovery
-   (step 3) or fallback.
-3. Otherwise create it with hooks disabled and LFS smudge off. Never
-   execute project code. Exact invocation:
-   `GIT_LFS_SKIP_SMUDGE=1 git -c core.hooksPath=/dev/null worktree add --detach <toplevel>/.codewalk/worktree/codewalk-<short-sha> HEAD`
-   If creation fails because the path is already registered to git (a
-   stale registration whose directory was deleted by hand), run
-   `git worktree remove --force` on that exact path only, then retry the
-   add once. NEVER run global `git worktree prune`.
-4. On creation, add `.codewalk/worktree/` to the file reported by
-   `git rev-parse --git-path info/exclude`: create its parent directory
-   if missing, skip the append if that exact line is already present,
-   and if the file's last line lacks a trailing newline, add one first.
-   Touch no tracked file.
-5. Probe-read one tracked file inside the worktree, on reuse as well as
-   on creation, before recording the pin (the full SHA). If the probe
-   fails, use the fallback and pin `unknown`.
+The worktree mechanics belong to the use-worktree script. Get the full
+SHA of HEAD with `git rev-parse HEAD`, then run, from inside the
+repository being read:
 
-No automatic cleanup. Worktrees persist for reuse; the `codewalk-`
-prefix marks their purpose. Removal is the user's, via
+`node "${CLAUDE_PLUGIN_ROOT}/skills/use-worktree/scripts/worktree.mjs" ensure --detach <full-HEAD-sha>`
+
+The script prints one JSON object on stdout. On `"ok": true`, read the
+worktree path from `"path"` and the pin from `"pin"` (the full SHA);
+do all reading under that path. Do not recreate, repair, or probe the
+worktree by hand. Never execute project code.
+
+A worktree for the same commit is reused, never rebuilt, so its
+`codewalk-` name marks its purpose and it persists across walks.
+Nothing is removed automatically. Removal is the user's, via
 `git worktree remove .codewalk/worktree/codewalk-<sha>`.
+
+On any non-zero exit, or if the script cannot run (no git, no
+repository, no commits, script file missing, Node.js missing), use the
+fallback below.
 
 ### Citation boundaries and fallback
 
@@ -107,9 +97,9 @@ path reaches a dependency, describe the boundary without citing its
 code. Submodules are boundaries: describe them, never cite their
 content.
 
-Fallback: if there is no git, no repository, no commits, or the
-worktree cannot be created or read, read the working tree directly and
-pin `unknown`.
+Fallback: if there is no git, no repository, no commits, the script
+is unavailable (missing, or no Node.js runtime), or it exits non-zero,
+read the working tree directly and pin `unknown`.
 
 ## Step 3: Build the route
 
