@@ -28,11 +28,34 @@ The page SHALL require Build to work only inside an isolated worktree, and SHALL
 
 #### Scenario: Re-entry after CI red
 - **WHEN** Build is re-entered after red CI, Wrap has removed the worktree, and `build/worktree.md` names the missing worktree
-- **THEN** Build SHALL open a fresh worktree on the existing branch `wu/<id>`, rewrite `build/worktree.md` with the new path, and write code there
+- **THEN** Build SHALL open a fresh worktree on the existing branch `wu/<id>`, rewrite `build/worktree.md` with the new path, re-run the worktree setup step, and write code there
 
 #### Scenario: No Build, no worktree
 - **WHEN** a work unit ends or is graded no-op before Build
 - **THEN** no worktree SHALL have been opened for it
+
+### Requirement: Worktree setup after creation
+Because a fresh `git worktree add` yields tracked files only, the page SHALL require Build to run the setup step after every `git worktree add`, both on first open and on CI-red reopen, before writing any code. The page SHALL require Build to read `.harness/worktree-setup.json` (written by init bootstrap) from the project's main checkout, not from the new worktree, and Build MUST NOT modify that file. The setup step SHALL run each command in `setup`, in order, inside the new worktree, and SHALL copy each `copy` entry from the main checkout into the same relative path in the worktree. Copying SHALL prefer copy-on-write (`cp -c` on APFS, `cp --reflink=auto` where supported) and SHALL fall back to a plain copy. The page MUST NOT permit symlinking a mutable directory or file between worktrees, because that breaches isolation; a symlink is permitted only for an entry that the config marks `"readonly": true`. If a setup command fails or a copy source is missing, Build SHALL record blocked.
+
+#### Scenario: First open
+- **WHEN** Build creates a worktree for a work unit for the first time
+- **THEN** Build SHALL run the `setup` commands and copy the `copy` entries into it before writing code
+
+#### Scenario: Reopen after CI red
+- **WHEN** Build reopens a fresh worktree on the existing branch after red CI
+- **THEN** Build SHALL run the setup step again, because the new worktree has none of the earlier setup
+
+#### Scenario: Copy-on-write preferred
+- **WHEN** a `copy` entry is copied
+- **THEN** Build SHALL use copy-on-write where the filesystem supports it and a plain copy otherwise
+
+#### Scenario: No mutable symlinks
+- **WHEN** a `copy` entry is not marked `"readonly": true`
+- **THEN** Build SHALL copy it and SHALL NOT symlink it into the worktree
+
+#### Scenario: Empty config
+- **WHEN** `.harness/worktree-setup.json` has empty `setup` and `copy`
+- **THEN** Build SHALL perform no setup and proceed
 
 ### Requirement: Cadence is per work unit
 The page SHALL state that one worktree serves the whole work unit and is reused across all of its tickets, and SHALL NOT require a worktree per ticket. Build SHALL still implement one ticket at a time inside that worktree.

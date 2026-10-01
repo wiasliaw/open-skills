@@ -27,6 +27,12 @@ WOR-33 defines skills as capabilities mounted on a node, not nodes. Build is mou
   - (c) Stability. Native behavior depends on settings, sandbox, and version and is not contract-stable; in practice the sandbox has interfered enough to be disabled.
   - Accepted trade-off: there is no runtime isolation enforcement. "Write only inside the worktree" becomes contractual and reviewer-verified, consistent with the existing contractual-restriction-over-mechanical-whitelist ruling in `openspec/changes/graph-plugin-architecture/design.md`.
 
+- **Worktree setup is declared config, run by Build after every `git worktree add`.** A fresh worktree has tracked files only, so dependencies, env files, and large untracked assets are absent. Init investigates the needs and records them in `.harness/worktree-setup.json` (decision in `graph-engineering-node-specs` design.md); Build reads it from the main checkout (the file may not be committed, so the new worktree is not a reliable source) and never modifies it. Setup runs on first open and on every CI-red reopen, since each is a fresh worktree. This declared config is the portable equivalent of Claude Code's native worktree setting, which is not used because the native mechanism was rejected (see the "Rejected alternative: Claude Code native worktree isolation" entry above).
+  - **Regenerate over copy is the default posture.** Setup commands rebuild dependencies; package-manager caches are machine-level anyway, so regeneration is cheap and stays correct. Copying is reserved for assets that cannot be cheaply regenerated (large data, env files).
+  - **Copy-on-write preferred.** `cp -c` (APFS) or `cp --reflink=auto` shares storage until a file diverges, so large assets cost little disk and time yet remain independent per worktree; plain copy is the fallback.
+  - **No mutable symlinks.** A symlinked mutable directory would let one worktree's writes alter another's, breaching isolation; symlinks are allowed only for entries the config marks `readonly`.
+  - Rejected: symlinking everything (isolation breach); mandatory copy of dependency directories (slow, large, stale-prone).
+
 ## Risks / Trade-offs
 
 - [Reused worktree accumulates state from failed attempts; a CI-red reopen starts clean from the branch] -> Review runs against the ticket's verification command, so stale state surfaces as a failing check; Build may discard its own uncommitted changes inside the worktree but never removes the worktree.

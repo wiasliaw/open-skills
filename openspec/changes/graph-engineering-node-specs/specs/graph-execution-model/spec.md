@@ -58,8 +58,12 @@ Human intervention SHALL occur only at Human Gate (grading), Human Gate (spec), 
 - **THEN** the work SHALL route to Advisor first, and to Human Escalation only after Advisor's consultation cap is reached, instead of waiting inline
 
 ### Requirement: Single long-term memory write point
-Only Wrap SHALL write long-term memory. Long-term memory SHALL be readable by every node.
+Within the running graph, only Wrap SHALL write long-term memory. Long-term memory SHALL be readable by every node. The one exception is the pre-graph init bootstrap, which writes `.harness/worktree-setup.json` once, before the graph starts; init is not a node, and no node other than Wrap writes long-term memory.
 
 #### Scenario: Non-Wrap write
 - **WHEN** a node other than Wrap attempts to write `.harness/`
 - **THEN** that write SHALL be disallowed by the graph definition
+
+#### Scenario: Init bootstrap exception
+- **WHEN** init bootstrap writes `.harness/worktree-setup.json` before the graph starts
+- **THEN** that write SHALL be allowed as the single pre-graph exception, and once the graph is running Wrap SHALL remain the only writer of long-term memory
