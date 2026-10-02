@@ -1,5 +1,7 @@
 # {{project_name}}
 
+{{project_description}}
+
 ## Repo Structure
 
 <!-- COMMENT MUST DELETE: tree CLI format, using ├──/└── connectors; include key file names (manifests, primary entry files), not directories only. Add an inline # comment only on entries an agent would get wrong without being told. -->

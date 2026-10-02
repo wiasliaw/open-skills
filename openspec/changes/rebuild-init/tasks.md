@@ -23,6 +23,6 @@
 ## 5. Verify
 
 - [x] 5.1 `claude plugin validate .` — green
-- [ ] 5.2 Manual dry-run: run `/open-skills:init` against a scratch repo with a package.json + `.env.example`; confirm interview order, tool gate, and that `worktree-setup.json` is written with the install command and env copy entry
-- [ ] 5.3 Manual dry-run: scratch repo needing nothing; confirm `worktree-setup.json` written with empty lists
+- [x] 5.2 Dry-run (subagent-simulated interview) against a scratch repo with package.json + `.env.example`: interview order and tool gate confirmed; `worktree-setup.json` written with `setup: ["npm install"]` and `copy: [".env"]`; findings folded back into SKILL.md
+- [x] 5.3 Dry-run (subagent-simulated interview) on a scratch repo needing nothing: `worktree-setup.json` written with empty `setup`/`copy` lists; both gates pass
 - [x] 5.4 `grep -rn "{{" skills/init/templates/` output matches only intended placeholders; no `.harness/` scaffold references remain in `skills/init/`
