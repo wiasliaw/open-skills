@@ -1,7 +1,5 @@
 # {{project_name}}
 
-Load the `open-skills:harness-flow` skill before producing or modifying any deliverable — code, docs, or configuration.
-
 ## Repo Structure
 
 <!-- COMMENT MUST DELETE: tree CLI format, using ├──/└── connectors; include key file names (manifests, primary entry files), not directories only. Add an inline # comment only on entries an agent would get wrong without being told. -->
@@ -30,17 +28,3 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 | Phase | How |
 |---|---|
 | {{phase_name}} | {{phase_how_command_skill_or_manual_step}} |
-
-## Harness
-
-<!-- COMMENT MUST DELETE: bullet list only — version bullet, four .harness/ file links each with a one-line applicability note, a short-term memory bullet (work-unit state file location, default .project/work-units/), a work-unit tool bullet (declared tool, or none), a session memory bullet (handoff file location, default .project/handoff.md), and the merge-moment write-discipline note pointing at the harness-flow skill. -->
-
-- open-skills plugin version: v{{open_skills_plugin_version}}
-- `.harness/ARCHITECTURE.md` — module map, layering, key boundaries; read before making a structural change.
-- `.harness/CONSTRAINTS.md` — hard MUST / MUST NOT rules with source and applicability; read before any change that could violate one.
-- `.harness/DECISIONS.md` — index of active decisions (details in `.harness/decisions/`); read before revisiting a past call.
-- `.harness/FEATURES.md` — passing-only index of verified behavior (details in `.harness/features/`); read to see what already works and how it was verified.
-- short-term memory: {{work_unit_state_file_location_default_dot_project_work_units}}
-- work-unit tool: {{declared_tool_that_carries_in_flight_change_state_or_none}}
-- session memory: {{handoff_file_location_default_dot_project_handoff_md}}
-- `.harness/` is read-anytime and written only by the orchestrator at merge moments — see the harness-flow skill (or run `/open-skills:harness-flow`) for the loop that enforces this.

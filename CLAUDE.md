@@ -25,7 +25,7 @@
 │   │       └── walkthrough.md.template
 │   ├── init/
 │   │   ├── SKILL.md
-│   │   └── templates/            # CLAUDE.md, .harness/ files, and D-/F- entry templates
+│   │   └── templates/            # CLAUDE.md and worktree-setup.json templates
 │   ├── receive-code-review/
 │   │   └── SKILL.md
 │   ├── request-code-review/
