@@ -7,8 +7,9 @@
 //   node worktree.mjs setup --worktree <path>
 //
 // Requirements: Node.js >= 20, git, macOS or Linux (Windows is unverified).
-// Only Node.js built-in modules are used; the only external programs are git,
-// cp (setup copies), and the shell that runs user-declared setup commands.
+// Only Node.js built-in modules and the sibling scripts/shared/ modules are
+// used; the only external programs are git, cp (setup copies), and the shell
+// that runs user-declared setup commands.
 //
 // Output contract: exactly one JSON object on stdout, diagnostics on stderr.
 //   success: {"ok": true, "action": "...", ...result fields}
@@ -35,47 +36,23 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { MIN_NODE_MAJOR, BASE_EXIT, WORKTREE_SETUP_REL } from './shared/definitions.mjs';
+import { Fail, makeReporter, parseFlags, validateWorktreeSetup, checkNodeVersion } from './shared/lib.mjs';
 
-const MIN_NODE_MAJOR = 20;
-
-const EXIT = {
-  internal: 1,
-  usage: 2,
+const EXIT = Object.assign({}, BASE_EXIT, {
   config: 2,
   collision: 3,
   stale_with_directory: 4,
   probe_failure: 5,
   not_a_git_repository: 6,
-  node_version: 7,
   setup_failed: 8,
   git_failed: 9,
-};
+});
 
 const EXCLUDE_LINE = '.codewalk/worktree/';
-const CONFIG_REL = path.join('.harness', 'worktree-setup.json');
+const CONFIG_REL = WORKTREE_SETUP_REL;
 
-class Fail extends Error {
-  constructor(error, message, extra) {
-    super(message);
-    this.error = error;
-    this.extra = extra || {};
-  }
-}
-
-function note(text) {
-  process.stderr.write('worktree.mjs: ' + text + '\n');
-}
-
-function emit(obj, code) {
-  process.stdout.write(JSON.stringify(obj) + '\n');
-  process.exitCode = code;
-}
-
-function reportFailure(e) {
-  note(e.error + ': ' + e.message);
-  const body = Object.assign({ ok: false, error: e.error, message: e.message }, e.extra);
-  emit(body, EXIT[e.error] === undefined ? EXIT.internal : EXIT[e.error]);
-}
+const { note, emit, reportFailure } = makeReporter('worktree.mjs', EXIT);
 
 // ---------------------------------------------------------------------------
 // git and filesystem helpers
@@ -373,15 +350,8 @@ function removeStaleRegistrationForDetach(toplevel, registeredPath) {
 // ---------------------------------------------------------------------------
 // setup
 
-const ALLOWED_TOP = ['version', 'setup', 'copy'];
-const ALLOWED_COPY = ['path', 'readonly'];
-
 function configError(message) {
   return new Fail('config', CONFIG_REL + ': ' + message);
-}
-
-function isPlainObject(v) {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 function validateConfig(text) {
@@ -391,39 +361,7 @@ function validateConfig(text) {
   } catch (e) {
     throw configError('invalid JSON: ' + e.message);
   }
-  if (!isPlainObject(cfg)) throw configError('top level must be an object');
-  for (const key of Object.keys(cfg)) {
-    if (ALLOWED_TOP.indexOf(key) === -1) throw configError('unknown key "' + key + '"');
-  }
-  if ('version' in cfg && cfg.version !== 1) {
-    throw configError('unsupported version ' + JSON.stringify(cfg.version) + ' (supported: 1)');
-  }
-  const setup = 'setup' in cfg ? cfg.setup : [];
-  if (!Array.isArray(setup) || !setup.every(function (c) { return typeof c === 'string'; })) {
-    throw configError('"setup" must be an array of strings');
-  }
-  const copy = 'copy' in cfg ? cfg.copy : [];
-  if (!Array.isArray(copy)) throw configError('"copy" must be an array');
-  const entries = copy.map(function (item, i) {
-    if (!isPlainObject(item)) throw configError('copy[' + i + '] must be an object');
-    for (const key of Object.keys(item)) {
-      if (ALLOWED_COPY.indexOf(key) === -1) throw configError('copy[' + i + '] has unknown key "' + key + '"');
-    }
-    if (typeof item.path !== 'string' || item.path === '') {
-      throw configError('copy[' + i + '].path must be a non-empty string');
-    }
-    if ('readonly' in item && typeof item.readonly !== 'boolean') {
-      throw configError('copy[' + i + '].readonly must be a boolean');
-    }
-    if (path.isAbsolute(item.path) || item.path.startsWith('/') || /^[A-Za-z]:/.test(item.path)) {
-      throw configError('copy[' + i + '].path must be relative: ' + item.path);
-    }
-    if (item.path.split(/[\\/]/).indexOf('..') !== -1) {
-      throw configError('copy[' + i + '].path must not contain "..": ' + item.path);
-    }
-    return { path: item.path, readonly: item.readonly === true };
-  });
-  return { setup: setup, copy: entries };
+  return validateWorktreeSetup(cfg, CONFIG_REL);
 }
 
 function copyTree(src, dst, isDir) {
@@ -550,18 +488,6 @@ function runSetup(worktreeArg) {
 // ---------------------------------------------------------------------------
 // argument parsing and dispatch
 
-function parseFlags(args, allowed) {
-  const flags = {};
-  for (let i = 0; i < args.length; i += 2) {
-    const name = args[i];
-    if (allowed.indexOf(name) === -1) throw new Fail('usage', 'unknown argument: ' + name);
-    if (i + 1 >= args.length) throw new Fail('usage', name + ' requires a value');
-    if (name in flags) throw new Fail('usage', name + ' given more than once');
-    flags[name] = args[i + 1];
-  }
-  return flags;
-}
-
 function run(argv) {
   const sub = argv[0];
   if (sub === 'ensure') {
@@ -593,11 +519,7 @@ function detachWithPin(sha) {
 }
 
 function main() {
-  const major = parseInt(process.versions.node.split('.')[0], 10);
-  if (major < MIN_NODE_MAJOR) {
-    reportFailure(new Fail('node_version', 'Node.js >= ' + MIN_NODE_MAJOR + ' is required, found ' + process.versions.node));
-    return;
-  }
+  if (!checkNodeVersion(MIN_NODE_MAJOR, reportFailure)) return;
   try {
     emit(run(process.argv.slice(2)), 0);
   } catch (e) {

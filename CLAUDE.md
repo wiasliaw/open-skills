@@ -34,6 +34,9 @@
 │   └── use-worktree/
 │       └── SKILL.md
 ├── scripts/                      # shared plugin-root scripts, resolved via ${CLAUDE_PLUGIN_ROOT}/scripts/
+│   ├── shared/                   # modules shared between scripts: definitions.mjs (constants), lib.mjs (mechanics)
+│   │   ├── definitions.mjs
+│   │   └── lib.mjs
 │   ├── init.mjs
 │   ├── init.test.mjs
 │   ├── worktree.mjs

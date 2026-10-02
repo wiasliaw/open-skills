@@ -9,7 +9,8 @@
 //
 // Requirements: Node.js >= 20; git is used only to resolve the repository
 // root, with the working directory as the fallback when git is unavailable.
-// Only Node.js built-in modules are used.
+// Only Node.js built-in modules and the sibling scripts/shared/ modules are
+// used.
 //
 // Output contract: exactly one JSON object on stdout, diagnostics on stderr.
 //   success: {"ok": true, "action": "valid" | "written", ...result fields}
@@ -27,85 +28,29 @@
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { MIN_NODE_MAJOR, BASE_EXIT, HARNESS_DIR, WORKTREE_SETUP_FILE, PROJECT_CONFIG_FILE } from './shared/definitions.mjs';
+import { Fail, makeReporter, parseFlags, isPlainObject, validateWorktreeSetup, checkNodeVersion } from './shared/lib.mjs';
 
-const MIN_NODE_MAJOR = 20;
-
-const EXIT = {
-  internal: 1,
-  usage: 2,
+const EXIT = Object.assign({}, BASE_EXIT, {
   config: 3,
   write_failed: 4,
-  node_version: 7,
-};
+});
 
 const KINDS = {
-  'worktree-setup': { file: 'worktree-setup.json', validate: validateWorktreeSetup },
-  'config': { file: 'config.json', validate: validateProjectConfig },
+  'worktree-setup': { file: WORKTREE_SETUP_FILE, validate: validateWorktreeSetup },
+  'config': { file: PROJECT_CONFIG_FILE, validate: validateProjectConfig },
 };
 
-class Fail extends Error {
-  constructor(error, message) {
-    super(message);
-    this.error = error;
-  }
-}
-
-function note(text) {
-  process.stderr.write('init.mjs: ' + text + '\n');
-}
-
-function emit(obj, code) {
-  process.stdout.write(JSON.stringify(obj) + '\n');
-  process.exitCode = code;
-}
-
-function reportFailure(e) {
-  note(e.error + ': ' + e.message);
-  emit({ ok: false, error: e.error, message: e.message }, EXIT[e.error] === undefined ? EXIT.internal : EXIT[e.error]);
-}
+const { note, emit, reportFailure } = makeReporter('init.mjs', EXIT);
 
 // ---------------------------------------------------------------------------
-// schema validation
-
-function isPlainObject(v) {
-  return typeof v === 'object' && v !== null && !Array.isArray(v);
-}
+// schema validation (the worktree-setup schema is shared/lib.mjs's, the same
+// validation the consumer worktree.mjs runs)
 
 function checkKeys(obj, allowed, where) {
   for (const key of Object.keys(obj)) {
     if (allowed.indexOf(key) === -1) throw new Fail('config', where + ' has unknown key "' + key + '"');
   }
-}
-
-// Identical rules to the consumer side in worktree.mjs runSetup/validateConfig.
-function validateWorktreeSetup(cfg) {
-  if (!isPlainObject(cfg)) throw new Fail('config', 'top level must be an object');
-  checkKeys(cfg, ['version', 'setup', 'copy'], 'top level');
-  if (cfg.version !== 1) {
-    throw new Fail('config', 'unsupported version ' + JSON.stringify(cfg.version) + ' (supported: 1)');
-  }
-  const setup = 'setup' in cfg ? cfg.setup : [];
-  if (!Array.isArray(setup) || !setup.every(function (c) { return typeof c === 'string' && c !== ''; })) {
-    throw new Fail('config', '"setup" must be an array of non-empty strings');
-  }
-  const copy = 'copy' in cfg ? cfg.copy : [];
-  if (!Array.isArray(copy)) throw new Fail('config', '"copy" must be an array');
-  copy.forEach(function (item, i) {
-    if (!isPlainObject(item)) throw new Fail('config', 'copy[' + i + '] must be an object');
-    checkKeys(item, ['path', 'readonly'], 'copy[' + i + ']');
-    if (typeof item.path !== 'string' || item.path === '') {
-      throw new Fail('config', 'copy[' + i + '].path must be a non-empty string');
-    }
-    if ('readonly' in item && typeof item.readonly !== 'boolean') {
-      throw new Fail('config', 'copy[' + i + '].readonly must be a boolean');
-    }
-    if (path.isAbsolute(item.path) || item.path.startsWith('/') || /^[A-Za-z]:/.test(item.path)) {
-      throw new Fail('config', 'copy[' + i + '].path must be relative: ' + item.path);
-    }
-    if (item.path.split(/[\\/]/).indexOf('..') !== -1) {
-      throw new Fail('config', 'copy[' + i + '].path must not contain "..": ' + item.path);
-    }
-  });
 }
 
 function validateProjectConfig(cfg) {
@@ -179,19 +124,7 @@ function atomicWrite(target, draft) {
 }
 
 // ---------------------------------------------------------------------------
-// argument parsing and dispatch
-
-function parseFlags(args, allowed) {
-  const flags = {};
-  for (let i = 0; i < args.length; i += 2) {
-    const name = args[i];
-    if (allowed.indexOf(name) === -1) throw new Fail('usage', 'unknown argument: ' + name);
-    if (i + 1 >= args.length) throw new Fail('usage', name + ' requires a value');
-    if (name in flags) throw new Fail('usage', name + ' given more than once');
-    flags[name] = args[i + 1];
-  }
-  return flags;
-}
+// dispatch
 
 function run(argv) {
   const sub = argv[0];
@@ -212,17 +145,13 @@ function run(argv) {
   if (sub === 'validate') {
     return { ok: true, action: 'valid', kind: kind };
   }
-  const target = path.join(resolveRoot(), '.harness', KINDS[kind].file);
+  const target = path.join(resolveRoot(), HARNESS_DIR, KINDS[kind].file);
   atomicWrite(target, draft);
   return { ok: true, action: 'written', kind: kind, path: target };
 }
 
 function main() {
-  const major = parseInt(process.versions.node.split('.')[0], 10);
-  if (major < MIN_NODE_MAJOR) {
-    reportFailure(new Fail('node_version', 'Node.js >= ' + MIN_NODE_MAJOR + ' is required, found ' + process.versions.node));
-    return;
-  }
+  if (!checkNodeVersion(MIN_NODE_MAJOR, reportFailure)) return;
   try {
     emit(run(process.argv.slice(2)), 0);
   } catch (e) {

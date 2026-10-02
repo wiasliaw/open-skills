@@ -163,14 +163,21 @@ test('script is parseable and runs through node without a shebang or executable 
   assertFail(res, 'usage');
 });
 
-test('only node: built-in modules are imported and no global registration cleanup exists', () => {
-  const src = fs.readFileSync(SCRIPT, 'utf8');
-  const specifiers = [...src.matchAll(/^import\s[^;]*?from\s+'([^']+)'/gm)].map((m) => m[1]);
-  assert.ok(specifiers.length > 0);
-  for (const s of specifiers) assert.ok(s.startsWith('node:'), `non-builtin import: ${s}`);
-  assert.ok(!/\brequire\s*\(/.test(src));
-  assert.ok(!/import\s*\(/.test(src));
-  assert.ok(!/prune/i.test(src), 'source must not contain any prune invocation');
+test('only node: built-ins and scripts/shared/ are imported and no global registration cleanup exists', () => {
+  const files = [SCRIPT];
+  const sharedDir = path.join(path.dirname(SCRIPT), 'shared');
+  for (const f of fs.readdirSync(sharedDir)) files.push(path.join(sharedDir, f));
+  for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+    const specifiers = [...src.matchAll(/^import\s[^;]*?from\s+'([^']+)'/gm)].map((m) => m[1]);
+    const local = file === SCRIPT ? (s) => s.startsWith('./shared/') : () => false;
+    for (const s of specifiers) {
+      assert.ok(s.startsWith('node:') || local(s), `non-builtin import in ${path.basename(file)}: ${s}`);
+    }
+    assert.ok(!/\brequire\s*\(/.test(src));
+    assert.ok(!/import\s*\(/.test(src));
+    assert.ok(!/prune/i.test(src), `${path.basename(file)} must not contain any prune invocation`);
+  }
 });
 
 test('Node older than 20 fails with the node-version error before touching git', () => {
@@ -261,11 +268,15 @@ test('running from a script copy in a read-only plugin directory writes nothing 
   const dir = tmpdir();
   const plugin = path.join(dir, 'plugin');
   const scripts = path.join(plugin, 'scripts');
-  fs.mkdirSync(scripts, { recursive: true });
+  const shared = path.join(scripts, 'shared');
+  fs.mkdirSync(shared, { recursive: true });
   fs.copyFileSync(SCRIPT, path.join(scripts, 'worktree.mjs'));
+  for (const f of fs.readdirSync(path.join(path.dirname(SCRIPT), 'shared'))) {
+    fs.copyFileSync(path.join(path.dirname(SCRIPT), 'shared', f), path.join(shared, f));
+  }
   const before = snapshot(plugin);
   const chmodTree = (mode) => {
-    for (const d of [scripts, plugin]) fs.chmodSync(d, mode);
+    for (const d of [shared, scripts, plugin]) fs.chmodSync(d, mode);
   };
   chmodTree(0o555);
   try {
