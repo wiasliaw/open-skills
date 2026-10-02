@@ -20,9 +20,16 @@
 - [x] 4.1 Update README.md's init row to the new scope
 - [x] 4.2 Update the docs page covering init (post-first-change location) — describe outputs as CLAUDE.md + worktree-setup.json
 
-## 5. Verify
+## 5. Init script and project config (added 2026-10-02)
 
-- [x] 5.1 `claude plugin validate .` — green
-- [x] 5.2 Dry-run (subagent-simulated interview) against a scratch repo with package.json + `.env.example`: interview order and tool gate confirmed; `worktree-setup.json` written with `setup: ["npm install"]` and `copy: [".env"]`; findings folded back into SKILL.md
-- [x] 5.3 Dry-run (subagent-simulated interview) on a scratch repo needing nothing: `worktree-setup.json` written with empty `setup`/`copy` lists; both gates pass
-- [x] 5.4 `grep -rn "{{" skills/init/templates/` output matches only intended placeholders; no `.harness/` scaffold references remain in `skills/init/`
+- [x] 5.1 Implement `scripts/init.mjs`: `validate`/`write` subcommands over kinds `worktree-setup` and `config`; schemas per the init-script spec; atomic write to `.harness/` at the repo root; worktree.mjs-style stdout-JSON and exit codes; Node >= 20 startup check
+- [x] 5.2 Implement `scripts/init.test.mjs` (`node:test` only): valid/invalid drafts per kind, overwrite, `.harness/` creation, unknown kind, usage errors, single-JSON stdout
+- [x] 5.3 Update `skills/init/SKILL.md`: outputs become CLAUDE.md + two configs; drafts validated (step 3) and written (step 5) via the script; validation failure is a gap, not a write
+- [x] 5.4 Add `skills/init/templates/config.json.template`; update docs/init.md, README row, and CLAUDE.md repo tree for the script and new config
+
+## 6. Verify
+
+- [x] 6.1 `claude plugin validate .` — green
+- [x] 6.2 Dry-run (subagent-simulated interview) against a scratch repo with package.json + `.env.example`: interview order and tool gate confirmed; `worktree-setup.json` written with `setup: ["npm install"]` and `copy: [".env"]`; findings folded back into SKILL.md
+- [x] 6.3 Dry-run (subagent-simulated interview) on a scratch repo needing nothing: `worktree-setup.json` written with empty `setup`/`copy` lists; both gates pass
+- [x] 6.4 `grep -rn "{{" skills/init/templates/` output matches only intended placeholders; no `.harness/` scaffold references remain in `skills/init/`

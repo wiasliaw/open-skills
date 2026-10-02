@@ -1,12 +1,21 @@
 ---
 name: init
-description: Use when a project wants a root CLAUDE.md and worktree setup config generated from a survey and interview — surveys the repo, interviews the user one question at a time, and produces a root CLAUDE.md plus .harness/worktree-setup.json. Manual entry point only — invoked via the /open-skills:init command. Do not invoke automatically.
+description: Use when a project wants a root CLAUDE.md and machine-readable project configs generated from a survey and interview — surveys the repo, interviews the user one question at a time, and produces a root CLAUDE.md plus .harness/worktree-setup.json and .harness/config.json, written through the bundled init.mjs script. Manual entry point only — invoked via the /open-skills:init command. Do not invoke automatically.
 disable-model-invocation: true
 ---
 
 # init
 
-Prepare a repository for agent work by interviewing the user, so any agent opening this repo knows how it is developed, verified, and organized. Init produces exactly two artifacts: a root `CLAUDE.md` carrying project knowledge, and the worktree setup config `.harness/worktree-setup.json`. Init writes nothing else — no memory scaffolding, no skill load directives, and never feature code.
+Prepare a repository for agent work by interviewing the user, so any agent opening this repo knows how it is developed, verified, and organized. Init produces exactly three artifacts: a root `CLAUDE.md` carrying project knowledge, the worktree setup config `.harness/worktree-setup.json`, and the project config `.harness/config.json` — the interview's machine-readable record (VCS declaration, workflow phases with their execution methods), so scripts and other skills consume the declarations without parsing CLAUDE.md. Init writes nothing else — no memory scaffolding, no skill load directives, and never feature code.
+
+The config mechanics belong to the script `scripts/init.mjs`, never to the agent: init drafts the JSON, and the script validates it against the schema and writes the canonical file. Resolve the script as `${CLAUDE_PLUGIN_ROOT}/scripts/init.mjs` and run it with `node` from the consumer project:
+
+```
+node "<script>" validate --kind <worktree-setup|config> --from <draft.json>
+node "<script>" write    --kind <worktree-setup|config> --from <draft.json>
+```
+
+Read the result from stdout, one JSON object: `"ok": true` with `"action"` (`valid`, `written`), or `"ok": false` with a stable `"error"` code and `"message"`. Node.js >= 20 is a prerequisite; if the script is unavailable or fails for a non-schema reason, report it instead of hand-writing the config files.
 
 ## Checklist
 
@@ -60,7 +69,12 @@ Fill `{{repo_structure_tree}}` as `tree` CLI format, using `├──`/`└─�
 
 Fill the Workflow table with one row per user-declared phase, in the user's declared order. Every command in the table must be copy-paste runnable as written — no unresolved placeholders or paraphrased commands; manual steps are recorded as prose, and TBD is recorded verbatim where the execution method is not yet decided.
 
-Draft `.harness/worktree-setup.json` alongside CLAUDE.md, following this skill's `worktree-setup.json.template`: `{"version": 1, "setup": [...], "copy": [...]}` with the confirmed commands and assets, or explicitly empty lists when nothing is needed.
+Draft both configs alongside CLAUDE.md, writing each draft to a temporary file:
+
+- `worktree-setup` draft, following this skill's `worktree-setup.json.template`: `{"version": 1, "setup": [...], "copy": [...]}` with the confirmed commands and assets, or explicitly empty lists when nothing is needed.
+- `config` draft, following this skill's `config.json.template`: `{"version": 1, "vcs": "<the Version Control sentence>", "workflow": [{"phase", "how", "kind"}...]}` mirroring the Workflow table, with `kind` as `command`, `manual`, or `tbd` per row.
+
+Run `init.mjs validate --kind <kind> --from <draft>` on each draft. A validation failure is a gap: fix the draft (or return to step 2) before showing anything to the user — never show or write a draft the script rejects.
 
 If the project requires environment variables or secrets to run, document their shape only — variable names, purpose, and how to obtain a value — and point at `.env.example` where present. Never write a secret value into any output.
 
@@ -76,18 +90,18 @@ Also check:
 - No `{{` remains anywhere in the output.
 - No section contradicts another.
 - CLAUDE.md is between 50 and 200 lines. If over budget, move detail into a linked topic doc until it is back in budget. If under 50 lines, check whether a required topic was skipped rather than padding it — a small repo that covers all four topics may legitimately stay under 50; completeness, not line count, is the check.
-- `worktree-setup.json` is valid JSON matching the schema: `version` is 1, `setup` is an array of strings, `copy` entries are objects with a repo-relative `path` (no absolute paths, no `..`) and an optional boolean `readonly`.
+- Both config drafts passed `init.mjs validate`.
 
 ## 4. User review
 
-Show the complete draft — CLAUDE.md and worktree-setup.json — in the conversation, along with the two self-check gate results. Iterate until the user approves. Do not write any file before approval.
+Show the complete draft — CLAUDE.md and both config drafts — in the conversation, along with the two self-check gate results. Iterate until the user approves; a changed config draft is re-validated through the script before being shown again. Do not write any file before approval.
 
 ## 5. Write
 
 - Write the approved CLAUDE.md to the repo root.
-- Write the approved config to `.harness/worktree-setup.json`, creating the `.harness/` directory if needed. Write the file even when `setup` and `copy` are empty lists, so consumers can rely on its presence. Init is the single writer of this file: no other actor edits it; an actor needing a different setup reports the need instead.
+- Write each approved config with `init.mjs write --kind <kind> --from <draft>`, which validates again and writes `.harness/worktree-setup.json` and `.harness/config.json` atomically, creating `.harness/` if needed. The worktree-setup file is written even when `setup` and `copy` are empty lists, so consumers can rely on its presence. Init is the single writer of both files: no other actor edits them; an actor needing a different setup reports the need instead.
 - In update mode, overwrite only files/sections that changed; leave still-correct content untouched.
 
 ## 6. Report
 
-Report what was written (CLAUDE.md, `.harness/worktree-setup.json`), the two self-check gate results, and the tool-availability results. In update mode, report the gaps found and how they were resolved, including any removed stale load directive or Harness section.
+Report what was written (CLAUDE.md, `.harness/worktree-setup.json`, `.harness/config.json`), the two self-check gate results, and the tool-availability results. In update mode, report the gaps found and how they were resolved, including any removed stale load directive or Harness section.

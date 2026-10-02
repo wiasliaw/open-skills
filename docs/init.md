@@ -38,9 +38,18 @@ readiness gate and a fresh-session test first. Then:
   entries for untracked assets (optionally `readonly` to symlink
   instead of copy). Written even when nothing is needed, with empty
   lists, so consumers such as `scripts/worktree.mjs` can rely on its
-  presence. Init is the file's single writer. Concrete paths in an
-  existing `.worktreeinclude` are translated into `copy` entries;
-  glob patterns are reported for a manual decision.
+  presence. Concrete paths in an existing `.worktreeinclude` are
+  translated into `copy` entries; glob patterns are reported for a
+  manual decision.
+- **`.harness/config.json`** — the interview's machine-readable
+  record: the VCS declaration and the workflow phases with their
+  commands, so scripts and other skills read the declarations
+  without parsing CLAUDE.md.
+
+Both config files are validated and written through the bundled
+`scripts/init.mjs` script — the agent never hand-writes them, and a
+draft that fails schema validation is fixed before you ever see it.
+Init is the single writer of both files.
 
 Run init again on an initialized project to enter update mode:
 still-correct content is kept, only missing or stale fields are
