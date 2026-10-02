@@ -34,6 +34,8 @@
 │   └── use-worktree/
 │       └── SKILL.md
 ├── scripts/                      # shared plugin-root scripts, resolved via ${CLAUDE_PLUGIN_ROOT}/scripts/
+│   ├── init.mjs
+│   ├── init.test.mjs
 │   ├── worktree.mjs
 │   └── worktree.test.mjs
 ├── .gitignore

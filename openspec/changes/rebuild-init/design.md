@@ -24,6 +24,8 @@ Init is the manual entry point (`/open-skills:init`) that prepares a repo for ag
 4. **`.worktreeinclude` translation is best-effort and one-way.** Concrete paths become `copy` entries; glob patterns are reported to the user for manual decision. Alternative — teach `worktree.mjs` to read `.worktreeinclude` — rejected: changes script behavior, out of scope.
 5. **Tool checks run the declared commands (or `--help` dry-runs), reusing the old init's verification rule**, now extended to a blocking gate: a missing required tool fails init with a named report, per `graph-init-bootstrap`'s "Missing tools block the graph".
 6. **CLAUDE.md.template keeps the 50–200 line budget, Fresh Session Test, and readiness gate**, minus the Harness section. The template's fixed first line (load directive) is removed entirely rather than made conditional.
+7. **Config mechanics live in `scripts/init.mjs`, not in the agent** (user decision, 2026-10-02): the agent drafts JSON, the script validates against the schema and writes atomically — mirroring the worktree.mjs split of mechanics vs. policy, and guaranteeing the file `worktree.mjs setup` later reads is schema-valid. Alternative — agent hand-writes the JSON with a self-check — rejected: hand-written JSON has no enforcement, and validation rules would be duplicated prose.
+8. **A second config, `.harness/config.json`, records the interview machine-readably** (user decision, 2026-10-02): `{version, vcs, workflow: [{phase, how, kind}]}`. Scripts and the future orchestrator read declarations (e.g. verify commands) from it instead of parsing CLAUDE.md. Kept minimal; the harness rebuild may extend the schema with a version bump.
 
 ## Risks / Trade-offs
 

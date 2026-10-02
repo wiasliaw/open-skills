@@ -23,7 +23,7 @@ The interview SHALL cover exactly four topics, in order: VCS strategy, workflow 
 - **THEN** no question SHALL concern load directives, `.harness/` memory files, or work-unit tools
 
 ### Requirement: Orchestrator-independent outputs only
-Init SHALL produce exactly two artifacts: a root `CLAUDE.md` containing project knowledge (structure, development environment, version control, workflow) with no skill load directive and no Harness section, and the worktree setup config `.harness/worktree-setup.json`. Init MUST NOT scaffold `.harness/` index files (ARCHITECTURE/CONSTRAINTS/DECISIONS/FEATURES) or decision/feature entry formats.
+Init SHALL produce exactly three artifacts: a root `CLAUDE.md` containing project knowledge (structure, development environment, version control, workflow) with no skill load directive and no Harness section; the worktree setup config `.harness/worktree-setup.json`; and the project config `.harness/config.json` carrying the interview's machine-readable record (VCS declaration and workflow phases with their execution methods), so scripts and the future orchestrator consume the declarations without parsing CLAUDE.md. Init MUST NOT scaffold `.harness/` index files (ARCHITECTURE/CONSTRAINTS/DECISIONS/FEATURES) or decision/feature entry formats. Init MUST NOT hand-write either config file: it drafts the JSON and validates and writes it through the `init-script` capability (`scripts/init.mjs`), treating a validation failure as a gap to fix before the draft is shown.
 
 #### Scenario: CLAUDE.md shape
 - **WHEN** init writes CLAUDE.md
@@ -31,7 +31,11 @@ Init SHALL produce exactly two artifacts: a root `CLAUDE.md` containing project 
 
 #### Scenario: No memory scaffold
 - **WHEN** init completes
-- **THEN** the only file under `.harness/` that init has written SHALL be `worktree-setup.json`
+- **THEN** the only files under `.harness/` that init has written SHALL be `worktree-setup.json` and `config.json`, both through the init script
+
+#### Scenario: Script-mediated write
+- **WHEN** init writes either config file
+- **THEN** it SHALL do so via `node scripts/init.mjs write --kind <kind> --from <draft>` and SHALL NOT write the canonical file directly
 
 ### Requirement: Tool-availability gate
 During the survey and before recording workflow commands, init SHALL verify that every declared executable command and required CLI runs (execute it, or dry-run via `--help` or equivalent). A command that cannot run MUST NOT be written into CLAUDE.md; init SHALL ask for a working one. If a required tool is unavailable and no substitute is declared, init SHALL end with a blocking report naming the missing tool.
