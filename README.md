@@ -18,7 +18,7 @@ Inside Claude Code:
 | [request-code-review](./docs/request-code-review.md) | Reviews your changes: three lens reviewers in parallel, adversarial verification of every finding, and an explicit verdict on the overall design. |
 | [receive-code-review](./docs/receive-code-review.md) | Processes review feedback you received: verifies every comment against the code, fixes what holds up, drafts evidence-backed rebuttals for what doesn't. |
 | [codewalk](./docs/codewalk.md) | Interactive guided walkthrough of a codebase or one execution path, one verified `file:line` stop at a time, pinned to a commit and landed as a reading record. |
-| [harness](./docs/harness.md) | Project harness: `init` scaffolds a CLAUDE.md plus `.harness/` long-term memory, `harness-flow` runs a reviewer-gated implementor/reviewer loop, `handoff` persists in-flight context across sessions. |
+| [init](./docs/init.md) | Surveys the repo and interviews you to produce a root CLAUDE.md, so any agent opening the repo knows how it is developed, verified, and organized. |
 | [use-worktree](./docs/use-worktree.md) | Gives the Build stage an isolated git worktree `wu/<id>`, provisioned by the orchestrator through a bundled Node script that never deletes existing directories. |
 
 Invoke by slash command or by asking in plain words:
@@ -28,8 +28,6 @@ Invoke by slash command or by asking in plain words:
 /open-skills:receive-code-review #91
 /open-skills:codewalk
 /open-skills:init
-/open-skills:harness-flow
-/open-skills:handoff
 ```
 
 ### External tools

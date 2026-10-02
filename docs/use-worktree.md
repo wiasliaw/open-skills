@@ -6,8 +6,8 @@ the branch `wu/<id>` and lives in a sibling directory of the project.
 
 ## Who invokes it
 
-The skill is not a slash command. The orchestrator (the main session
-running `harness-flow`) provisions the worktree before dispatching the
+The skill is not a slash command. The orchestrator (the main session)
+provisions the worktree before dispatching the
 Build actor, on first Build entry and again on every CI-red reopen.
 The Build actor never runs the script or any git worktree command; it
 only writes inside the path it is handed. Wrap removes the worktree
