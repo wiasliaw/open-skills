@@ -15,7 +15,7 @@ only writes inside the path it is handed. Wrap removes the worktree
 
 ## The script
 
-The mechanics live in `skills/use-worktree/scripts/worktree.mjs`, run
+The mechanics live in `scripts/worktree.mjs` at the plugin root, run
 as `node worktree.mjs <subcommand>` with the project as the working
 directory:
 

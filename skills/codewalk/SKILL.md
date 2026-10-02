@@ -72,7 +72,7 @@ The worktree mechanics belong to the use-worktree script. Get the full
 SHA of HEAD with `git rev-parse HEAD`, then run, from inside the
 repository being read:
 
-`node "${CLAUDE_PLUGIN_ROOT}/skills/use-worktree/scripts/worktree.mjs" ensure --detach <full-HEAD-sha>`
+`node "${CLAUDE_PLUGIN_ROOT}/scripts/worktree.mjs" ensure --detach <full-HEAD-sha>`
 
 The script prints one JSON object on stdout. On `"ok": true`, read the
 worktree path from `"path"` and the pin from `"pin"` (the full SHA);

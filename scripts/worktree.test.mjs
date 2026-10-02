@@ -1,4 +1,4 @@
-// Tests for worktree.mjs. Run with: node --test skills/use-worktree/scripts/
+// Tests for worktree.mjs. Run with: node --test scripts/
 // Every fixture is a fresh temp directory; nothing touches the network.
 
 import { test, before, after } from 'node:test';
@@ -260,12 +260,12 @@ function shimDir(dir, log) {
 test('running from a script copy in a read-only plugin directory writes nothing into it', () => {
   const dir = tmpdir();
   const plugin = path.join(dir, 'plugin');
-  const scripts = path.join(plugin, 'skills', 'use-worktree', 'scripts');
+  const scripts = path.join(plugin, 'scripts');
   fs.mkdirSync(scripts, { recursive: true });
   fs.copyFileSync(SCRIPT, path.join(scripts, 'worktree.mjs'));
   const before = snapshot(plugin);
   const chmodTree = (mode) => {
-    for (const d of [scripts, path.dirname(scripts), path.dirname(path.dirname(scripts)), plugin]) fs.chmodSync(d, mode);
+    for (const d of [scripts, plugin]) fs.chmodSync(d, mode);
   };
   chmodTree(0o555);
   try {

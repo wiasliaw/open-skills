@@ -32,10 +32,10 @@
 │   │   ├── SKILL.md
 │   │   └── reviewer-prompt.md
 │   └── use-worktree/
-│       ├── SKILL.md
-│       └── scripts/
-│           ├── worktree.mjs
-│           └── worktree.test.mjs
+│       └── SKILL.md
+├── scripts/                      # shared plugin-root scripts, resolved via ${CLAUDE_PLUGIN_ROOT}/scripts/
+│   ├── worktree.mjs
+│   └── worktree.test.mjs
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -55,7 +55,7 @@ This project uses GitHub flow — feature branches merged into `main` via pull r
 | Phase | How |
 |---|---|
 | edit | Edit `skills/`, `agents/`, `docs/` directly |
-| verify | `claude plugin validate .`; `node --test "skills/use-worktree/scripts/*.test.mjs"`; eval: TBD |
+| verify | `claude plugin validate .`; `node --test "scripts/*.test.mjs"`; eval: TBD |
 
 ## Constraints
 

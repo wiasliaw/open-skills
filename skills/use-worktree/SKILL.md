@@ -24,10 +24,10 @@ node "<script>" setup --worktree <path>
 
 Resolve `<script>`:
 
-- When `${CLAUDE_PLUGIN_ROOT}` is available: `${CLAUDE_PLUGIN_ROOT}/skills/use-worktree/scripts/worktree.mjs`.
+- When `${CLAUDE_PLUGIN_ROOT}` is available: `${CLAUDE_PLUGIN_ROOT}/scripts/worktree.mjs`.
 - Otherwise: the absolute script path the orchestrator passed in the Build dispatch.
 
-The directory `skills/use-worktree/scripts/` is a stable path contract.
+The plugin-root directory `scripts/` is a stable path contract.
 
 Read the result from stdout, which is one JSON object. `"ok": true` carries `"action"` (`created`, `reused`, `reopened`, `recovered-stale`) and `"path"`. `"ok": false` carries a stable `"error"` code and a `"message"`. Branch on the `"error"` code; the exit code is the coarse signal, and the numeric assignments are documented in the script header. Diagnostics are on stderr.
 
