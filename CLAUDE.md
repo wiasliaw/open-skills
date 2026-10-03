@@ -8,11 +8,13 @@
 ├── .claude-plugin/
 │   ├── marketplace.json          # marketplace listing; single plugin with source "./"
 │   └── plugin.json               # plugin manifest; carries the released version
-├── agents/                       # subagents awaiting the orchestrator rebuild; not dispatched by any shipped skill
+├── agents/                       # generic graph actors dispatched by graph-flow; stage-agnostic, node identity is dispatch data
+│   ├── advisor.md
 │   ├── implementor.md
 │   └── reviewer.md
 ├── docs/                         # user-facing docs, linked from README's Skills table
 │   ├── codewalk.md
+│   ├── graph-flow.md
 │   ├── init.md
 │   ├── receive-code-review.md
 │   ├── request-code-review.md
@@ -23,6 +25,10 @@
 │   │   ├── SKILL.md
 │   │   └── templates/
 │   │       └── walkthrough.md.template
+│   ├── graph-flow/
+│   │   ├── SKILL.md              # the orchestrator loop; successor of harness-flow
+│   │   └── references/
+│   │       └── nodes.md          # per-node dispatch source derived from the graph-node-* specs
 │   ├── init/
 │   │   ├── SKILL.md
 │   │   └── templates/            # CLAUDE.md and worktree-setup.json templates
@@ -39,6 +45,8 @@
 │   │   └── lib.mjs
 │   ├── init.mjs
 │   ├── init.test.mjs
+│   ├── work-unit.mjs
+│   ├── work-unit.test.mjs
 │   ├── worktree.mjs
 │   └── worktree.test.mjs
 ├── .gitignore
@@ -67,6 +75,6 @@ This project uses GitHub flow — feature branches merged into `main` via pull r
 - All tracked file content MUST be written in English; the plugin is published for a public audience.
 - Every user-facing skill MUST be covered by a `docs/` page and a row in README's Skills table, updated in the same change that adds, renames, removes, or changes the usage of the skill.
 
-## Harness Rebuild Status
+## Graph Execution
 
-The harness loop (`harness-flow`, `handoff`) and this repo's `.harness/` memory were removed pending a ground-up redesign — see `openspec/changes/remove-harness-and-relocate-scripts/`. `agents/` and the orchestrator wording in `skills/use-worktree/SKILL.md` intentionally await that rebuild. Pre-removal memory is retrievable from git history (`git log --oneline -- .harness`).
+The orchestrator rebuild landed as the `graph-flow` skill (see `docs/graph-flow.md` and the `graph-node-*` / `graph-plugin-*` specs under `openspec/changes/`): the main session orchestrates a 13-node execution graph, dispatching the generic `agents/` actors per node, with per-work-unit state under `.project/work-units/` validated by `scripts/work-unit.mjs`. `.harness/` remains the long-term memory and config namespace, written only by init (pre-graph) and the Wrap stage. The old `harness-flow`/`handoff` loop and this repo's pre-rebuild `.harness/` memory are retrievable from git history (`git log --oneline -- .harness`).

@@ -20,6 +20,7 @@ Inside Claude Code:
 | [codewalk](./docs/codewalk.md) | Interactive guided walkthrough of a codebase or one execution path, one verified `file:line` stop at a time, pinned to a commit and landed as a reading record. |
 | [init](./docs/init.md) | Surveys the repo and interviews you to produce a root CLAUDE.md plus machine-readable project configs, so any agent opening the repo knows how it is developed, verified, and organized. |
 | [use-worktree](./docs/use-worktree.md) | Gives the Build stage an isolated git worktree `wu/<id>`, provisioned by the orchestrator through a bundled Node script that never deletes existing directories. |
+| [graph-flow](./docs/graph-flow.md) | Turns the main session into the orchestrator of a 13-node execution graph: generic implementor/reviewer/advisor agents per stage, two human gates, schema-validated work-unit state, and a single merge moment. |
 
 Invoke by slash command or by asking in plain words:
 
@@ -28,6 +29,7 @@ Invoke by slash command or by asking in plain words:
 /open-skills:receive-code-review #91
 /open-skills:codewalk
 /open-skills:init
+/open-skills:graph-flow
 ```
 
 ### External tools
