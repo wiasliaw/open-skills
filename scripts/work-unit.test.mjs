@@ -275,6 +275,16 @@ test('invariant 9: a fail counter for a missing ticket is rejected', () => {
   assert.match(r.json.message, /refers to no existing ticket/);
 });
 
+test('the fast-path scope node:build is a valid fail counter without tickets', () => {
+  const { unit, state } = createUnit();
+  state.fail_counters = { 'node:build': 1 };
+  state.grading = 'full'; // post-upgrade state
+  state.current_node = 'spec';
+  state.updated_at = T2;
+  const r = writeUnit(unit, state, logLine(2, T2, { node: 'review', description: 'Fast-path fail: upgraded to full, routed to spec.' }));
+  assert.equal(r.status, 0, r.stderr);
+});
+
 test('invariant 10: a dangling review file pointer is rejected, a real one accepted', () => {
   const { unit, state } = createUnit();
   const review = {

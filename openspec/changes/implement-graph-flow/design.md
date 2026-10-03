@@ -18,6 +18,16 @@ The graph and its realization are fully specified (`graph-engineering-node-specs
 - [Write-tool confinement for reviewer/advisor is contractual only] -> identical to the architecture's chosen enforcement model; violations are detectable from the stage diff and fail the review.
 - [`references/nodes.md` can drift from the specs] -> it declares its derivation; a spec change's tasks must include updating it (same discipline as C-002 for docs).
 
+## Dogfooding findings (work unit 2026-10-03-demo-slugify)
+
+The first full run of the loop (research → grading gate → fast-path build → Review fail → upgrade → spec → spec gate → ticket → build ×2 → review → wrap → ship) surfaced three findings, resolved as follows:
+
+1. The installed v0.1.0 reviewer agent lacks the Write tool, so the orchestrator persisted reviewer reports (deviation logged per occurrence in the work unit's `log.ndjson`). Already fixed in `agents/reviewer.md`; takes effect when the next plugin version ships.
+2. `fail_counters` had no key shape for a fast-path Review failure (no ticket exists yet). Resolved: `node:build` added to the `graph-plugin-work-unit-state` spec and `work-unit.mjs` as the fast-path failure scope — audit-only, feeding no Advisor edge.
+3. Re-dispatching the LLM Ticket node for selection-only re-entry is waste. Resolved: `graph-node-ticket` now declares selection-only re-entry a deterministic orchestrator step; `skills/graph-flow` updated to match.
+
+Advisor and Human Escalation remain unexercised by a real run.
+
 ## Open Questions
 
 - Whether Wrap's CI wait needs a bundled polling helper or stays a project-declared command (inherited from `graph-plugin-architecture`).

@@ -51,6 +51,7 @@ Edge guards are evaluated by the orchestrator in the order listed; "blocked" alw
 - **Implementor skills**: TDD (verification defined before build).
 - **Reviewer skills**: —.
 - **Edges**: spec contradiction → `spec` (record the contradiction); next ticket → `build`; blocked → `advisor`; in-node review loop fails a second time → `advisor`.
+- **Selection-only re-entry**: when a passing Review re-enters Ticket and the list needs no change, the orchestrator selects the next pending ticket in declared order deterministically — no LLM dispatch. Dispatch the implementor only for the initial decomposition or to change the list.
 
 ## build — LLM loop
 

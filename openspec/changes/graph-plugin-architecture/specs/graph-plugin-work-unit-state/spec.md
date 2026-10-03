@@ -140,7 +140,7 @@ For a Review failure with fail count of 2 or more, `blocked_at` SHALL be `build`
 - **THEN** the orchestrator SHALL set that ticket's `status` to `passed`, append the evidence references, and reset that ticket's fail counter to 0
 
 ### Requirement: Fail counter schema
-`fail_counters` SHALL be an object mapping a scope key to a non-negative integer, written only by the orchestrator. A key SHALL be `ticket:<ticket-id>` for failing Review verdicts on a ticket (the Build and Review loop, feeding the Review "fail count of 2 or more" edge), or `node:<node-id>` with node id `research-explore`, `spec`, `ticket`, or `wrap` for failing verdicts of that node's in-node review loop (feeding the "second failure of the in-node review loop" edge). A key SHALL be created at value 1 on the first failure of its scope, and an absent key SHALL mean 0. The orchestrator SHALL increment a counter when it records a failing verdict for that scope, SHALL reset it to 0 when that scope passes or when a human decision of `unblocked` resolves the problem for that scope, and SHALL NOT reset it when the Advisor issues advice. A counter value of 2 or more SHALL select the edge to Advisor.
+`fail_counters` SHALL be an object mapping a scope key to a non-negative integer, written only by the orchestrator. A key SHALL be `ticket:<ticket-id>` for failing Review verdicts on a ticket (the Build and Review loop, feeding the Review "fail count of 2 or more" edge), `node:<node-id>` with node id `research-explore`, `spec`, `ticket`, or `wrap` for failing verdicts of that node's in-node review loop (feeding the "second failure of the in-node review loop" edge), or `node:build` for a failing Review verdict on the trivial fast path, where no ticket exists yet. A `node:build` entry records the upgrade-triggering failure for audit; it feeds no Advisor edge (the fast-path failure edge routes to Spec) and is reset when a later Review passes the Build output. A key SHALL be created at value 1 on the first failure of its scope, and an absent key SHALL mean 0. The orchestrator SHALL increment a counter when it records a failing verdict for that scope, SHALL reset it to 0 when that scope passes or when a human decision of `unblocked` resolves the problem for that scope, and SHALL NOT reset it when the Advisor issues advice. A counter value of 2 or more SHALL select the edge to Advisor.
 
 #### Scenario: Failing Review verdict
 - **WHEN** the reviewer reports a failing verdict for ticket `T-2`
@@ -153,6 +153,10 @@ For a Review failure with fail count of 2 or more, `blocked_at` SHALL be `build`
 #### Scenario: Advice does not reset the counter
 - **WHEN** the Advisor issues advice for a problem on `ticket:T-2` whose counter is 2
 - **THEN** the counter SHALL remain 2 until the ticket passes or a human unblocks it
+
+#### Scenario: Fast-path failure has a counter scope
+- **WHEN** a trivial fast-path work unit fails Review once, with no ticket in `tickets`
+- **THEN** the orchestrator SHALL record `fail_counters["node:build"]` as 1 in the same write that upgrades the grading and routes to Spec
 
 ### Requirement: Advisor consultation schema
 `advisor_consults` SHALL be a list with one entry per problem, written only by the orchestrator. It SHALL hold routing data and file pointers only; the advice text lives in the advice file, which the advisor writes. Each entry SHALL have:
@@ -289,7 +293,7 @@ The orchestrator SHALL validate every write to `state.json` and `log.ndjson` aga
 6. Each `advisor_consults[].count` equals the length of its `advice` and never exceeds 2.
 7. `current_ticket` is null or an id in `tickets`; at most one ticket has `status` `in-progress` or `blocked`.
 8. `spec_ref` is non-null whenever `current_node` is `ticket`, `build`, `review`, `wrap`, or `ship` and `grading` is `full` or `small`.
-9. Every `fail_counters` key refers to an existing ticket id or to one of `research-explore`, `spec`, `ticket`, `wrap`.
+9. Every `fail_counters` key refers to an existing ticket id or to one of `research-explore`, `spec`, `ticket`, `wrap`, `build` (the `node:build` scope is the fast-path Build failure).
 10. Every file pointer in `state.json` (`reviews[].file`, `human_decisions[].file`, `advisor_consults[].advice[].file`) and every folder-relative `path` evidence reference resolves to an existing file inside the work-unit folder.
 
 #### Scenario: fast_path implies trivial

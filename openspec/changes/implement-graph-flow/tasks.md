@@ -24,4 +24,4 @@
 - [x] 5.1 `node --test scripts/*.test.mjs`
 - [x] 5.2 `claude plugin validate .`
 - [x] 5.3 `openspec validate implement-graph-flow --strict --no-interactive`
-- [ ] 5.4 Dry-run the loop on one trivial-graded work unit in a scratch repo (deferred to the first dogfooding unit)
+- [x] 5.4 Dry-run the loop on one work unit — done in-repo as work unit `2026-10-03-demo-slugify` (archived under `.project/work-units/archive/`); findings recorded in design.md and folded back into the specs

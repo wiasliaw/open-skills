@@ -57,7 +57,9 @@ const NODE_IDS = [
 ];
 const BLOCKABLE_NODES = ['research-explore', 'spec', 'ticket', 'build', 'review', 'wrap'];
 const REVIEW_NODES = ['research-explore', 'spec', 'ticket', 'review', 'wrap'];
-const FAIL_COUNTER_NODES = ['research-explore', 'spec', 'ticket', 'wrap'];
+// The four in-node review loops, plus 'build' for the fast-path Review
+// failure scope (node:build), where no ticket exists yet.
+const FAIL_COUNTER_NODES = ['research-explore', 'spec', 'ticket', 'wrap', 'build'];
 const GRADINGS = ['full', 'small', 'trivial', 'no-op'];
 const TRIGGER_SOURCES = ['prompt', 'issue', 'ci-failure', 'analysis-request'];
 const CI_STATUSES = ['pending', 'green', 'red'];

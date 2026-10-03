@@ -59,6 +59,13 @@ Each ticket SHALL declare its verification before it is handed to Build, and tic
 - **WHEN** Ticket writes a ticket to the task list
 - **THEN** that ticket SHALL include verification commands or criteria
 
+### Requirement: Selection-only re-entry is deterministic
+When Ticket is re-entered from a passing Review with a non-empty ticket list, no spec contradiction, and no need to change the list, the orchestrator SHALL select the next pending ticket in declared order as a deterministic step and SHALL NOT dispatch an LLM actor. An LLM dispatch of Ticket SHALL occur only for the initial decomposition or when the ticket list itself must change.
+
+#### Scenario: Next ticket after a pass
+- **WHEN** Review passes a ticket and pending tickets remain unchanged
+- **THEN** the orchestrator SHALL set the next pending ticket in declared order as the selection and route to Build without an LLM dispatch
+
 ### Requirement: Contradictions go back to Spec
 When decomposition reveals that the spec contradicts itself or cannot be satisfied, Ticket SHALL route to Spec instead of producing tickets.
 
