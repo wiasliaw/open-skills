@@ -1,0 +1,337 @@
+{
+  "schema_version": "1.0.0",
+  "id": "2026-10-03-demo-slugify",
+  "created_at": "2026-10-03T14:23:24Z",
+  "updated_at": "2026-10-03T14:46:44Z",
+  "trigger": {
+    "source": "prompt",
+    "request": "Add a demo/ folder holding a small worked example built through the graph-flow loop: a zero-dependency slugify module (demo/slugify.mjs) with a node:test suite (demo/slugify.test.mjs) and a short demo/README.md describing how the folder was produced."
+  },
+  "current_node": "ship",
+  "grading": "full",
+  "fast_path": false,
+  "blocked_at": null,
+  "spec_ref": {
+    "kind": "path",
+    "ref": "spec/spec.md"
+  },
+  "current_ticket": null,
+  "refs": {
+    "issue": null,
+    "pr": null
+  },
+  "ci_status": "green",
+  "tickets": [
+    {
+      "id": "T-1",
+      "title": "Revise slugify.mjs and its test suite to AC1-AC14",
+      "description": "Test-first: rewrite demo/slugify.test.mjs to cover AC1-AC14 (red against current code), then revise demo/slugify.mjs to the normative order (validate, NFKD normalize, strip, collapse, trim; separator ^[-_.~]*$).",
+      "status": "passed",
+      "verification_command": "node --test demo/slugify.test.mjs",
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "review/review-2.md"
+        }
+      ]
+    },
+    {
+      "id": "T-2",
+      "title": "Update demo/README.md for new behavior and provenance",
+      "description": "Revise README: hyphen/underscore/whitespace separators, idempotence, validated separator option, run command, graph-flow provenance chain.",
+      "status": "passed",
+      "verification_command": "grep -q 'node --test demo/slugify.test.mjs' demo/README.md && grep -q 'research-explore' demo/README.md && grep -q 'spec' demo/README.md && grep -q 'build' demo/README.md && grep -q 'review' demo/README.md && grep -qi 'idempotent' demo/README.md",
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "review/review-3.md"
+        }
+      ]
+    }
+  ],
+  "fail_counters": {
+    "node:research-explore": 0,
+    "node:spec": 0
+  },
+  "advisor_consults": [],
+  "reviews": [
+    {
+      "id": "R-1",
+      "node": "research-explore",
+      "target": {
+        "type": "stage",
+        "id": "research-explore"
+      },
+      "verdict": "fail",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "fail"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "verification",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "research-explore/review-1.md"
+        }
+      ],
+      "file": "research-explore/review-1.md",
+      "date": "2026-10-03T14:25:35Z"
+    },
+    {
+      "id": "R-2",
+      "node": "research-explore",
+      "target": {
+        "type": "stage",
+        "id": "research-explore"
+      },
+      "verdict": "pass",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "pass"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "verification",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "research-explore/review-2.md"
+        }
+      ],
+      "file": "research-explore/review-2.md",
+      "date": "2026-10-03T14:26:50Z"
+    },
+    {
+      "id": "R-3",
+      "node": "review",
+      "target": {
+        "type": "stage",
+        "id": "build"
+      },
+      "verdict": "fail",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "fail"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "verification",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "review/review-1.md"
+        },
+        {
+          "kind": "command",
+          "ref": "node -e slugify('foo-bar') -> foobar (output in review/review-1.md)"
+        }
+      ],
+      "file": "review/review-1.md",
+      "date": "2026-10-03T14:32:48Z"
+    },
+    {
+      "id": "R-4",
+      "node": "spec",
+      "target": {
+        "type": "stage",
+        "id": "spec"
+      },
+      "verdict": "fail",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "fail"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "spec/review-1.md"
+        }
+      ],
+      "file": "spec/review-1.md",
+      "date": "2026-10-03T14:35:32Z"
+    },
+    {
+      "id": "R-5",
+      "node": "spec",
+      "target": {
+        "type": "stage",
+        "id": "spec"
+      },
+      "verdict": "pass",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "pass"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "verification",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "spec/review-2.md"
+        }
+      ],
+      "file": "spec/review-2.md",
+      "date": "2026-10-03T14:37:44Z"
+    },
+    {
+      "id": "R-6",
+      "node": "ticket",
+      "target": {
+        "type": "stage",
+        "id": "ticket"
+      },
+      "verdict": "pass",
+      "dimensions": [
+        {
+          "name": "coverage",
+          "result": "pass"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "verification",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "ticket/review-1.md"
+        }
+      ],
+      "file": "ticket/review-1.md",
+      "date": "2026-10-03T14:41:02Z"
+    },
+    {
+      "id": "R-7",
+      "node": "review",
+      "target": {
+        "type": "ticket",
+        "id": "T-1"
+      },
+      "verdict": "pass",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "pass"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "test-adequacy",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "review/review-2.md"
+        },
+        {
+          "kind": "command",
+          "ref": "node --test demo/slugify.test.mjs 17/17 (output in review/review-2.md)"
+        }
+      ],
+      "file": "review/review-2.md",
+      "date": "2026-10-03T14:43:51Z"
+    },
+    {
+      "id": "R-8",
+      "node": "review",
+      "target": {
+        "type": "ticket",
+        "id": "T-2"
+      },
+      "verdict": "pass",
+      "dimensions": [
+        {
+          "name": "correctness",
+          "result": "pass"
+        },
+        {
+          "name": "contract-compliance",
+          "result": "pass"
+        },
+        {
+          "name": "verification",
+          "result": "pass"
+        }
+      ],
+      "evidence_refs": [
+        {
+          "kind": "path",
+          "ref": "review/review-3.md"
+        },
+        {
+          "kind": "command",
+          "ref": "T-2 grep chain exit 0 (output in review/review-3.md)"
+        }
+      ],
+      "file": "review/review-3.md",
+      "date": "2026-10-03T14:45:46Z"
+    }
+  ],
+  "human_decisions": [
+    {
+      "id": "H-1",
+      "gate": "grading",
+      "node": "human-gate-grading",
+      "decision": "approved",
+      "grading": "trivial",
+      "date": "2026-10-03T14:30:15Z",
+      "file": "human-gate-grading/decision-1.md"
+    },
+    {
+      "id": "H-2",
+      "gate": "spec",
+      "node": "human-gate-spec",
+      "decision": "approved",
+      "grading": null,
+      "date": "2026-10-03T14:38:30Z",
+      "file": "human-gate-spec/decision-1.md"
+    }
+  ],
+  "outcome": "shipped",
+  "outcome_reason": null
+}

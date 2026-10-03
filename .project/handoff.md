@@ -1,21 +1,26 @@
-# Handoff — 2026-10-01
+# Handoff — 2026-10-03
 
-> If you are picking up this work: read this file fully. Goal, completed work, and task state live in short-term memory (the work-unit state file and any declared work-unit tool), not here. This file is overwritten or deleted at the next clock-out — do not hand-edit it to track ongoing state.
+Written by Wrap for work unit 2026-10-03-demo-slugify (the first full
+graph-flow dogfooding run).
 
-## Decisions & Rationale
+## What shipped
+demo/ (slugify.mjs, slugify.test.mjs, README.md) on develop, built through
+the full graph: research-explore -> grading gate (trivial) -> build ->
+review (FAIL: hyphens stripped, non-idempotent; fast-path upgrade) ->
+spec -> spec gate -> ticket -> build (T-1, T-2) -> review -> wrap -> ship.
+Archived record: .project/work-units/archive/2026-10-03-demo-slugify/.
 
-- Both OpenSpec changes (`graph-engineering-node-specs`, `graph-plugin-architecture`) are deliberately left as proposals in `openspec/changes/` — not applied, not archived. Applying (syncing delta specs into `openspec/specs/`) is reserved for the implementation work unit.
-- The former escalation-resume gap is closed: an Advisor tier (4th generic actor, ≤ 2 consultations per problem, then Human Escalation; resume at `blocked_at`) is now specified in both changes — edge set is 26, node count 13 (F-009; the actor decision now lives in D-007, which absorbed D-005/D-006).
-- Work-unit state is now a folder, not a single JSON: `state.json` (routing, orchestrator-only) + `log.ndjson` (append-only events) + per-stage artifact dirs written by the producing actors (F-011/D-007); the advisor node spec's output wording was aligned to the folder design in a follow-up (F-012).
-- The design source of truth remains Linear WOR-33 (設計定案 body, 2026-09-30); whiteboard: local tldraw file `~/Documents/WOR-33 graph-engineering.tldraw`. Repo specs are the English rendering; on drift, WOR-33 wins.
-- opsx slash commands (`.claude/commands/opsx/`) need a session restart; the skill files under `.claude/skills/` are readable without it.
-
-## Dead Ends
-
-- None attempted and abandoned this session; rejected design alternatives are recorded in `.harness/decisions/D-004.md` and `.harness/decisions/archive/D-005.md`, not here.
-
-## Next Steps
-
-1. Push and open the PR: `git push -u origin feature/wor-33-node-specs`, then `gh pr create --base main --title "feat: WOR-33 graph-engineering specs via OpenSpec"` with a body summarizing F-006 through F-011 and linking Linear WOR-33.
-3. After merge: start the implementation work unit — `openspec validate --all --strict --no-interactive` to confirm both proposals still pass, then follow `.claude/skills/openspec-apply-change/SKILL.md` (or `/opsx:apply` after restart) through both changes' `tasks.md`.
-4. Optional Linear hygiene: move WOR-33 out of Backlog; link the PR; comment that the plugin-architecture change landed.
+## Loop findings (for the graph-flow iteration)
+1. Installed v0.1.0 reviewer agent lacks the Write tool, so reviewer reports
+   were persisted by the orchestrator (deviation logged per occurrence).
+   Fixed in agents/reviewer.md; takes effect when the plugin version ships.
+2. Spec gap: fail_counters has no key shape for a fast-path Build/Review
+   failure (no ticket exists yet). Harmless (that edge routes to Spec, not
+   Advisor) but the schema should name it.
+3. Next-ticket selection after a Review pass was done deterministically by
+   the orchestrator instead of re-dispatching the LLM Ticket node (logged
+   deviation L-0041); consider making selection-only re-entry deterministic
+   in the node spec.
+4. Wrap ran as orchestrator-deterministic steps (commit, verify-as-CI,
+   merge to develop — no PR per session directive); no .harness/ long-term
+   memory entries exist yet post-rebuild, so Wrap had nothing to write there.

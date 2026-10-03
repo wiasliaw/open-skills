@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "vcs": "GitHub flow - feature branches merged into main via pull request; Conventional Commits. Current integration branch: develop.",
+  "workflow": [
+    {
+      "phase": "edit",
+      "how": "Edit skills/, agents/, docs/ directly",
+      "kind": "manual"
+    },
+    {
+      "phase": "verify",
+      "how": "claude plugin validate .",
+      "kind": "command"
+    },
+    {
+      "phase": "verify",
+      "how": "node --test scripts/*.test.mjs",
+      "kind": "command"
+    }
+  ]
+}
