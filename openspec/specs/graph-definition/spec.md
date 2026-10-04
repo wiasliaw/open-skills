@@ -6,7 +6,7 @@ The graph definition artifact: the machine-readable document that graph-build pr
 
 ### Requirement: One machine-readable document
 
-A graph definition SHALL be a single machine-readable JSON document declaring: the graph's nodes and edges (carrying every field the node and edge declaration contracts in `graph-build` require), the declared caps (failure cap, advisor consultation cap), the designated converge node, and the grading vocabulary in force with each grade's meaning and skipped stages. Per-node prose instructions MAY be markdown strings inside the document or files it references; routing data MUST NOT live in prose.
+A graph definition SHALL be a single machine-readable JSON document declaring: the graph's nodes and edges (carrying every field the node and edge declaration contracts in `graph-build` require), the declared caps (failure cap, advisor consultation cap), the designated converge node, and the grading vocabulary in force with each grade's meaning and skipped stages (the reference vocabulary: `full` — a new contract is needed; `small` — an existing contract covers it; `trivial` — fast path straight to implementation; `no-op` — not needed, end the work). Per-node prose instructions MAY be markdown strings inside the document or files it references; routing data MUST NOT live in prose.
 
 #### Scenario: Definition inspected
 - **WHEN** a graph definition is read

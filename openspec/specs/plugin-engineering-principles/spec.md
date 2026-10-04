@@ -20,6 +20,18 @@ The repository SHALL distinguish the external plugin surface published for consu
 - **WHEN** the plugin is installed into a consumer project
 - **THEN** every path a skill or agent resolves at runtime SHALL lie on the external surface, and no runtime behavior SHALL require reading `openspec/` or other internal reference content
 
+### Requirement: Outsource what the factory need not own
+
+A node capability MAY be fulfilled by an external skill — another plugin's skill or a platform command — mounted at graph-build exactly like an in-house one: equipment the plant does not own is bought, not rebuilt. The plugin SHALL ship its own skill only where the capability is core to the factory's own contracts (state, memory, isolation, convergence, verification) or no adequate external option exists. An external mount that is unavailable at run time degrades per the graph-build rule.
+
+#### Scenario: Research outsourced
+- **WHEN** a research node needs deep investigation
+- **THEN** it MAY mount an external research or explore skill, and the dispatch SHALL carry that mount like any other
+
+#### Scenario: Specification via OpenSpec
+- **WHEN** a spec stage runs with OpenSpec mounted
+- **THEN** the stage's contract artifact SHALL be an OpenSpec change, and no in-house specification skill is required
+
 ### Requirement: Deterministic work is a native Node.js script
 
 Any step that needs a deterministic result or deterministic execution SHALL be implemented as a zero-dependency native Node.js script (Node.js >= 20, built-in modules only), with one JSON object on stdout, stable error codes, documented exit codes, and a committed `node --test` suite. Deterministic mechanics MUST NOT be left to LLM prose.

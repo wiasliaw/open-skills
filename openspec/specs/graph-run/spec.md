@@ -62,7 +62,11 @@ A human gate SHALL be a synchronous stop where the orchestrator puts a question 
 
 ### Requirement: Deterministic nodes run in the orchestrator
 
-Entry, terminal, and deterministic nodes (creating the work unit, delivery steps, archival) SHALL run as commands or tool calls invoked by the orchestrator, with no LLM actor dispatch.
+Entry, terminal, and deterministic nodes (creating the work unit, delivery steps, archival) SHALL run as commands or tool calls invoked by the orchestrator, with no LLM actor dispatch. Likewise, selection-only re-entry of a decomposition stage — picking the next pending ticket from an unchanged list, in declared order — SHALL be a deterministic routing step by the orchestrator, with no actor dispatch.
+
+#### Scenario: Next ticket after a pass
+- **WHEN** a ticket passes and pending tickets remain unchanged
+- **THEN** the orchestrator SHALL select the next pending ticket in declared order during routing, dispatching no actor
 
 #### Scenario: Delivery
 - **WHEN** execution reaches a deterministic delivery node

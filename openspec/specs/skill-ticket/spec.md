@@ -1,37 +1,37 @@
 ## Purpose
 
-Standalone decomposition skill: split an approved contract into independently verifiable tickets, each with its verification declared before any implementation starts. Mountable on a ticket node.
+Standalone TDD decomposition skill: split a contract into tickets whose verification is a test defined before any implementation — red first, green when done. Mountable on a ticket node.
 
 ## Requirements
 
-### Requirement: Verification is defined before build
+### Requirement: A ticket is defined by its test
 
-Every ticket SHALL declare its verification (commands or criteria) before it is handed to implementation, and tickets SHALL be independently verifiable.
+Every ticket SHALL declare its verification as an executable test (or check) before it is handed to implementation; a ticket without a declared test does not exist. Tickets SHALL be independently verifiable and small enough that one test run settles them.
 
 #### Scenario: Ticket written
 - **WHEN** the skill writes a ticket
-- **THEN** that ticket SHALL include its scope and a declared verification
+- **THEN** that ticket SHALL include its scope and an executable test command as its verification
+
+### Requirement: Red before green
+
+A ticket's declared test SHALL fail against the pre-implementation state — proving it tests the actual gap — and SHALL pass when the ticket is done. A test that already passes before implementation means the ticket is mis-scoped or already satisfied, and SHALL be revised or dropped.
+
+#### Scenario: Test already green
+- **WHEN** a ticket's declared test passes before any implementation
+- **THEN** the ticket SHALL be revised or removed, not handed to implementation as-is
 
 ### Requirement: Contradictions go back to the contract
 
-When decomposition reveals that the contract contradicts itself or cannot be satisfied, the skill SHALL send the problem back to the specification instead of producing tickets around it.
+When decomposition reveals that the contract contradicts itself or cannot be satisfied, the skill SHALL send the problem back to the contract instead of producing tickets around it.
 
 #### Scenario: Contradiction found
-- **WHEN** decomposition finds the spec unsatisfiable
-- **THEN** the contradiction SHALL be recorded and the specification revised before tickets are produced
-
-### Requirement: Selection-only re-entry is deterministic
-
-Selecting the next pending ticket from an unchanged list SHALL be a deterministic step (declared order) performed by the orchestrator as part of routing, not a node execution and not an LLM task. An LLM pass SHALL occur only for the initial decomposition or when the ticket list itself must change.
-
-#### Scenario: Next ticket after a pass
-- **WHEN** a ticket passes and pending tickets remain unchanged
-- **THEN** the orchestrator SHALL select the next pending ticket in declared order during routing, with no node dispatch
+- **WHEN** decomposition finds the contract unsatisfiable
+- **THEN** the contradiction SHALL be recorded and the contract revised before tickets are produced
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: write the ticket list into the work unit's state through the orchestrator; report exactly one of the outcomes `tickets-produced`, `spec-contradiction`, or `blocked` (never decomposing an unapproved contract); and leave routing to the node's declared edges.
+When mounted on a node, the skill SHALL additionally: write the ticket list into the work unit's state through the orchestrator; and report exactly one of the outcomes `tickets-produced`, `spec-contradiction`, or `blocked` (never decomposing an unapproved contract), leaving routing to the node's declared edges.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability
-- **THEN** tickets SHALL be recorded in work-unit state with their verification, the report SHALL name one declared outcome, and the orchestrator SHALL route by the node's edges
+- **THEN** tickets SHALL be recorded in work-unit state with their tests, the report SHALL name one declared outcome, and the orchestrator SHALL route by the node's edges
