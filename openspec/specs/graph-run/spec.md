@@ -54,7 +54,7 @@ A stage that is blocked, or reaches its declared failure cap with the same error
 
 ### Requirement: Human gates are synchronous orchestrator stops
 
-A human gate SHALL be a synchronous stop where the orchestrator puts a question to the human in the main session and records the answer before routing; it MUST NOT be an agent. Every human answer SHALL be recorded (decision record in the gate's stage directory, state entry, log line) before the route is taken. When in doubt the human rejects back for more work. The grading gate SHALL be mandatory for every work unit — a grading that skips stages is itself the thing being approved, so no grade, however trivial, bypasses the gate.
+A human gate SHALL be a synchronous stop where the orchestrator puts a question to the human in the main session and records the answer before routing; it MUST NOT be an agent. Every human answer SHALL be recorded (decision record in the gate's stage directory, state entry, log line) before the route is taken. When in doubt the human rejects back for more work. The phase gate SHALL be mandatory for every work unit — the phase's declared path is itself the thing being approved, so no phase, however short its path, bypasses the gate.
 
 #### Scenario: Gate answered
 - **WHEN** the human answers a gate question

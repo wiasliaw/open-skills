@@ -42,11 +42,11 @@ The term edge SHALL be reserved for data-flow routing. Static relations between 
 
 ### Requirement: The graph is a superset and skipping is normal
 
-A graph definition SHALL be a superset of any single execution path, and skipping nodes according to an approved routing decision (for example a grading) SHALL be normal execution, not an error.
+A graph definition SHALL be a superset of any single execution path: each approved phase walks its own declared path through the graph, and nodes outside that path simply do not run — normal execution, not an error.
 
 #### Scenario: Fast path
-- **WHEN** a routing decision grades the work as trivial
-- **THEN** execution SHALL skip the stages the grading excludes and this SHALL be a legitimate path
+- **WHEN** the approved phase's path goes straight to implementation
+- **THEN** the nodes outside that path SHALL NOT run and this SHALL be a legitimate execution
 
 ### Requirement: Every loop has an exit and a cap
 
