@@ -38,27 +38,31 @@ Every artifact-producing stage SHALL run worker, then reviewer, then route. The 
 
 ### Requirement: Tiered escalation
 
-A stage that is blocked, or reaches its declared failure cap with the same error recurring, SHALL be routed to the advisor: the orchestrator records the blocked node, and the advisor — an analysis-only LLM actor — diagnoses root cause and writes concrete retry guidance as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL route to human escalation, which resumes at the blocked node or cancels. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; only a pass or a human unblock does.
+Escalation SHALL happen in place — it is a fallback chain inside the current node, not routing: when a stage is blocked or reaches its declared failure cap with the same error recurring, the orchestrator stays at that node, records the problem, and dispatches the advisor — an analysis-only LLM actor that diagnoses root cause and writes concrete retry guidance into the stage directory as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL stop in place for the human ruling: retry here with the guidance, move back to a named earlier node of the path, or end the work. Because every node carries this fallback chain, no advisor, blocked, or escalation edge SHALL exist in a graph definition. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; only a pass or a human ruling does.
 
 #### Scenario: Failure cap reached
 - **WHEN** the same stage or ticket fails up to its declared cap with the same error
-- **THEN** the orchestrator SHALL record the blocked node and route to the advisor, not dispatch the worker again until advice is issued
+- **THEN** the orchestrator SHALL stay at the node, record the problem, and consult the advisor, not dispatch the worker again until advice is issued
 
 #### Scenario: Advisor cap reached
 - **WHEN** the advisor has been consulted up to the declared consultation cap on the same problem and the stage still fails
-- **THEN** the orchestrator SHALL route to human escalation and SHALL NOT consult the advisor again
+- **THEN** the orchestrator SHALL wait at the node for the human ruling and SHALL NOT consult the advisor again
 
-#### Scenario: Human resolution
-- **WHEN** the human unblocks at escalation
-- **THEN** the orchestrator SHALL record the decision and resume at the blocked node; on cancel it SHALL route to the abandonment terminal
+#### Scenario: Human ruling
+- **WHEN** the human rules on an exhausted escalation
+- **THEN** the orchestrator SHALL record the disposition — retry with guidance, move back to a named earlier node, or end — and only then act on it
 
-### Requirement: Human gates are synchronous orchestrator stops
+### Requirement: Human checkpoints are in-place stops, never nodes
 
-A human gate SHALL be a synchronous stop where the orchestrator puts a question to the human in the main session and records the answer before routing; it MUST NOT be an agent. Every human answer SHALL be recorded (decision record in the gate's stage directory, state entry, log line) before the route is taken. When in doubt the human rejects back for more work. The phase gate SHALL be mandatory for every work unit — the phase's declared path is itself the thing being approved, so no phase, however short its path, bypasses the gate.
+A node MAY declare a human checkpoint: its output requires the human's sign-off before the orchestrator routes on it. A checkpoint is a synchronous in-place stop — the orchestrator puts the question to the human in the main session at the current node and records the answer (decision record in that node's stage directory, state entry, log line) before taking any route; it MUST NOT be an agent and MUST NOT be a node. The answer approves the outcome, sends the work back to a named earlier node with feedback, or ends it; when in doubt the human sends it back. The phase checkpoint SHALL be mandatory for every work unit — the approved phase's declared path is itself the thing being signed off, so no phase, however short its path, bypasses it.
 
-#### Scenario: Gate answered
-- **WHEN** the human answers a gate question
-- **THEN** the orchestrator SHALL record the decision and its feedback before dispatching any next node
+#### Scenario: Checkpoint answered
+- **WHEN** the human answers a checkpoint question
+- **THEN** the orchestrator SHALL record the decision and its feedback in the current node's stage directory and state before dispatching any next node
+
+#### Scenario: Not needed
+- **WHEN** the phase checkpoint judges the work not needed
+- **THEN** the recorded disposition SHALL end the unit at the abandonment terminal
 
 ### Requirement: Deterministic nodes run in the orchestrator
 

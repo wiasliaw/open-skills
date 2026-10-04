@@ -6,7 +6,7 @@ The design axis of open-skills: graph engineering, where a node defines what is 
 
 ### Requirement: Graph vocabulary
 
-The system SHALL use these definitions: a node is a unit of work typed as LLM call, deterministic function, tool call, validator, or human gate, and defines both what is to be done and how it is verified; an edge is data flow, a condition function that reads state and decides what runs next; state is the work-unit folder, shared across the whole graph; a skill is a capability mounted on a node and is never a node.
+The system SHALL use these definitions: a node is a unit of work typed as entry, LLM call, deterministic function, tool call, validator, or terminal, and defines both what is to be done and how it is verified; an edge is data flow, a condition function that reads state and decides what runs next; state is the work-unit folder, shared across the whole graph; a skill is a capability mounted on a node and is never a node. Human interaction is never a node: approvals and escalations happen in place at the current node.
 
 #### Scenario: Skills are not nodes
 - **WHEN** a capability such as research, review, or worktree handling is attached to a step
@@ -50,7 +50,7 @@ A graph definition SHALL be a superset of any single execution path: each approv
 
 ### Requirement: Every loop has an exit and a cap
 
-A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedly with the same error SHALL escalate rather than loop again, and every blocked state SHALL have a declared destination. Escalation SHALL be tiered: an LLM advisor absorbs the first escalations, and the human is reached only after the advisor tier is exhausted.
+A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedly with the same error SHALL escalate rather than loop again. Escalation SHALL be tiered and in place — the orchestrator stays at the current node: an LLM advisor absorbs the first escalations there, and the human is reached only after the advisor tier is exhausted. Because this fallback chain is universal, blocked states need no declared edges.
 
 #### Scenario: Repeated failure
 - **WHEN** the same failure recurs at a stage up to its declared cap
@@ -68,13 +68,17 @@ A valid graph SHALL have at least one success terminal and one abandonment termi
 - **WHEN** execution reaches a terminal
 - **THEN** the graph SHALL stop and the outcome SHALL be recorded
 
-### Requirement: Human intervention is concentrated and last
+### Requirement: The human is every node's final fallback
 
-Human gates SHALL sit in the cheap stages of the graph, so that no synchronous human wait occurs inside the expensive build-and-verify loops. Inside those loops, problems SHALL reach the human only through the advisor tier.
+The human SHALL be the universal final fallback of every node, reached in place through the advisor tier — the supervisor and the advisor failed, so the higher-up comes to the floor. The orchestrator MUST NOT leave the current node while a human ruling is pending; the ruling decides the disposition: retry here with guidance, move back to an earlier node of the path, or end the work. Routine approvals are declared as checkpoints on the nodes whose output needs sign-off, kept in the cheap stages so no synchronous human wait sits inside the expensive build-and-verify loops.
 
-#### Scenario: No human wait in the expensive loop
-- **WHEN** an expensive stage is blocked or repeatedly failing
-- **THEN** the work SHALL route to the advisor first and to human escalation only after the advisor is exhausted, instead of waiting inline
+#### Scenario: Escalation stays in place
+- **WHEN** a stage is blocked or repeatedly failing and the advisor tier is exhausted
+- **THEN** the orchestrator SHALL wait at that node for the human ruling and SHALL NOT route anywhere until it is recorded
+
+#### Scenario: Ruling dispositions
+- **WHEN** the human rules on an escalation
+- **THEN** the recorded disposition SHALL be one of: retry the current node with guidance, move back to a named earlier node, or end the work
 
 ### Requirement: Single long-term memory write point
 

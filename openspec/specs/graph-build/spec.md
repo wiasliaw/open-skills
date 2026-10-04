@@ -14,7 +14,7 @@ The graph SHALL be defined as reviewable content (a graph definition), not as co
 
 ### Requirement: Node declaration contract
 
-Each node in a graph definition SHALL declare: its purpose and type; the state it reads and the state it produces; its verification criteria; its outgoing guarded edges; its mounted capabilities — skills, commands, and MCP servers; and its restrictions (what it must not write or do). A capability not declared at build time SHALL NOT be available to the node at run time.
+Each node in a graph definition SHALL declare: its purpose and type; the state it reads and the state it produces; its verification criteria; its outgoing guarded edges; its mounted capabilities — skills, commands, and MCP servers; its restrictions (what it must not write or do); and whether its output requires a human checkpoint before routing. A capability not declared at build time SHALL NOT be available to the node at run time.
 
 #### Scenario: Mounts declared at build time
 - **WHEN** a node needs a skill, command, or MCP server during a run
