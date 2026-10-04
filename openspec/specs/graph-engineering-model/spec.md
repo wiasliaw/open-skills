@@ -26,7 +26,7 @@ Operating the system SHALL consist of two distinct phases: graph-build construct
 
 ### Requirement: No work outside nodes during a run
 
-During graph-run, no work on the work unit SHALL happen outside a node, and no routing SHALL happen outside an edge. The orchestrator's own bookkeeping (evaluating guards, transcribing state, appending log lines) is the execution of edges and state, not node work. Work performed during graph-build (including the per-project bootstrap) is outside the graph by definition.
+During graph-run, no work on the work unit SHALL happen outside a node, and routing SHALL happen only through a declared edge — with one bounded exception: a human ruling or approval answer MAY move the unit as a recorded orchestrator override, whose target is restricted to a node already walked on the unit's path or the abandonment terminal. The orchestrator's own bookkeeping (evaluating guards, transcribing state, appending log lines, and the deterministic pre- and post-steps a node's declaration assigns to it — provisioning the worktree, VCS operations on the unit's branch, delivery) is the execution of edges and state, not node work. Work performed during graph-build (including the per-project bootstrap) is outside the graph by definition.
 
 #### Scenario: Ad hoc work rejected
 - **WHEN** a change to the work unit's deliverables would happen outside any node's execution
@@ -82,7 +82,7 @@ The human SHALL be the universal final fallback of every node, reached in place 
 
 ### Requirement: Single long-term memory write point
 
-The memory write point SHALL NOT be a separate designation: the close-out stage — the node that mounts the close-out (wrap) skill — is the sole writer of long-term memory during a run, and exactly one node in a graph SHALL mount that skill; every node may read. The per-project bootstrap (graph-build phase) may write its own one-time configuration before any run starts; within a run, only the close-out stage writes.
+The memory write point SHALL NOT be a separate designation: the close-out stage — the node that mounts the close-out (wrap) skill — is the sole memory writer of an ordinary unit's run, and exactly one node in a graph SHALL mount that skill; every node may read. The detailed rules, and the maintenance phase's sole exception for current-truth documents, are owned by the memory spec; a violation is a contractual restriction violation, like any other. The per-project bootstrap (graph-build phase) may write its own one-time configuration before any run starts; within a run, only the close-out stage writes.
 
 #### Scenario: Write outside the close-out stage
 - **WHEN** a node that does not mount the close-out skill attempts to write long-term memory

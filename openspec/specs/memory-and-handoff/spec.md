@@ -6,7 +6,7 @@ The durable records of a run, managed the way specs are managed: current-truth d
 
 ### Requirement: Memory is current truth plus accumulated deltas
 
-Long-term memory SHALL live under the project's `.harness/` namespace in two layers: a declared set of current-truth documents (reference set: architecture, constraints), each with a declared size budget and loaded whole at every run; and a delta ledger — one file per delta entry (reference types: decision, feature, constraint-change, architecture-change) recording a durable outcome as a proposed change to current truth. Deltas accumulate append-only; current-truth documents are never the direct target of a run-time write.
+Long-term memory SHALL live under the project's `.harness/` namespace in two layers: a declared set of current-truth documents (reference set: architecture, constraints), each with a declared size budget and loaded whole at every run; and a delta ledger — one file per delta entry (reference types: decision, feature, constraint-change, architecture-change) recording a durable outcome as a proposed change to current truth. Deltas accumulate append-only — entry bodies are immutable, and `status` is the one mutable frontmatter field, flipped only by the apply unit; current-truth documents are never the direct target of an ordinary unit's write.
 
 #### Scenario: Current truth stays bounded
 - **WHEN** a current-truth document would exceed its declared budget
@@ -18,7 +18,7 @@ Long-term memory SHALL live under the project's `.harness/` namespace in two lay
 
 ### Requirement: Delta entry format
 
-A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum: `id` (unique, stable), `title`, `date`, `type`, `status` (`pending`, `applied`, or `rejected`), and the current-truth target it proposes to change; relations SHALL be the frontmatter fields `supersedes`, `depends-on`, `decided-by`, and `verified-by`, each a list of entry ids referencing existing entries. The body states the outcome and its rationale. One entry per file is required so concurrent runs merge as whole-file additions, never as in-place conflicts.
+A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum: `id` (`<unit-id>-<n>`, unique by construction across concurrent units, stable), `title`, `date`, `type`, `status` (`pending`, `applied`, or `rejected`), and the current-truth target it proposes to change; relations SHALL be the frontmatter fields `supersedes`, `depends-on`, `decided-by`, and `verified-by`, each a list of entry ids referencing existing entries or sibling drafts of the same unit. The body states the outcome and its rationale. One entry per file is required so concurrent runs merge as whole-file additions, never as in-place conflicts.
 
 #### Scenario: Superseding decision
 - **WHEN** a new decision replaces an earlier one
@@ -26,7 +26,7 @@ A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum
 
 ### Requirement: Deltas originate in the work unit and merge back at close-out
 
-A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at close-out: the close-out stage (the node mounting the close-out skill) SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than the close-out stage, or a direct run-time edit to a current-truth document by anyone, SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
+A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at close-out: the close-out stage (the node mounting the close-out skill) SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, and drop every draft a reviewer report named as rejected — a reviewer MAY reject a draft delta by naming its id with the reason in its report), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than the close-out stage, or a direct run-time edit to a current-truth document by anyone, SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
 
 #### Scenario: Drafted at the moment of decision
 - **WHEN** a stage makes a lasting decision mid-run
@@ -42,7 +42,7 @@ A durable outcome SHALL be drafted where and when it happens: the stage whose wo
 
 ### Requirement: Apply is a maintenance work unit
 
-Pending deltas SHALL be folded into the current-truth documents only by an apply step that runs as a normal work unit through the graph — reviewed, converged, and serialized through version control like any other work. Cleanup is dual-mode: close-out performs each session's immediate cleanup, and the maintenance unit is the periodic comprehensive pass over accumulated state. Applying marks each folded delta `applied` (the file stays as history); a delta judged wrong is marked `rejected` with the reason. The project config MAY declare thresholds (pending-delta count, current-truth budget pressure) whose breach is reported at run start as a due maintenance unit.
+Pending deltas SHALL be folded into the current-truth documents only by an apply step that runs as a normal work unit through the graph — reviewed, converged, and serialized through version control like any other work. The maintenance phase is the single authorized exception to the no-current-truth-write rule: its declaration names the current-truth documents and delta statuses as its deliverables, so its worker edits them as ordinary work products, and flipping `status` to `applied` or `rejected` is its exclusive right. Cleanup is dual-mode: close-out performs each session's immediate cleanup, and the maintenance unit is the periodic comprehensive pass over accumulated state. Applying marks each folded delta `applied` (the file stays as history); a delta judged wrong is marked `rejected` with the reason. The project config MAY declare thresholds (pending-delta count, current-truth budget pressure) whose breach is reported at run start as a due maintenance unit.
 
 #### Scenario: Distillation run
 - **WHEN** the pending-delta threshold is breached
@@ -62,7 +62,7 @@ A deterministic script SHALL generate the memory index from entry frontmatter (i
 
 ### Requirement: The handoff record closes a work unit
 
-Every work unit that reaches a terminal SHALL have a handoff record written into its work-unit folder before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. The close-out stage writes it on success; the orchestrator writes it at the abandonment terminal. Its reader is the next session or human picking up the project.
+Every work unit that reaches a terminal SHALL have a handoff record written as `handoff.md` at the work-unit folder root before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. The close-out stage writes it on success; the orchestrator writes it at the abandonment terminal. Its reader is the next session or human picking up the project.
 
 #### Scenario: Abandoned unit still hands off
 - **WHEN** a work unit ends because the phase approval judged it not needed, or through a cancellation

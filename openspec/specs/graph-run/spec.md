@@ -38,11 +38,15 @@ Every artifact-producing stage SHALL run worker, then reviewer, then route. The 
 
 ### Requirement: Tiered escalation
 
-Escalation SHALL happen in place — it is a fallback chain inside the current node, not routing: when a stage is blocked or reaches its declared failure cap with the same error recurring, the orchestrator stays at that node, records the problem, and dispatches the advisor — an analysis-only LLM actor that diagnoses root cause and writes concrete retry guidance into the stage directory as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL stop in place for the human ruling: retry here with the guidance, move back to a named earlier node of the path, or end the work. Because every node carries this fallback chain, no advisor, blocked, or escalation edge SHALL exist in a graph definition. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; only a pass or a human ruling does.
+Escalation SHALL happen in place — it is a fallback chain inside the current node, not routing. "The same error" SHALL be judged by failure signature: the set of failing dimensions plus the failing verification command from the reviewer's verdict. A problem opens when a stage is blocked or its failure counter reaches the declared cap with the signature recurring, and closes when the stage passes (resolved) or a human ruling disposes of it (escalated or abandoned); a later failure on the same scope opens a new problem. When a problem opens or persists, the orchestrator stays at that node, records it, and dispatches the advisor — an analysis-only LLM actor that diagnoses root cause and writes concrete retry guidance into the stage directory as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL stop in place for the human ruling: retry here with the guidance, move back to a named earlier node of the path, or end the work. Because every node carries this fallback chain, no advisor, blocked, or escalation edge SHALL exist in a graph definition. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; only a pass or a human ruling does.
 
 #### Scenario: Failure cap reached
-- **WHEN** the same stage or ticket fails up to its declared cap with the same error
+- **WHEN** the same stage or ticket fails up to its declared cap with the same failure signature
 - **THEN** the orchestrator SHALL stay at the node, record the problem, and consult the advisor, not dispatch the worker again until advice is issued
+
+#### Scenario: Failure after advice
+- **WHEN** the worker fails again after advice while the counter is at or above its cap
+- **THEN** the orchestrator SHALL take the next tier — a further consultation while the consultation cap allows, otherwise the human ruling — and SHALL NOT loop the worker
 
 #### Scenario: Advisor cap reached
 - **WHEN** the advisor has been consulted up to the declared consultation cap on the same problem and the stage still fails
@@ -50,11 +54,15 @@ Escalation SHALL happen in place — it is a fallback chain inside the current n
 
 #### Scenario: Human ruling
 - **WHEN** the human rules on an exhausted escalation
-- **THEN** the orchestrator SHALL record the disposition — retry with guidance, move back to a named earlier node, or end — and only then act on it
+- **THEN** the orchestrator SHALL record the disposition — retry with guidance, move back, or end — and only then act on it
+
+#### Scenario: Ruling jumps are bounded overrides
+- **WHEN** a ruling or an approval answer moves the unit somewhere other than a declared edge's target
+- **THEN** the move SHALL be a recorded orchestrator override whose target is a node already walked on the unit's path or the abandonment terminal, and nothing else
 
 ### Requirement: Human approvals are in-place stops, never nodes
 
-A node MAY declare a human approval: its output requires the human's sign-off before the orchestrator routes on it. An approval is a synchronous in-place stop — the orchestrator puts the question to the human in the main session at the current node and records the answer (decision record in that node's stage directory, state entry, log line) before taking any route; it MUST NOT be an agent and MUST NOT be a node. The answer approves the outcome, sends the work back to a named earlier node with feedback, or ends it; when in doubt the human sends it back. The phase approval SHALL be mandatory for every work unit — the approved phase's declared path is itself the thing being signed off, so no phase, however short its path, bypasses it.
+A node MAY declare a human approval: its output requires the human's sign-off before the orchestrator routes on it. An approval is a synchronous in-place stop — the orchestrator puts the question to the human in the main session at the current node and records the answer (decision record in that node's stage directory, state entry, log line) before taking any route; it MUST NOT be an agent and MUST NOT be a node. The answer approves the outcome, sends the work back to a named earlier node with feedback, or ends it; when in doubt the human sends it back. The phase approval SHALL be mandatory for every work unit and SHALL sit at the first node of every declared path, which therefore always carries a human approval whose answer records the phase; phases come only from the definition's declared vocabulary, never invented at run time. The approved phase's declared path is itself the thing being signed off, so no phase, however short its path, bypasses it.
 
 #### Scenario: Approval answered
 - **WHEN** the human answers an approval question
@@ -66,7 +74,7 @@ A node MAY declare a human approval: its output requires the human's sign-off be
 
 ### Requirement: Deterministic nodes run in the orchestrator
 
-Entry, terminal, and deterministic nodes (creating the work unit, delivery steps, archival) SHALL run as commands or tool calls invoked by the orchestrator, with no LLM actor dispatch. Likewise, in a graph that declares a decomposition stage, selection-only re-entry — picking the next pending ticket from an unchanged list, in declared order — SHALL be a deterministic routing step by the orchestrator, with no actor dispatch.
+Node types SHALL map to execution as follows: entry, terminal, and deterministic nodes run as commands invoked by the orchestrator, with no LLM actor dispatch; tool-call nodes run as orchestrator tool invocations; validator nodes dispatch the reviewer only (no worker); LLM nodes run worker then reviewer. Terminals carry no verification, no outcomes, and no edges. The delivery steps after a passed close-out — committing, pushing, opening the delivery channel, removing the worktree — are deterministic orchestrator work, and the abandonment terminal's deterministic steps SHALL likewise remove any live worktree and write the handoff before archival, so an abandoned unit leaves no residue. Likewise, in a graph that declares a decomposition stage, selection-only re-entry — picking the next pending ticket from an unchanged list, in declared order — SHALL be a deterministic routing step by the orchestrator, with no actor dispatch.
 
 #### Scenario: Next ticket after a pass
 - **WHEN** a ticket passes and pending tickets remain unchanged
@@ -75,6 +83,10 @@ Entry, terminal, and deterministic nodes (creating the work unit, delivery steps
 #### Scenario: Delivery
 - **WHEN** execution reaches a deterministic delivery node
 - **THEN** the orchestrator SHALL run its steps as commands or tools and record the results, dispatching no worker, reviewer, or advisor
+
+#### Scenario: Abandoned unit leaves no residue
+- **WHEN** a unit ends at the abandonment terminal with a live worktree and unmerged draft deltas
+- **THEN** the orchestrator SHALL remove the worktree, write the handoff naming the unmerged drafts, and archive the folder with the drafts preserved in place
 
 ### Requirement: Restrictions are contractual
 

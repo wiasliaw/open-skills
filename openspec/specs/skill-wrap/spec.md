@@ -38,11 +38,15 @@ The skill SHALL remove execution residue — the worktree, temp files, intermedi
 
 ### Requirement: Close-out ends at handover
 
-The skill SHALL end the line of work at handover: open the delivery channel the project uses (reference implementation: a pull request), record the handoff, and finish. It MUST NOT wait for asynchronous integration results — no unit holds open state for an external verification. An integration failure discovered after handover (red CI, a merge conflict needing a rebase) re-enters the factory as a new work unit through its own trigger — `ci-failure`, or the human's prompt — typically walking a short phase to fix it.
+The skill SHALL end the line of work at handover, in two halves. The LLM half (this skill) produces the close-out deliverables: the consolidated delta entries and the handoff record. After those pass review, the deterministic half — committing, pushing, opening the delivery channel the project uses (reference implementation: a pull request), and removing the worktree — is executed by the orchestrator as commands, so nothing irreversible happens before the reviewer's verdict. Neither half waits for asynchronous integration results — no unit holds open state for an external verification. An integration failure discovered after handover (red CI, a merge conflict needing a rebase) re-enters the factory as a new work unit through its own trigger — `ci-failure`, or the human's prompt — typically walking a short phase to fix it.
 
 #### Scenario: Handover finishes the unit
-- **WHEN** close-out has opened the delivery channel and written the handoff
+- **WHEN** the close-out deliverables pass review and the orchestrator completes the delivery steps
 - **THEN** the unit SHALL proceed to its terminal and archive, holding no pending-integration state
+
+#### Scenario: Reviewer rejects close-out
+- **WHEN** the reviewer fails the close-out deliverables
+- **THEN** no delivery step SHALL have run — no commit pushed, no channel opened, the worktree intact — and the stage retries like any failing stage
 
 #### Scenario: CI fails after handover
 - **WHEN** CI fails on the delivered branch after the unit is archived
@@ -54,7 +58,7 @@ The skill SHALL end the line of work at handover: open the delivery channel the 
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: collect the draft deltas from the work unit's stage directories and carry the merged entries on the unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report exactly one of the outcomes `handed-off` or `blocked`, leaving routing to the node's declared edges.
+When mounted on a node, the skill SHALL additionally: collect the draft deltas from the work unit's stage directories and carry the merged entries on the unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report the outcome `handed-off` — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
 
 #### Scenario: Mounted close-out
 - **WHEN** the skill runs as the close-out stage of a work unit

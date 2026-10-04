@@ -21,12 +21,16 @@ Each node in a graph definition SHALL declare: its purpose and type; the state i
 - **THEN** that mount SHALL already be named in the node's declaration, and the dispatch SHALL carry only declared mounts
 
 #### Scenario: Unshipped mount degrades to instructions
-- **WHEN** a declared skill mount is not installed in the running environment
+- **WHEN** a declared skill mount without graph profile obligations is not installed in the running environment
 - **THEN** the dispatch SHALL carry the mount's intent as instructions instead, and the degradation SHALL be visible in the dispatch
+
+#### Scenario: Profile-bearing mount never degrades
+- **WHEN** a mount whose graph profile the run depends on (close-out, review, decomposition) is unavailable
+- **THEN** the stage SHALL report blocked instead of degrading to instructions
 
 ### Requirement: Edge declaration contract
 
-Each edge SHALL declare its source node, its target node, and its guard: the condition over state that selects it. For every non-terminal node, the declared outgoing edges SHALL cover every outcome the node can report, so that routing is always decided by a declared edge.
+Each edge SHALL declare its source node, its target node, and its guard: the condition over state that selects it. For every non-terminal node, the declared outgoing edges SHALL cover every routable outcome the node can report, so that routing is always decided by a declared edge. `blocked` is not a routable outcome: it is universal, handled by the in-place fallback chain, declared nowhere, and excluded from edge coverage.
 
 #### Scenario: Outcome without an edge
 - **WHEN** a node reports an outcome no outgoing edge guard matches
@@ -34,7 +38,7 @@ Each edge SHALL declare its source node, its target node, and its guard: the con
 
 ### Requirement: Graph validation gates the first run
 
-Before a graph definition is used, it SHALL be validated: every loop has an exit and a cap, every blocked state has a destination, at least one success and one abandonment terminal exist and are reachable, edge coverage is complete, and exactly one node mounts the close-out skill. An invalid definition SHALL NOT run.
+Before a graph definition is used, it SHALL be validated: every loop has an exit and a cap, at least one success and one abandonment terminal exist and are reachable, edge coverage of routable outcomes is complete, exactly one node mounts the close-out skill, and every declared phase's path ends at the success terminal through the close-out node. An invalid definition SHALL NOT run.
 
 #### Scenario: Uncapped loop rejected
 - **WHEN** a definition contains a cycle with no failure cap or exit guard
@@ -42,7 +46,7 @@ Before a graph definition is used, it SHALL be validated: every loop has an exit
 
 ### Requirement: Project bootstrap
 
-Graph-build SHALL include a per-project bootstrap (the init tier) run before any graph-run: survey the repository (structure, conventions, how things are executed) and record the project's facts machine-readably in one project config (`.harness/config.json`), written through a deterministic script, never by hand. The config SHALL carry a schema version and hold every project fact as a section — at minimum VCS, the work-units and worktrees locations, the worktree-setup section (setup commands and copy entries), and optionally the graph definition path. The config holds no command catalog: what a node can execute is declared on that node in the graph definition. The tool-availability gate SHALL run before a graph definition is accepted: every command and CLI mounted by any of its nodes is verified to actually run — a missing required tool blocks acceptance and is reported by name. The bootstrap is the single writer of this config; every other actor only reads it. A consuming script SHALL validate the config against its declared schema version and consume only its own section, so one section's evolution is caught by versioning rather than silently breaking another consumer.
+Graph-build SHALL include a per-project bootstrap (the init tier) run before any graph-run: survey the repository (structure, conventions, how things are executed) and record the project's facts machine-readably in one project config (`.harness/config.json`), written through a deterministic script, never by hand. The config SHALL carry a schema version and hold every project fact as a section — at minimum VCS, the work-units and worktrees locations, the worktree-setup section (setup commands and copy entries), the memory section (the current-truth documents with their budgets, the ledger location, and the maintenance thresholds), and optionally the graph definition path. The config holds no command catalog: what a node can execute is declared on that node in the graph definition. The tool-availability gate SHALL run before a graph definition is accepted: every command and CLI mounted by any of its nodes is verified to actually run — a missing required tool blocks acceptance and is reported by name. The bootstrap is the single writer of this config; every other actor only reads it. A consuming script SHALL validate the config against its declared schema version and consume only its own section, so one section's evolution is caught by versioning rather than silently breaking another consumer.
 
 #### Scenario: Tool missing
 - **WHEN** the gate finds that a command mounted by a node of the definition cannot run

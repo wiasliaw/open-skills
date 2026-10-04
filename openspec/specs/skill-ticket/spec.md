@@ -30,7 +30,7 @@ When decomposition reveals that the contract contradicts itself or cannot be sat
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: write the ticket list into the work unit's state through the orchestrator; and report exactly one of the outcomes `tickets-produced`, `spec-contradiction`, or `blocked` (never decomposing an unapproved contract), leaving routing to the node's declared edges.
+When mounted on a node, the skill SHALL additionally: write the full ticket text as a stage artifact and hand the routing entries (id, status, verification command) to the orchestrator for state; and report exactly one of the outcomes `tickets-produced` or `spec-contradiction` (never decomposing an unapproved contract) — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability
