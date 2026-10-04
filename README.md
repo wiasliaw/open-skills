@@ -21,10 +21,11 @@ A Claude Code plugin for graph engineering. `graph-build` builds the factory: it
 |use-worktree|Isolate a line of work in its own git worktree (`wu/<id>`), with creation, reuse and recovery handled by a script.|[docs](docs/use-worktree.md)|
 |request-code-review|Commission an independent code review: the request carries scope, verification commands, restrictions and acceptance criteria, and reviewers verify independently and return a pass/fail verdict with WHAT/WHY/FIX evidence.|[docs](docs/request-code-review.md)|
 |receive-code-review|Triage external review feedback into adopt, decline or needs-clarification with recorded reasons, then fold adopted items in with verification|[docs](docs/receive-code-review.md)|
+|codewalk|Interactive, reader-paced walkthrough of code you don't know: one verified stop at a time, anchored to file:line at a pinned commit, landing a reading record.|[docs](docs/codewalk.md)|
 
 ## Architecture
 
-- `skills/`: the seven skills above, each with a compact `SKILL.md` and on-demand `references/` (graph-build also ships `templates/` with the template graph definition).
+- `skills/`: the eight skills above, each with a compact `SKILL.md` and on-demand `references/` (graph-build also ships `templates/` with the template graph definition).
 - `agents/`: `worker`, `reviewer` and `advisor`, the roles dispatched along the graph.
 - `scripts/`: zero-dependency Node.js (>= 20) deterministic scripts, each with a `node --test` suite: `graph.mjs` (validator and tool gate), `work-unit.mjs` (write gate), `memory.mjs`, `worktree.mjs`, `init.mjs`.
 - `docs/`: one page per user-facing skill, plus reference pages: [file formats](docs/file-formats.md) (config, graph definition, work-unit folder, delta entries) and [project anatomy](docs/project-anatomy.md) (consumer-project layout and write authority).
