@@ -34,7 +34,7 @@ When decomposition reveals that the contract contradicts itself or cannot be sat
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: write the full ticket text as a stage artifact and hand the routing entries (id, status, verification command) to the orchestrator for state; and report exactly one of the outcomes `tickets-produced` or `spec-contradiction` (never decomposing an unapproved contract) — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
+When mounted on a node, the skill SHALL additionally: write the full ticket text as a stage artifact and hand the routing entries (id, status, verification command) to the orchestrator for state. The red-before-green obligations of the implementing node are not carried by this mount: a definition mounting this skill SHALL also declare them on its build node — in its stage instructions and as the `ticket-invalid` outcome with its returning edge — and the template factories do. The skill SHALL further: and report exactly one of the outcomes `tickets-produced` or `spec-contradiction` (never decomposing an unapproved contract) — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability

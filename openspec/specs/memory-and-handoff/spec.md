@@ -6,11 +6,11 @@ The durable records of a run, managed the way specs are managed: current-truth d
 
 ### Requirement: Memory is current truth plus accumulated deltas
 
-Long-term memory SHALL live under the project's `.harness/` namespace in two layers: a declared set of current-truth documents (reference set: architecture, constraints), each with a declared size budget and loaded whole at every run; and a delta ledger — one file per delta entry (reference types: decision, feature, constraint-change, architecture-change) recording a durable outcome as a proposed change to current truth. Deltas accumulate append-only — entry bodies are immutable, and `status` is the one mutable frontmatter field, flipped only by the apply unit; current-truth documents are never the direct target of an ordinary unit's write.
+Long-term memory SHALL live under the project's `.harness/` namespace in two layers: a declared set of current-truth documents (reference set: architecture, constraints), each with a declared size budget and loaded whole at every run — a document that does not exist yet reads as empty, and the maintenance unit is what first creates it; and a delta ledger — one file per delta entry (reference types: decision, feature, constraint-change, architecture-change) recording a durable outcome as a proposed change to current truth. Deltas accumulate append-only — entry bodies are immutable, and `status` is the one mutable frontmatter field, flipped only by the apply unit; current-truth documents are never the direct target of an ordinary unit's write.
 
 #### Scenario: Current truth stays bounded
-- **WHEN** a current-truth document would exceed its declared budget
-- **THEN** that SHALL be a validation failure that demands distillation, not a silent growth
+- **WHEN** a current-truth document exceeds its declared budget
+- **THEN** the memory script SHALL report due maintenance — and nothing else: run starts and ordinary close-outs proceed (deltas keep accumulating in the ledger), because only the maintenance unit can distill, and blocking anything on the breach would deadlock the cure
 
 #### Scenario: History grows, the read surface does not
 - **WHEN** the delta ledger grows over the project's life
@@ -18,7 +18,7 @@ Long-term memory SHALL live under the project's `.harness/` namespace in two lay
 
 ### Requirement: Delta entry format
 
-A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum: `id` (`<unit-id>-<node-id>-<n>`, with `<n>` counted per stage directory, unique by construction across concurrent units and stages, stable), `target` (the current-truth document it proposes to change), `date` (ISO-8601 UTC), `title`, `type`, and `status` (`pending`, `applied`, or `rejected`); relations SHALL be the frontmatter fields `supersedes`, `depends-on`, `decided-by`, and `verified-by`, each a list of entry ids referencing existing entries or sibling drafts of the same unit. The body states the outcome and its rationale. One entry per file is required so concurrent runs merge as whole-file additions, never as in-place conflicts.
+A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum: `id` (`<unit-id>.<node-id>.<n>` — dot-separated because ids themselves may contain hyphens, `<n>` counted per stage directory, unique by construction across concurrent units and stages, stable), `target` (the current-truth document it proposes to change), `date` (ISO-8601 UTC), `title`, `type`, and `status` (`pending`, `applied`, or `rejected`); relations SHALL be the frontmatter fields `supersedes`, `depends-on`, `decided-by`, and `verified-by`, each a list of entry ids referencing existing entries or sibling drafts of the same unit. The body states the outcome and its rationale. One entry per file is required so concurrent runs merge as whole-file additions, never as in-place conflicts.
 
 #### Scenario: Superseding decision
 - **WHEN** a new decision replaces an earlier one

@@ -12,6 +12,10 @@ The orchestrator SHALL be a skill run by the main session. It SHALL refuse to st
 - **WHEN** an actor reports a result for a node
 - **THEN** the orchestrator SHALL record the routing-relevant result in state, append the log line, and evaluate the node's outgoing edge guards to select the next node
 
+#### Scenario: Zero guards match
+- **WHEN** a reported routable outcome matches no declared guard at run time
+- **THEN** the orchestrator SHALL treat it as a definition defect and stay in place as blocked, never improvising a route
+
 #### Scenario: Route checked against the path
 - **WHEN** a guard selects a target that is neither the next node on the approved phase's path nor an earlier path node reached by a declared returning edge
 - **THEN** the orchestrator SHALL treat it as a definition defect, stay in place as blocked, and NOT dispatch the target
@@ -22,7 +26,7 @@ The orchestrator SHALL be a skill run by the main session. It SHALL refuse to st
 
 ### Requirement: Generic actors, node identity as dispatch data
 
-Graph execution SHALL use a fixed set of generic, stage-agnostic actor roles — worker (implementor), reviewer, and advisor — plus the orchestrator. Node identity is data in the dispatch payload: node id, stage instructions, declared mounts, prompt-carried restrictions, verification commands, and the stage directory the actor writes into. There SHALL be no per-node agent definitions.
+Graph execution SHALL use a fixed set of generic, stage-agnostic actor roles — worker (implementor), reviewer, and advisor — plus the orchestrator. Node identity is data in the dispatch payload: node id, stage instructions, declared mounts, prompt-carried restrictions, verification commands, the stage directory the actor writes into, and — whenever the unit has a worktree — its path, which is the working directory for every verification command any actor executes, so verification always runs against the unit's code, never the main checkout. There SHALL be no per-node agent definitions.
 
 #### Scenario: Dispatch construction
 - **WHEN** the orchestrator dispatches an actor for a node
@@ -42,11 +46,19 @@ Every artifact-producing stage SHALL run worker, then reviewer, then route. The 
 
 ### Requirement: Tiered escalation
 
-Escalation SHALL happen in place — it is a fallback chain inside the current node, not routing. "The same error" SHALL be judged by failure signature: for reviewed stages, the set of failing dimensions plus the failing verification command from the reviewer's verdict; for deterministic and tool-call nodes, the failing command plus its exit status. A failing verdict increments exactly one counter: the finest applicable scope (a graph-declared scope such as `ticket:<id>` when its concept applies, otherwise `node:<id>`). Supersession happens only while a problem is already open: a failure with a different signature then closes it as superseded by a new problem that inherits its consultation count and stays inside the escalation chain — the orchestrator remains in place and continues with the advisor or the human per the inherited count, never dropping back to the plain worker-retry loop; the per-signature counter restarts at one for bookkeeping only. A problem opened by the total failure cap SHALL NOT be superseded at all, and the signature-independent total failure cap keeps counting across signatures, so alternating signatures can evade neither escalation nor the human tier. Routable-outcome loops are capped by progress, not signature: each traversal of a declared edge returning to an earlier path node increments an `edge:<from>-<to>` counter (a core scope kind) that resets only on recorded progress — a closed definition: a scope item transitioning to passed, or a graph-declared monotonic progress field advancing, nothing else — and engages this chain at the graph's declared edge-revisit cap; the deterministic selection-only re-entry of a decomposition stage follows recorded progress by definition and therefore never accumulates. A problem opens when a stage is blocked or its counter reaches the graph's declared cap with the signature recurring, and closes when the stage passes (resolved) or a human ruling disposes of it (escalated or abandoned); a later failure on the same scope opens a new problem. When a problem opens or persists, the orchestrator stays at that node, records it, and dispatches the advisor — an analysis-only LLM actor that diagnoses root cause and writes concrete retry guidance into the stage directory as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL stop in place for the human ruling: retry here with the guidance, move back to a named earlier node of the path, or end the work. Because every node carries this fallback chain, no advisor, blocked, or escalation edge SHALL exist in a graph definition. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; a pass or a human ruling resets the node- and concept-scoped ones, while edge revisit counters reset only on recorded progress — a retry ruling leaves them unchanged.
+Escalation SHALL happen in place — it is a fallback chain inside the current node, not routing. "The same error" SHALL be judged by failure signature: for reviewed stages, the set of failing dimensions plus the failing verification command from the reviewer's verdict; for deterministic and tool-call nodes, the failing command plus its exit status; for a blocked report, the blocked reason code plus the node (a script failure contributes its stable error code). A failing verdict increments exactly one counter: the finest applicable scope (a graph-declared scope such as `ticket:<id>` when its concept applies, otherwise `node:<id>`). Supersession happens only while a problem is already open: a failure with a different signature then closes it as superseded by a new problem that inherits its consultation count and stays inside the escalation chain — the orchestrator remains in place and continues with the advisor or the human per the inherited count, never dropping back to the plain worker-retry loop; the per-signature counter restarts at one for bookkeeping only. A problem opened by the total failure cap SHALL NOT be superseded at all, and the signature-independent total failure cap keeps counting across signatures, so alternating signatures can evade neither escalation nor the human tier. Routable-outcome loops are capped by progress, not signature: each traversal of a declared edge returning to an earlier path node increments an `edge:<from>-<to>` counter (a core scope kind) that resets only on recorded progress — a closed definition: a scope item transitioning to passed, or a graph-declared monotonic progress field advancing, nothing else — and engages this chain at the graph's declared edge-revisit cap; the deterministic selection-only re-entry of a decomposition stage follows recorded progress by definition and therefore never accumulates. A problem opens when a stage is blocked or its counter reaches the graph's declared cap with the signature recurring, and closes when the stage passes (resolved) or a human ruling disposes of it (escalated or abandoned); a later failure on the same scope opens a new problem. When a problem opens or persists, the orchestrator stays at that node, records it, and dispatches the advisor — an analysis-only LLM actor that diagnoses root cause and writes concrete retry guidance into the stage directory as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL stop in place for the human ruling: retry here with the guidance, move back to a named earlier node of the path, or end the work. Because every node carries this fallback chain, no advisor, blocked, or escalation edge SHALL exist in a graph definition. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; a pass or a human ruling resets the node- and concept-scoped ones, while edge revisit counters reset only on recorded progress — a retry ruling leaves them unchanged.
 
 #### Scenario: Failure cap reached
 - **WHEN** the same stage or ticket fails up to its declared cap with the same failure signature
 - **THEN** the orchestrator SHALL stay at the node, record the problem, and consult the advisor, not dispatch the worker again until advice is issued
+
+#### Scenario: Supersession inherits the chain
+- **WHEN** a different failure signature closes an open problem as superseded
+- **THEN** the new problem SHALL carry the inherited consultation count and the orchestrator SHALL continue at the advisor or human tier accordingly, not restart the worker-retry loop
+
+#### Scenario: Total cap cannot be superseded
+- **WHEN** a problem opened by the signature-independent total failure cap sees a new failure signature
+- **THEN** the problem SHALL remain open and un-superseded, and the chain SHALL proceed to its next tier
 
 #### Scenario: Failure after advice
 - **WHEN** the worker fails again after advice while the counter is at or above its cap
@@ -60,6 +72,10 @@ Escalation SHALL happen in place — it is a fallback chain inside the current n
 - **WHEN** the human rules on an exhausted escalation
 - **THEN** the orchestrator SHALL record the disposition — retry with guidance, move back, or end — and only then act on it
 
+#### Scenario: Ruling on an edge-revisit cap
+- **WHEN** the human rules on a problem opened by an edge revisit counter
+- **THEN** retry means permitting one more traversal of that edge, and the other dispositions remain move back or end — the counter itself stays until recorded progress resets it
+
 #### Scenario: Ruling jumps are bounded overrides
 - **WHEN** a ruling or an approval answer moves the unit somewhere other than a declared edge's target
 - **THEN** the move SHALL be a recorded orchestrator override whose target is a node already walked on the unit's path or the abandonment terminal, and nothing else
@@ -72,13 +88,21 @@ A node MAY declare a human approval: its output requires the human's sign-off be
 - **WHEN** the human answers an approval question
 - **THEN** the orchestrator SHALL record the decision and its feedback in the current node's stage directory and state before dispatching any next node
 
+#### Scenario: Phase cannot change
+- **WHEN** a send-back re-approval attempts to record a different phase for the same unit
+- **THEN** the write SHALL be rejected — the unit ends and a new one opens if the phase was wrong
+
+#### Scenario: Maintenance binding enforced
+- **WHEN** an approval would record the `maintenance` phase on a unit whose trigger source is not `maintenance-due`
+- **THEN** the write gate SHALL reject it, and the reverse likewise
+
 #### Scenario: Not needed
 - **WHEN** the phase approval judges the work not needed
 - **THEN** the recorded disposition SHALL end the unit at the abandonment terminal
 
 ### Requirement: Deterministic nodes run in the orchestrator
 
-Node types SHALL map to execution as follows: entry, terminal, and deterministic nodes run as commands invoked by the orchestrator, with no LLM actor dispatch; tool-call nodes run as orchestrator tool invocations; validator nodes dispatch the reviewer only (no worker); LLM nodes run worker then reviewer. Terminals carry no verification, no outcomes, and no edges. The delivery steps after a passed close-out — committing, pushing, opening the delivery channel, removing the worktree — run as the close-out node's post-steps, and the abandonment terminal's deterministic steps SHALL likewise remove any live worktree — forced removal is permitted there, since the work is being abandoned and the unit folder already holds the drafts and records — and write the handoff before archival, so an abandoned unit leaves no residue. A failing pre-step, post-step, or terminal step is treated as that node's deterministic failure: command plus exit status as the signature, the in-place fallback chain engaged, any recorded reviewer pass staying valid, and the retry re-running only the failed step — which is why steps SHALL be idempotent. Likewise, in a graph that declares a decomposition stage, selection-only re-entry — picking the next pending ticket from an unchanged list, in declared order — SHALL be a deterministic routing step by the orchestrator, with no actor dispatch.
+Node types SHALL map to execution as follows: entry, terminal, and deterministic nodes run as commands invoked by the orchestrator, with no LLM actor dispatch; tool-call nodes run as orchestrator tool invocations; validator nodes dispatch the reviewer only (no worker); LLM nodes run worker then reviewer. Terminals carry no verification, no outcomes, and no edges. The delivery steps after a passed close-out — committing, pushing, opening the delivery channel, removing the worktree — run as the close-out node's post-steps, and the abandonment terminal's deterministic steps SHALL likewise remove any live worktree — forced removal is permitted there, since the work is being abandoned and the unit folder already holds the drafts and records — and write the handoff before archival, so an abandoned unit leaves no residue. A failing pre-step, post-step, or terminal step is treated as that node's deterministic failure: command plus exit status as the signature, the in-place fallback chain engaged, any recorded reviewer pass staying valid, and the retry re-running only the failed step — which is why steps SHALL be idempotent. Likewise, selection-only re-entry is driven by declaration, not convention: a node MAY declare a re-entry rule (the list field selected from, the order, and the progress field it advances), and where one is declared the orchestrator performs the selection as a deterministic routing step with no actor dispatch, appending the node to the walked history; the advanced progress field is what makes such re-entry count as progress for the revisit counters.
 
 #### Scenario: Next ticket after a pass
 - **WHEN** a ticket passes and pending tickets remain unchanged
