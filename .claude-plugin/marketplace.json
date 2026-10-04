@@ -1,0 +1,14 @@
+{
+  "name": "open-skills",
+  "description": "Graph engineering for Claude Code: graph-build builds the factory and graph-run operates it.",
+  "owner": {
+    "name": "wiasliaw"
+  },
+  "plugins": [
+    {
+      "name": "open-skills",
+      "source": "./",
+      "description": "Graph engineering for Claude Code: graph-build builds the factory (nodes, edges, verification, mounts) and graph-run operates it."
+    }
+  ]
+}

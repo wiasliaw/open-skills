@@ -1,0 +1,8 @@
+{
+  "name": "open-skills",
+  "version": "0.2.0",
+  "description": "Graph engineering for Claude Code: graph-build builds the factory (nodes, edges, verification, mounts) and graph-run operates it.",
+  "author": {
+    "name": "wiasliaw"
+  }
+}
