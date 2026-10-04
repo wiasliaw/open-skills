@@ -42,12 +42,12 @@ Any step that needs a deterministic result or deterministic execution SHALL be i
 
 ### Requirement: State is externalized
 
-Settings for scripts and agents SHALL be recorded in config (the sectioned, schema-versioned `.harness/config.json`), written once by its declared producer and read by everyone else. What happens during execution SHALL be recorded in files (the work-unit folder: `state.json`, `log.ndjson`, stage artifacts), not held in conversation context. The designated converge node SHALL converge this execution state at the end: record durable results into long-term memory as accumulated deltas and clean the residue.
+Settings for scripts and agents SHALL be recorded in config (the sectioned, schema-versioned `.harness/config.json`), written once by its declared producer and read by everyone else. What happens during execution SHALL be recorded in files (the work-unit folder: `state.json`, `log.ndjson`, stage artifacts), not held in conversation context. The close-out stage (the node mounting the close-out skill) SHALL converge this execution state at the end: record durable results into long-term memory as accumulated deltas and clean the residue.
 
 #### Scenario: Execution record outlives the session
 - **WHEN** a session running the graph ends mid-flight
 - **THEN** the work unit's routing state, event log, and stage artifacts SHALL be fully recoverable from its folder without replaying the conversation
 
-#### Scenario: Converge node converges
-- **WHEN** a work unit reaches the designated converge node
+#### Scenario: Close-out converges
+- **WHEN** a work unit reaches its close-out stage
 - **THEN** durable outcomes SHALL be written to long-term memory, and temporary execution residue (worktree, intermediate artifacts) SHALL be removed

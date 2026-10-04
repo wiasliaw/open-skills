@@ -24,20 +24,20 @@ A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum
 - **WHEN** a new decision replaces an earlier one
 - **THEN** the new delta's frontmatter SHALL list the old entry's id under `supersedes`, and the old file SHALL remain in place unedited
 
-### Requirement: Deltas originate in the work unit and merge back at converge
+### Requirement: Deltas originate in the work unit and merge back at close-out
 
-A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at converge: the converge stage SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than converge, or a direct run-time edit to a current-truth document by anyone, SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
+A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at close-out: the close-out stage (the node mounting the close-out skill) SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than the close-out stage, or a direct run-time edit to a current-truth document by anyone, SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
 
 #### Scenario: Drafted at the moment of decision
 - **WHEN** a stage makes a lasting decision mid-run
 - **THEN** it SHALL write a draft delta into its own stage directory, and no `.harness/` path SHALL change
 
-#### Scenario: Merged at converge
-- **WHEN** the work unit reaches converge
+#### Scenario: Merged at close-out
+- **WHEN** the work unit reaches its close-out stage
 - **THEN** the drafted deltas SHALL be consolidated and merged into the ledger as pending entries on the unit's branch
 
 #### Scenario: Mid-run direct edit
-- **WHEN** any stage writes the ledger before converge or edits a current-truth document during a run
+- **WHEN** any stage writes the ledger before close-out or edits a current-truth document during a run
 - **THEN** the write SHALL be a restriction violation recorded as a failure
 
 ### Requirement: Apply is a maintenance work unit
@@ -62,7 +62,7 @@ A deterministic script SHALL generate the memory index from entry frontmatter (i
 
 ### Requirement: The handoff record closes a work unit
 
-Every work unit that reaches a terminal SHALL have a handoff record written into its work-unit folder before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. The converge node writes it on success; the orchestrator writes it at the abandonment terminal. Its reader is the next session or human picking up the project.
+Every work unit that reaches a terminal SHALL have a handoff record written into its work-unit folder before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. The close-out stage writes it on success; the orchestrator writes it at the abandonment terminal. Its reader is the next session or human picking up the project.
 
 #### Scenario: Abandoned unit still hands off
 - **WHEN** a work unit ends because the phase approval judged it not needed, or through a cancellation

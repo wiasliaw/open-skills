@@ -80,18 +80,18 @@ Entry, terminal, and deterministic nodes (creating the work unit, delivery steps
 
 Per-stage permissions SHALL be contractual: written into the dispatch prompt (for example "MUST NOT write long-term memory"), checked by the reviewer, with violations recorded as failures. The plugin MUST NOT rely on per-node tool whitelists or per-node agent definitions for enforcement.
 
-#### Scenario: Converge-stage exception
-- **WHEN** the worker is dispatched for the designated converge node
+#### Scenario: Close-out exception
+- **WHEN** the worker is dispatched for the node mounting the close-out skill
 - **THEN** its prompt SHALL permit the long-term memory writes that node owns and still forbid writing routing state
 
 ### Requirement: The plant runs more than one orchestrator
 
-Multiple orchestrators MAY run concurrently in one project, each carrying its own work unit, isolated by the per-unit state folder. Writes to shared long-term memory SHALL be serialized at the merge moment: converge-stage delta entries travel with the work unit's own branch, so version control is the serialization point and conflicts surface through the graph's own integration-failure edge rather than corrupting memory in place.
+Multiple orchestrators MAY run concurrently in one project, each carrying its own work unit, isolated by the per-unit state folder. Writes to shared long-term memory SHALL be serialized at the merge moment: close-out delta entries travel with the work unit's own branch, so version control is the serialization point and conflicts surface through the graph's own integration-failure edge rather than corrupting memory in place.
 
 #### Scenario: Two concurrent work units
 - **WHEN** two orchestrators run two work units in the same project
 - **THEN** each SHALL read and write only its own work-unit folder, and neither run SHALL corrupt the other's routing state
 
-#### Scenario: Concurrent converge
-- **WHEN** two work units both reach their converge stage with memory updates
+#### Scenario: Concurrent close-out
+- **WHEN** two work units both reach their close-out stage with memory updates
 - **THEN** the updates SHALL merge through version control, and a conflict SHALL surface as a failing integration outcome handled by the graph's edges, not as a lost update

@@ -82,8 +82,8 @@ The human SHALL be the universal final fallback of every node, reached in place 
 
 ### Requirement: Single long-term memory write point
 
-Each graph SHALL designate exactly one converge node as the sole writer of long-term memory during a run; every node may read it. The per-project bootstrap (graph-build phase) may write its own one-time configuration before any run starts; within a run, only the converge node writes.
+The memory write point SHALL NOT be a separate designation: the close-out stage — the node that mounts the close-out (wrap) skill — is the sole writer of long-term memory during a run, and exactly one node in a graph SHALL mount that skill; every node may read. The per-project bootstrap (graph-build phase) may write its own one-time configuration before any run starts; within a run, only the close-out stage writes.
 
-#### Scenario: Non-converge write
-- **WHEN** a node other than the designated converge node attempts to write long-term memory
+#### Scenario: Write outside the close-out stage
+- **WHEN** a node that does not mount the close-out skill attempts to write long-term memory
 - **THEN** the write SHALL be disallowed by the graph definition

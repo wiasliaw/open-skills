@@ -34,7 +34,7 @@ Each edge SHALL declare its source node, its target node, and its guard: the con
 
 ### Requirement: Graph validation gates the first run
 
-Before a graph definition is used, it SHALL be validated: every loop has an exit and a cap, every blocked state has a destination, at least one success and one abandonment terminal exist and are reachable, edge coverage is complete, and the designated converge node is unique. An invalid definition SHALL NOT run.
+Before a graph definition is used, it SHALL be validated: every loop has an exit and a cap, every blocked state has a destination, at least one success and one abandonment terminal exist and are reachable, edge coverage is complete, and exactly one node mounts the close-out skill. An invalid definition SHALL NOT run.
 
 #### Scenario: Uncapped loop rejected
 - **WHEN** a definition contains a cycle with no failure cap or exit guard
