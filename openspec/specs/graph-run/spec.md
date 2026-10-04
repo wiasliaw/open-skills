@@ -78,7 +78,7 @@ Per-stage permissions SHALL be contractual: written into the dispatch prompt (fo
 
 ### Requirement: The plant runs more than one orchestrator
 
-Multiple orchestrators MAY run concurrently in one project, each carrying its own work unit, isolated by the per-unit state folder. Writes to shared long-term memory SHALL be serialized at the merge moment: converge-stage memory updates travel with the work unit's own branch, so version control is the serialization point and conflicts surface through the graph's own CI-failure edge rather than corrupting memory in place.
+Multiple orchestrators MAY run concurrently in one project, each carrying its own work unit, isolated by the per-unit state folder. Writes to shared long-term memory SHALL be serialized at the merge moment: converge-stage memory updates travel with the work unit's own branch, so version control is the serialization point and conflicts surface through the graph's own integration-failure edge rather than corrupting memory in place.
 
 #### Scenario: Two concurrent work units
 - **WHEN** two orchestrators run two work units in the same project
@@ -86,4 +86,4 @@ Multiple orchestrators MAY run concurrently in one project, each carrying its ow
 
 #### Scenario: Concurrent converge
 - **WHEN** two work units both reach their converge stage with memory updates
-- **THEN** the updates SHALL merge through version control, and a conflict SHALL surface as a failed merge or red CI handled by the graph's edges, not as a lost update
+- **THEN** the updates SHALL merge through version control, and a conflict SHALL surface as a failing integration outcome handled by the graph's edges, not as a lost update

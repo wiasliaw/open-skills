@@ -22,10 +22,10 @@ The skill SHALL remove execution residue — the worktree, temp files, intermedi
 
 ### Requirement: Converge hands to delivery with a verifiable result
 
-The skill SHALL open the pull request and record the integration result. Delivery proceeds only on a mergeable branch with green CI; a red CI result and an unmergeable branch (merge conflict) are both failing outcomes that send the work back to implementation with the failure, never overridden.
+The skill SHALL hand the work to the integration verification the project declares in its config and record the result (the reference implementation: open a pull request and run CI). Delivery proceeds only on a mergeable branch with passing integration; a failing integration result and an unmergeable branch (merge conflict) are both failing outcomes that send the work back to implementation with the failure, never overridden. A project that declares no integration verification passes on mergeability alone.
 
-#### Scenario: Red CI
-- **WHEN** CI is red after the PR is opened
+#### Scenario: Integration fails
+- **WHEN** the declared integration verification fails after handover
 - **THEN** the work SHALL go back to implementation with the failure, and delivery SHALL NOT proceed
 
 #### Scenario: Merge conflict
