@@ -22,7 +22,7 @@ A memory entry SHALL be a markdown file with YAML frontmatter carrying at minimu
 
 ### Requirement: Read by all, written at converge
 
-Every node and actor MAY read long-term memory; during a run only the designated converge node writes it, carrying its new entries on the work unit's branch. The bootstrap's one-time configs are the only pre-run writes in the namespace.
+Every node and actor MAY read long-term memory; during a run only the designated converge node SHALL write it, carrying its new entries on the work unit's branch. The bootstrap's one-time configs are the only pre-run writes in the namespace.
 
 #### Scenario: Mid-run write attempt
 - **WHEN** a non-converge stage tries to add or edit a memory entry
