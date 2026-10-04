@@ -66,7 +66,7 @@ A node MAY declare a human approval: its output requires the human's sign-off be
 
 ### Requirement: Deterministic nodes run in the orchestrator
 
-Entry, terminal, and deterministic nodes (creating the work unit, delivery steps, archival) SHALL run as commands or tool calls invoked by the orchestrator, with no LLM actor dispatch. Likewise, selection-only re-entry of a decomposition stage — picking the next pending ticket from an unchanged list, in declared order — SHALL be a deterministic routing step by the orchestrator, with no actor dispatch.
+Entry, terminal, and deterministic nodes (creating the work unit, delivery steps, archival) SHALL run as commands or tool calls invoked by the orchestrator, with no LLM actor dispatch. Likewise, in a graph that declares a decomposition stage, selection-only re-entry — picking the next pending ticket from an unchanged list, in declared order — SHALL be a deterministic routing step by the orchestrator, with no actor dispatch.
 
 #### Scenario: Next ticket after a pass
 - **WHEN** a ticket passes and pending tickets remain unchanged
