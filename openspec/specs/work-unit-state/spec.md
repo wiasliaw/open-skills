@@ -6,7 +6,7 @@ The concrete contract of externalized execution state: one folder per work unit 
 
 ### Requirement: Work-unit folder
 
-Each work unit SHALL live in one folder at the work-units location declared in the project config written by the bootstrap, holding: `state.json` (routing state only, bounded size), `log.ndjson` (append-only event log, one JSON object per line), and one `<stage>/` directory per executed node — named by the node's id from the graph definition — holding that stage's artifacts (worker outputs, reviewer reports `review-<n>.md`, advisor advice `advice-<n>.md`, human decision records `decision-<n>.md`). A skipped node has no directory; advice lives under the stage it addresses. No markdown copy of routing state SHALL exist.
+Each work unit SHALL live in one folder at the work-units location declared in the project config written by the bootstrap, holding: `state.json` (routing state only, bounded size), `log.ndjson` (append-only event log, one JSON object per line), and one `<stage>/` directory per executed node — named by the node's id from the graph definition — holding that stage's artifacts (worker outputs, draft deltas `delta-<n>.md`, reviewer reports `review-<n>.md`, advisor advice `advice-<n>.md`, human decision records `decision-<n>.md`). A skipped node has no directory; advice lives under the stage it addresses. No markdown copy of routing state SHALL exist.
 
 #### Scenario: Routing truth lives in state.json
 - **WHEN** a work unit runs under the graph

@@ -24,17 +24,21 @@ A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum
 - **WHEN** a new decision replaces an earlier one
 - **THEN** the new delta's frontmatter SHALL list the old entry's id under `supersedes`, and the old file SHALL remain in place unedited
 
-### Requirement: Runs write deltas only
+### Requirement: Deltas originate in the work unit and merge back at converge
 
-Every node and actor MAY read long-term memory; during a run the designated converge node SHALL be the only memory writer, and its only memory writes SHALL be new delta entries, carried on the work unit's branch. A direct run-time edit to a current-truth document SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
+A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at converge: the converge stage SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than converge, or a direct run-time edit to a current-truth document by anyone, SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
 
-#### Scenario: Converge records an outcome
-- **WHEN** a work unit's converge stage has a durable outcome
-- **THEN** it SHALL be written as a new pending delta entry on the unit's branch, and no current-truth document SHALL change
+#### Scenario: Drafted at the moment of decision
+- **WHEN** a stage makes a lasting decision mid-run
+- **THEN** it SHALL write a draft delta into its own stage directory, and no `.harness/` path SHALL change
+
+#### Scenario: Merged at converge
+- **WHEN** the work unit reaches converge
+- **THEN** the drafted deltas SHALL be consolidated and merged into the ledger as pending entries on the unit's branch
 
 #### Scenario: Mid-run direct edit
-- **WHEN** any stage edits a current-truth document during a run
-- **THEN** the edit SHALL be a restriction violation recorded as a failure
+- **WHEN** any stage writes the ledger before converge or edits a current-truth document during a run
+- **THEN** the write SHALL be a restriction violation recorded as a failure
 
 ### Requirement: Apply is a maintenance work unit
 

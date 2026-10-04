@@ -4,13 +4,13 @@ Standalone convergence skill: close out a finished piece of work — fold durabl
 
 ## Requirements
 
-### Requirement: Converge records durable outcomes as deltas
+### Requirement: Converge merges the unit's deltas into memory
 
-The skill SHALL record the work's durable outcomes (decisions made, features landed, proposed constraint or architecture changes) as pending delta entries in long-term memory, with static relations between entries as frontmatter references. It MUST NOT edit a current-truth document directly — deltas are folded in later by a maintenance apply unit. This is the single memory write point of a run.
+The skill SHALL collect the draft deltas the unit's stages produced (decisions made, features landed, proposed constraint or architecture changes), consolidate them — deduplicate, resolve relations, drop drafts the reviews rejected — and merge them into long-term memory as pending delta entries. It MUST NOT edit a current-truth document directly — pending deltas are folded in later by a maintenance apply unit. This merge is the single memory write point of a run.
 
-#### Scenario: Decision recorded
-- **WHEN** convergence records a decision that supersedes an earlier one
-- **THEN** it SHALL be a new pending delta whose frontmatter references the superseded entry, no current-truth document SHALL change, and no separate graph file SHALL be created
+#### Scenario: Decision merged
+- **WHEN** convergence merges a drafted decision that supersedes an earlier entry
+- **THEN** the ledger gains a pending delta whose frontmatter references the superseded entry, no current-truth document SHALL change, and no separate graph file SHALL be created
 
 ### Requirement: Converge cleans residue
 
