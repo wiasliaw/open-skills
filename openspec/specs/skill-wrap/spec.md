@@ -4,13 +4,13 @@ Standalone convergence skill: close out a finished piece of work — fold durabl
 
 ## Requirements
 
-### Requirement: Converge folds durable outcomes into memory
+### Requirement: Converge records durable outcomes as deltas
 
-The skill SHALL update long-term memory with the work's durable outcomes (decisions made, features landed), recording static relations between entries as frontmatter references. This is the single memory write point of a run.
+The skill SHALL record the work's durable outcomes (decisions made, features landed, proposed constraint or architecture changes) as pending delta entries in long-term memory, with static relations between entries as frontmatter references. It MUST NOT edit a current-truth document directly — deltas are folded in later by a maintenance apply unit. This is the single memory write point of a run.
 
 #### Scenario: Decision recorded
 - **WHEN** convergence records a decision that supersedes an earlier one
-- **THEN** the relation SHALL be a frontmatter reference on the entry and no separate graph file SHALL be created
+- **THEN** it SHALL be a new pending delta whose frontmatter references the superseded entry, no current-truth document SHALL change, and no separate graph file SHALL be created
 
 ### Requirement: Converge cleans residue
 
@@ -34,7 +34,7 @@ The skill SHALL hand the work to the integration verification the project declar
 
 ### Requirement: Graph profile
 
-When mounted on the converge node, the skill SHALL additionally: carry its memory updates on the work unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report exactly one of the outcomes `integration-green`, `integration-failed`, or `blocked`, leaving routing to the node's declared edges.
+When mounted on the converge node, the skill SHALL additionally: carry its delta entries on the work unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report exactly one of the outcomes `integration-green`, `integration-failed`, or `blocked`, leaving routing to the node's declared edges.
 
 #### Scenario: Mounted converge
 - **WHEN** the skill runs as the converge node of a work unit
