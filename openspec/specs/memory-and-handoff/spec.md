@@ -42,7 +42,7 @@ A durable outcome SHALL be drafted where and when it happens: the stage whose wo
 
 ### Requirement: Apply is a maintenance work unit
 
-Pending deltas SHALL be folded into the current-truth documents only by an apply step that runs as a normal work unit through the graph — reviewed, converged, and serialized through version control like any other work. Applying marks each folded delta `applied` (the file stays as history); a delta judged wrong is marked `rejected` with the reason. The project config MAY declare thresholds (pending-delta count, current-truth budget pressure) whose breach is reported at run start as a due maintenance unit.
+Pending deltas SHALL be folded into the current-truth documents only by an apply step that runs as a normal work unit through the graph — reviewed, converged, and serialized through version control like any other work. Cleanup is dual-mode: close-out performs each session's immediate cleanup, and the maintenance unit is the periodic comprehensive pass over accumulated state. Applying marks each folded delta `applied` (the file stays as history); a delta judged wrong is marked `rejected` with the reason. The project config MAY declare thresholds (pending-delta count, current-truth budget pressure) whose breach is reported at run start as a due maintenance unit.
 
 #### Scenario: Distillation run
 - **WHEN** the pending-delta threshold is breached

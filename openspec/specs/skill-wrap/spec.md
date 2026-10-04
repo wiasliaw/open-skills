@@ -1,8 +1,20 @@
 ## Purpose
 
-Standalone close-out skill: finish a line of work properly — merge its durable outcomes into project memory, clean every residue of execution, close out workflow-tool state, and hand the result to integration. Mountable on the graph's designated converge node.
+Standalone clean-state skill: end a line of work so the next session can take over cold. Every session leaves the project in a clean state — verification green, durable outcomes externalized, no residual artifacts, no workflow tool mid-flight — because without active cleanup, repositories accrue entropy and successors waste their start diagnosing their predecessor's leftovers. Mountable on the graph's designated converge node.
 
 ## Requirements
+
+### Requirement: The clean-state guarantee
+
+Close-out SHALL leave the project in a state a successor session can pick up with zero knowledge of this session: declared verification passes, progress and outcomes are recorded in versioned files (never only in conversation), no temporary or debugging artifacts remain, no workflow tool is mid-flight, and the standard entry path works. A successor MUST NOT need to diagnose what the previous session left behind or distinguish intentional work from leftover scaffolding.
+
+#### Scenario: Successor cold start
+- **WHEN** a new orchestrator session takes over after close-out
+- **THEN** it SHALL be able to resume from the externalized records alone, finding no residue whose intent it must guess
+
+#### Scenario: Cleanup is idempotent
+- **WHEN** a close-out is interrupted and run again
+- **THEN** the repeated cleanup SHALL converge to the same clean state with no additional side effects
 
 ### Requirement: Close-out merges durable outcomes into memory
 
@@ -14,7 +26,7 @@ The skill SHALL collect the durable outcomes the line of work produced (decision
 
 ### Requirement: Close-out cleans residue and closes workflow state
 
-The skill SHALL remove execution residue — the worktree, temp files, intermediate artifacts — and SHALL close out the state of the workflow tools the work used, leaving no tool mid-flight (for example, archiving an applied OpenSpec change). Transient state is cleaned; durable state has already been externalized.
+The skill SHALL remove execution residue — the worktree, temp files, intermediate artifacts, and temporary debugging scaffolding (debug output statements, commented-out experiments, dead TODO markers introduced by this line of work) — and SHALL close out the state of the workflow tools the work used, leaving no tool mid-flight (for example, archiving an applied OpenSpec change). Transient state is cleaned; durable state has already been externalized.
 
 #### Scenario: Residue removed
 - **WHEN** close-out hands to integration
