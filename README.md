@@ -27,7 +27,7 @@ A Claude Code plugin for graph engineering. `graph-build` builds the factory: it
 - `skills/`: the seven skills above, each with a compact `SKILL.md` and on-demand `references/` (graph-build also ships `templates/` with the template graph definition).
 - `agents/`: `worker`, `reviewer` and `advisor`, the roles dispatched along the graph.
 - `scripts/`: zero-dependency Node.js (>= 20) deterministic scripts, each with a `node --test` suite: `graph.mjs` (validator and tool gate), `work-unit.mjs` (write gate), `memory.mjs`, `worktree.mjs`, `init.mjs`.
-- `docs/`: one page per user-facing skill.
+- `docs/`: one page per user-facing skill, plus reference pages: [file formats](docs/file-formats.md) (config, graph definition, work-unit folder, delta entries) and [project anatomy](docs/project-anatomy.md) (consumer-project layout and write authority).
 
 ## Development
 
