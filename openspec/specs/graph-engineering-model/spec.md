@@ -82,7 +82,7 @@ The human SHALL be the universal final fallback of every node, reached in place 
 
 ### Requirement: Single long-term memory write point
 
-The memory write point SHALL NOT be a separate designation: the close-out stage — the node that mounts the close-out (wrap) skill — is the sole memory writer of an ordinary unit's run, and exactly one node in a graph SHALL mount that skill; every node may read. The detailed rules, and the maintenance phase's sole exception for current-truth documents, are owned by the memory spec; a violation is a contractual restriction violation, like any other. The per-project bootstrap (graph-build phase) may write its own one-time configuration before any run starts; within a run, only the close-out stage writes the ledger, and the maintenance phase's declared overrides are the sole exception for current-truth documents.
+The memory write point SHALL NOT be a separate designation: the close-out stage — the node that mounts the close-out (wrap) skill — is the sole memory writer of an ordinary unit's run, and exactly one node in a graph SHALL mount that skill; every node may read. The detailed rules, and the maintenance phase's sole exception for current-truth documents, are owned by the memory spec; a violation is a contractual restriction violation, like any other. The per-project bootstrap (graph-build phase) may write its own one-time configuration before any run starts; within a run, only the close-out stage writes the ledger, and the maintenance phase's declared overrides are the sole exception — for current-truth documents and for delta status flips.
 
 #### Scenario: Write outside the close-out stage
 - **WHEN** a node that does not mount the close-out skill attempts to write long-term memory
