@@ -70,7 +70,7 @@ A valid graph SHALL have at least one success terminal and one abandonment termi
 
 ### Requirement: The human is every node's final fallback
 
-The human SHALL be the universal final fallback of every node, reached in place through the advisor tier — the supervisor and the advisor failed, so the higher-up comes to the floor. The orchestrator MUST NOT leave the current node while a human ruling is pending; the ruling decides the disposition: retry here with guidance, move back to an earlier node of the path, or end the work. Routine approvals are declared as checkpoints on the nodes whose output needs sign-off, kept in the cheap stages so no synchronous human wait sits inside the expensive build-and-verify loops.
+The human SHALL be the universal final fallback of every node, reached in place through the advisor tier — the supervisor and the advisor failed, so the higher-up comes to the floor. The orchestrator MUST NOT leave the current node while a human ruling is pending; the ruling decides the disposition: retry here with guidance, move back to an earlier node of the path, or end the work. Routine approvals are declared per node (the human-approval flag) on the nodes whose output needs sign-off, kept in the cheap stages so no synchronous human wait sits inside the expensive build-and-verify loops.
 
 #### Scenario: Escalation stays in place
 - **WHEN** a stage is blocked or repeatedly failing and the advisor tier is exhausted

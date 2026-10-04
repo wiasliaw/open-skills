@@ -65,5 +65,5 @@ A deterministic script SHALL generate the memory index from entry frontmatter (i
 Every work unit that reaches a terminal SHALL have a handoff record written into its work-unit folder before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. The converge node writes it on success; the orchestrator writes it at the abandonment terminal. Its reader is the next session or human picking up the project.
 
 #### Scenario: Abandoned unit still hands off
-- **WHEN** a work unit ends because the phase checkpoint judged it not needed, or through a cancellation
+- **WHEN** a work unit ends because the phase approval judged it not needed, or through a cancellation
 - **THEN** the handoff record SHALL state the conclusions and the abandonment reason before the folder is archived

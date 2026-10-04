@@ -52,16 +52,16 @@ Escalation SHALL happen in place — it is a fallback chain inside the current n
 - **WHEN** the human rules on an exhausted escalation
 - **THEN** the orchestrator SHALL record the disposition — retry with guidance, move back to a named earlier node, or end — and only then act on it
 
-### Requirement: Human checkpoints are in-place stops, never nodes
+### Requirement: Human approvals are in-place stops, never nodes
 
-A node MAY declare a human checkpoint: its output requires the human's sign-off before the orchestrator routes on it. A checkpoint is a synchronous in-place stop — the orchestrator puts the question to the human in the main session at the current node and records the answer (decision record in that node's stage directory, state entry, log line) before taking any route; it MUST NOT be an agent and MUST NOT be a node. The answer approves the outcome, sends the work back to a named earlier node with feedback, or ends it; when in doubt the human sends it back. The phase checkpoint SHALL be mandatory for every work unit — the approved phase's declared path is itself the thing being signed off, so no phase, however short its path, bypasses it.
+A node MAY declare a human approval: its output requires the human's sign-off before the orchestrator routes on it. An approval is a synchronous in-place stop — the orchestrator puts the question to the human in the main session at the current node and records the answer (decision record in that node's stage directory, state entry, log line) before taking any route; it MUST NOT be an agent and MUST NOT be a node. The answer approves the outcome, sends the work back to a named earlier node with feedback, or ends it; when in doubt the human sends it back. The phase approval SHALL be mandatory for every work unit — the approved phase's declared path is itself the thing being signed off, so no phase, however short its path, bypasses it.
 
-#### Scenario: Checkpoint answered
-- **WHEN** the human answers a checkpoint question
+#### Scenario: Approval answered
+- **WHEN** the human answers an approval question
 - **THEN** the orchestrator SHALL record the decision and its feedback in the current node's stage directory and state before dispatching any next node
 
 #### Scenario: Not needed
-- **WHEN** the phase checkpoint judges the work not needed
+- **WHEN** the phase approval judges the work not needed
 - **THEN** the recorded disposition SHALL end the unit at the abandonment terminal
 
 ### Requirement: Deterministic nodes run in the orchestrator
