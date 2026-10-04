@@ -26,7 +26,7 @@ Each work unit SHALL live in one folder at the work-units location declared in t
 
 ### Requirement: Routing state content
 
-`state.json` SHALL be two-layer. The core contract, present for every unit of every graph because it serves the universal machinery (orchestration, the fallback chain, approvals): the unit's identity (an id matching `^[a-z0-9][a-z0-9-]*$`, timestamps, and the captured trigger: its source and the original request verbatim); the current node; the blocked problem tracking when escalation is in flight; failure counters keyed by scope (the scope kind `node:<id>` is universal; further scope kinds, such as `ticket:<id>`, exist only where the graph declares the concept); advisor consultations keyed per problem, capped at the graph's declared consultation cap; review verdicts and human decisions, each with evidence references and a folder-relative file pointer to the full record; and the outcome with its reason. Everything else is graph-declared state: the graph definition declares each further field by name, type, and allowed values — the plugin's template factories declare the approved phase, the fast-path flag, the contract reference, and the ticket list with its current selection — and the write gate validates against the core contract plus the unit's graph declaration. A field belonging to a concept the graph does not have SHALL NOT exist in that graph's units. Full content lives in stage files; `state.json` holds verdicts, counts, enums, dates, and pointers.
+`state.json` SHALL be two-layer. The core contract, present for every unit of every graph because it serves the universal machinery (orchestration, the fallback chain, approvals): the unit's identity (an id matching `^[a-z0-9][a-z0-9-]*$`, timestamps, and the captured trigger: its source and the original request verbatim); the current node; the blocked problem tracking when escalation is in flight; failure counters keyed by scope (the scope kind `node:<id>` is universal; further scope kinds, such as `ticket:<id>`, exist only where the graph declares the concept); advisor consultations keyed per problem, capped at the graph's declared consultation cap; review verdicts and human decisions, each with evidence references and a folder-relative file pointer to the full record; and the outcome with its reason. Everything else is graph-declared state: the graph definition declares each further field by name, type, allowed values, and applicability — bound to the node that owns it (the field exists only in units whose approved path includes that node) or to the phases it applies to — and the write gate validates against the core contract plus the unit's graph declaration. A field SHALL NOT exist in a unit outside its applicability: not in units of a graph that never declares it, and not in units whose approved path or phase does not use it. The plugin's template factories declare the approved phase, the fast-path flag, the contract reference, and the ticket list with its current selection. Full content lives in stage files; `state.json` holds verdicts, counts, enums, dates, and pointers.
 
 #### Scenario: Graph-declared routing field
 - **WHEN** a graph definition declares a state field beyond the core contract
@@ -35,6 +35,10 @@ Each work unit SHALL live in one folder at the work-units location declared in t
 #### Scenario: Factory without tickets
 - **WHEN** a graph declares no decomposition concept
 - **THEN** its units' `state.json` SHALL contain no ticket fields and no `ticket:` counter scopes, and validation SHALL reject them if present
+
+#### Scenario: Phase without tickets
+- **WHEN** a unit's approved phase walks a path that excludes the ticket-owning node, in a graph that does declare tickets
+- **THEN** that unit's `state.json` SHALL likewise contain no ticket fields, and validation SHALL reject them if present
 
 #### Scenario: Verdict recorded with pointer
 - **WHEN** the orchestrator records a review verdict
