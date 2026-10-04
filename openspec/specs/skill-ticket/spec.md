@@ -14,10 +14,14 @@ Every ticket SHALL declare its verification as an executable test (or check) bef
 
 ### Requirement: Red before green
 
-A ticket's declared test SHALL fail against the pre-implementation state — proving it tests the actual gap — and SHALL pass when the ticket is done. A test that already passes before implementation means the ticket is mis-scoped or already satisfied, and SHALL be revised or dropped.
+A ticket's declared test SHALL fail against the pre-implementation state — proving it tests the actual gap — and SHALL pass when the ticket is done. The test is authored at decomposition as a stage artifact; the build worker lands it in the worktree, runs it red before implementing, and records the red run as evidence, so the reviewer can confirm red-then-green without any execution outside the worktree. A test that already passes before implementation means the ticket is mis-scoped or already satisfied, and SHALL be revised or dropped.
+
+#### Scenario: Red verified in the worktree
+- **WHEN** the build worker takes up a ticket
+- **THEN** it SHALL land the declared test in the worktree, run it, record the failing result as evidence, and only then implement
 
 #### Scenario: Test already green
-- **WHEN** a ticket's declared test passes before any implementation
+- **WHEN** a ticket's declared test passes in the worktree before any implementation
 - **THEN** the ticket SHALL be revised or removed, not handed to implementation as-is
 
 ### Requirement: Contradictions go back to the contract

@@ -18,7 +18,7 @@ Long-term memory SHALL live under the project's `.harness/` namespace in two lay
 
 ### Requirement: Delta entry format
 
-A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum: `id` (`<unit-id>-<n>`, unique by construction across concurrent units, stable), `title`, `date`, `type`, `status` (`pending`, `applied`, or `rejected`), and the current-truth target it proposes to change; relations SHALL be the frontmatter fields `supersedes`, `depends-on`, `decided-by`, and `verified-by`, each a list of entry ids referencing existing entries or sibling drafts of the same unit. The body states the outcome and its rationale. One entry per file is required so concurrent runs merge as whole-file additions, never as in-place conflicts.
+A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum: `id` (`<unit-id>-<node-id>-<n>`, with `<n>` counted per stage directory, unique by construction across concurrent units and stages, stable), `target` (the current-truth document it proposes to change), `date` (ISO-8601 UTC), `title`, `type`, and `status` (`pending`, `applied`, or `rejected`); relations SHALL be the frontmatter fields `supersedes`, `depends-on`, `decided-by`, and `verified-by`, each a list of entry ids referencing existing entries or sibling drafts of the same unit. The body states the outcome and its rationale. One entry per file is required so concurrent runs merge as whole-file additions, never as in-place conflicts.
 
 #### Scenario: Superseding decision
 - **WHEN** a new decision replaces an earlier one
@@ -26,7 +26,7 @@ A delta entry SHALL be a markdown file with YAML frontmatter carrying at minimum
 
 ### Requirement: Deltas originate in the work unit and merge back at close-out
 
-A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at close-out: the close-out stage (the node mounting the close-out skill) SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, and drop every draft a reviewer report named as rejected — a reviewer MAY reject a draft delta by naming its id with the reason in its report), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than the close-out stage, or a direct run-time edit to a current-truth document by anyone, SHALL be a restriction violation recorded as a failure. The bootstrap's one-time config is the only pre-run write in the namespace.
+A durable outcome SHALL be drafted where and when it happens: the stage whose work produced it writes a draft delta (`delta-<n>.md`, same format as a ledger entry) into its own stage directory in the work-unit folder, and `.harness/` stays untouched. Every node and actor MAY read long-term memory, but the ledger is written only at close-out: the close-out stage (the node mounting the close-out skill) SHALL collect the unit's draft deltas, consolidate them (deduplicate, resolve relations, and drop every draft a reviewer report named as rejected — a reviewer MAY reject a draft delta by naming its id with the reason in its report), and merge them into `.harness/` as pending delta entries carried on the work unit's branch. A ledger write by any stage other than the close-out stage, or a direct run-time edit to a current-truth document, SHALL be a restriction violation recorded as a failure — with one declared exception: a unit running the maintenance phase, whose phase-level restriction overrides (declared in the graph definition) grant its worker the current-truth documents and delta statuses as deliverables. The bootstrap's one-time config is the only pre-run write in the namespace.
 
 #### Scenario: Drafted at the moment of decision
 - **WHEN** a stage makes a lasting decision mid-run
@@ -37,12 +37,12 @@ A durable outcome SHALL be drafted where and when it happens: the stage whose wo
 - **THEN** the drafted deltas SHALL be consolidated and merged into the ledger as pending entries on the unit's branch
 
 #### Scenario: Mid-run direct edit
-- **WHEN** any stage writes the ledger before close-out or edits a current-truth document during a run
+- **WHEN** any stage of a non-maintenance unit writes the ledger before close-out or edits a current-truth document during a run
 - **THEN** the write SHALL be a restriction violation recorded as a failure
 
 ### Requirement: Apply is a maintenance work unit
 
-Pending deltas SHALL be folded into the current-truth documents only by an apply step that runs as a normal work unit through the graph — reviewed, converged, and serialized through version control like any other work. The maintenance phase is the single authorized exception to the no-current-truth-write rule: its declaration names the current-truth documents and delta statuses as its deliverables, so its worker edits them as ordinary work products, and flipping `status` to `applied` or `rejected` is its exclusive right. Cleanup is dual-mode: close-out performs each session's immediate cleanup, and the maintenance unit is the periodic comprehensive pass over accumulated state. Applying marks each folded delta `applied` (the file stays as history); a delta judged wrong is marked `rejected` with the reason. The project config MAY declare thresholds (pending-delta count, current-truth budget pressure) whose breach is reported at run start as a due maintenance unit.
+Pending deltas SHALL be folded into the current-truth documents only by an apply step that runs as a normal work unit through the graph — reviewed, converged, and serialized through version control like any other work. The maintenance phase is the single authorized exception to the no-current-truth-write rule, carried by its phase-level restriction overrides in the graph definition: they name the current-truth documents and delta statuses as its deliverables, so its worker edits them as ordinary work products — reviewed like any work — and flipping `status` to `applied` or `rejected` is its exclusive right. Cleanup is dual-mode: close-out performs each session's immediate cleanup, and the maintenance unit is the periodic comprehensive pass over accumulated state. Applying marks each folded delta `applied` (the file stays as history); a delta judged wrong is marked `rejected` with the reason. The project config MAY declare thresholds (pending-delta count, current-truth budget pressure) whose breach is reported at run start as a due maintenance unit.
 
 #### Scenario: Distillation run
 - **WHEN** the pending-delta threshold is breached
@@ -54,7 +54,7 @@ Pending deltas SHALL be folded into the current-truth documents only by an apply
 
 ### Requirement: The index is generated, never hand-written
 
-A deterministic script SHALL generate the memory index from entry frontmatter (id, title, date, type, status, relations); the index SHALL NOT be hand-edited and SHALL be regenerable at any time, including after a merge. The default view lists current-truth documents and pending deltas; applied and rejected entries appear only on request. Readers follow progressive disclosure: load the current truth and the index, pull individual entries on demand.
+A deterministic memory script SHALL own the mechanical side of this spec: it generates the index from entry frontmatter (id, title, date, type, status, relations) on demand — the index is never committed, so whole-file-addition merges stay conflict-free — and it performs the budget validation of current-truth documents and the threshold evaluation. The orchestrator SHALL invoke it at every run start; a breached threshold is reported as due maintenance, which the orchestrator turns into a work unit with trigger source `maintenance-due`. The index SHALL NOT be hand-edited and SHALL be regenerable at any time, including after a merge. The default view lists current-truth documents and pending deltas; applied and rejected entries appear only on request. Readers follow progressive disclosure: load the current truth and the index, pull individual entries on demand.
 
 #### Scenario: Index after a merge
 - **WHEN** two branches each added delta entries and are merged
@@ -62,7 +62,7 @@ A deterministic script SHALL generate the memory index from entry frontmatter (i
 
 ### Requirement: The handoff record closes a work unit
 
-Every work unit that reaches a terminal SHALL have a handoff record written as `handoff.md` at the work-unit folder root before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. The close-out stage writes it on success; the orchestrator writes it at the abandonment terminal. Its reader is the next session or human picking up the project.
+Every work unit that reaches a terminal SHALL have a handoff record at the work-unit folder root (`handoff.md`) before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. On success the close-out worker writes it as a reviewed deliverable in its own stage directory and the terminal's deterministic steps copy it to the root; at the abandonment terminal the orchestrator writes it directly. Its reader is the next session or human picking up the project.
 
 #### Scenario: Abandoned unit still hands off
 - **WHEN** a work unit ends because the phase approval judged it not needed, or through a cancellation

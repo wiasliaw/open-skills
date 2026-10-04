@@ -50,15 +50,15 @@ A graph definition SHALL be a superset of any single execution path: each approv
 
 ### Requirement: Every loop has an exit and a cap
 
-A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedly with the same error SHALL escalate rather than loop again. Escalation SHALL be tiered and in place — the orchestrator stays at the current node: an LLM advisor absorbs the first escalations there, and the human is reached only after the advisor tier is exhausted. Because this fallback chain is universal, blocked states need no declared edges.
+A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedly with the same failure signature SHALL escalate rather than loop again, and a routable-outcome loop — an edge returning to an earlier node of the path — SHALL carry a revisit counter under the graph's declared cap, engaging the same fallback chain at the cap. Escalation SHALL be tiered and in place — the orchestrator stays at the current node: an LLM advisor absorbs the first escalations there, and the human is reached only after the advisor tier is exhausted. Because this fallback chain is universal, blocked states need no declared edges.
 
 #### Scenario: Repeated failure
-- **WHEN** the same failure recurs at a stage up to its declared cap
-- **THEN** the graph SHALL route to the advisor tier rather than loop again
+- **WHEN** the same failure recurs at a stage up to the graph's declared cap
+- **THEN** the stage SHALL escalate to the advisor tier rather than loop again
 
 #### Scenario: Advisor exhausted
 - **WHEN** the advisor tier's consultation cap on the same problem is reached without resolution
-- **THEN** the graph SHALL route to human escalation
+- **THEN** the stage SHALL escalate to the human
 
 ### Requirement: Legitimate terminals
 

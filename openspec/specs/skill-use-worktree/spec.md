@@ -26,14 +26,14 @@ One worktree SHALL serve one line of work (one work unit), opened lazily at firs
 
 ### Requirement: Mechanics are script-owned
 
-Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a zero-dependency Node.js script (Node.js >= 20, built-in modules and git only, stdout-JSON plus distinct exit codes per failure class, idempotent subcommands, committed tests). The page carries policy; whoever works inside the worktree never improvises raw `git worktree` commands for creation, reuse, or recovery. Removal is the one operation outside the script: the worktree's owner (the close-out step, or the user for read-only pins) removes it directly with `git worktree remove`, which is why the script deliberately ships no `remove`. The script SHALL provide: `ensure --branch wu/<id>` (create, reuse, reopen on an existing branch, or recover a stale registration whose directory is absent), `ensure --detach <sha>` (a read-only pinned worktree that never runs project code), and `setup --worktree <path>` (run the declared setup commands and copies from the worktree-setup section of the project config). An existing directory that is not the expected worktree is a collision: never removed, never forced. There SHALL be no `remove` subcommand — a scripted remove would hand a destructive operation to workers that must not own it — and the script MUST NEVER run global `git worktree prune`.
+Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a zero-dependency Node.js script (Node.js >= 20, built-in modules and git only, stdout-JSON plus distinct exit codes per failure class, idempotent subcommands, committed tests). The page carries policy; whoever works inside the worktree never improvises raw `git worktree` commands for creation, reuse, or recovery. Removal is the one operation outside the script: the orchestrator, in the post-review delivery steps (or the user, for read-only pins), removes it directly with `git worktree remove`, which is why the script deliberately ships no `remove`. The script SHALL provide: `ensure --branch <branch>` — default `wu/<id>`, and a fix unit passes the existing branch its trigger names — (create, reuse, reopen on an existing branch, or recover a stale registration whose directory is absent), `ensure --detach <sha>` (a read-only pinned worktree that never runs project code), and `setup --worktree <path>` (run the declared setup commands and copies from the worktree-setup section of the project config). An existing directory that is not the expected worktree is a collision: never removed, never forced. There SHALL be no `remove` subcommand — a scripted remove would hand a destructive operation to workers that must not own it — and the script MUST NEVER run global `git worktree prune`.
 
 #### Scenario: Script fails
 - **WHEN** the script exits non-zero or cannot be resolved
 - **THEN** the consumer SHALL stop and report blocked with the script's error code, and SHALL NOT fall back to raw `git worktree` commands
 
 #### Scenario: Collision
-- **WHEN** the computed path exists but is not a registered worktree on `wu/<id>`
+- **WHEN** the computed path exists but is not a registered worktree on the unit's resolved branch
 - **THEN** the script SHALL fail with the collision error and nothing SHALL modify, reuse, or remove that path
 
 #### Scenario: Setup from declared config
@@ -42,7 +42,7 @@ Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a 
 
 ### Requirement: Cleanup belongs to the owner, not the worker
 
-Whoever works inside the worktree MUST NOT remove it. Removal belongs to the close-out step (or the user, for read-only pins). A missing worktree with the branch still present means reopen on the existing branch, not a new branch.
+Whoever works inside the worktree MUST NOT remove it. Removal belongs to the deterministic delivery steps the orchestrator executes after close-out passes review (or to the user, for read-only pins). A missing worktree with the branch still present means reopen on the existing branch, not a new branch.
 
 #### Scenario: Reopen after removal
 - **WHEN** the recorded worktree is gone but branch `wu/<id>` exists
@@ -50,10 +50,10 @@ Whoever works inside the worktree MUST NOT remove it. Removal belongs to the clo
 
 ### Requirement: Graph profile
 
-When mounted on a build node, the skill SHALL additionally require: the orchestrator provisions the worktree (runs `ensure` and `setup`) before dispatching the build worker — on first entry and again whenever the recorded worktree is gone — and passes the path in the dispatch; the build worker performs no VCS operations and confines its repository writes to the given path (its stage directory stays writable), reporting blocked when no usable path is given; the orchestrator owns the VCS operations on the unit's branch (committing accepted build output, pushing); the worker records the branch and path as a worktree record (`worktree.md`) in its dispatched stage directory so the close-out step can find and remove the worktree; and the worktree is reused across all of the unit's tickets.
+When mounted on a node that needs repository writes (build, close-out), the skill SHALL additionally require: the orchestrator provisions the worktree (runs `ensure` and `setup`) before dispatching the build worker — on first entry and again whenever the recorded worktree is gone — and passes the path in the dispatch; the build worker performs no VCS operations and confines its repository writes to the given path (its stage directory stays writable), reporting blocked when no usable path is given; the orchestrator owns the VCS operations on the unit's branch (committing accepted build output, pushing); the worker records the branch and path as a worktree record (`worktree.md`) in its dispatched stage directory so the close-out step can find and remove the worktree; and the worktree is reused across all of the unit's tickets.
 
 #### Scenario: Orchestrator provisions
-- **WHEN** build is about to start or be re-entered after a red-CI reopen
+- **WHEN** a repository-writing node is about to start — a unit's first build entry, a fix unit's first entry on its inherited branch, or a close-out whose recorded worktree is gone
 - **THEN** the orchestrator SHALL run `ensure` and `setup` first and dispatch the worker with the resulting path
 
 #### Scenario: Worker performs no VCS operations

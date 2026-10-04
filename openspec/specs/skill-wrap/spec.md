@@ -26,10 +26,10 @@ The skill SHALL collect the durable outcomes the line of work produced (decision
 
 ### Requirement: Close-out cleans residue and closes workflow state
 
-The skill SHALL remove execution residue — the worktree, temp files, intermediate artifacts, and temporary debugging scaffolding (debug output statements, commented-out experiments, dead TODO markers introduced by this line of work) — and SHALL close out the state of the workflow tools the work used, leaving no tool mid-flight (for example, archiving an applied OpenSpec change). Transient state is cleaned; durable state has already been externalized.
+The skill SHALL remove the execution residue inside the working copy — temp files, intermediate artifacts, and temporary debugging scaffolding (debug output statements, commented-out experiments, dead TODO markers introduced by this line of work) — and SHALL close out the state of the workflow tools the work used, leaving no tool mid-flight (for example, archiving an applied OpenSpec change). The worktree itself is not the skill's to remove: that is the deterministic delivery half's job. Transient state is cleaned; durable state has already been externalized.
 
 #### Scenario: Residue removed
-- **WHEN** close-out hands to integration
+- **WHEN** the delivery steps complete after close-out passes review
 - **THEN** no residual worktree or temp files SHALL remain
 
 #### Scenario: Workflow tool closed out
@@ -54,11 +54,11 @@ The skill SHALL end the line of work at handover, in two halves. The LLM half (t
 
 #### Scenario: Conflict needs a rebase
 - **WHEN** the delivered branch develops a merge conflict
-- **THEN** the human's prompt SHALL trigger a new short-phase unit to resolve it, not a loop inside the old unit
+- **THEN** a `ci-failure` trigger or the human's prompt SHALL open a new short-phase unit to resolve it, not a loop inside the old unit
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: collect the draft deltas from the work unit's stage directories and carry the merged entries on the unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report the outcome `handed-off` — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
+When mounted on a node, the skill SHALL additionally: work inside a worktree the orchestrator provisions for the close-out node exactly as for a build node (lazily, reusing the unit's worktree when one is live); read the draft deltas from the work unit's stage directories in the main checkout and merge the entries into the ledger inside the worktree, so they travel on the unit's own branch and concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains) — as a deliverable in its own stage directory, copied to the folder root by the terminal's deterministic steps; and report the outcome `handed-off` — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
 
 #### Scenario: Mounted close-out
 - **WHEN** the skill runs as the close-out stage of a work unit

@@ -30,7 +30,7 @@ An adopted item SHALL be folded into the work and verified like any other change
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: write the triage record into the dispatched stage directory; and report the outcome `feedback-digested` — routable outcomes route by the node's declared edges, while a blocked report engages the universal in-place fallback chain.
+When mounted on a node, the skill SHALL additionally: write the triage record into the dispatched stage directory; and report the outcome `feedback-digested` only when no item remains at needs-clarification — unresolved clarification items are a blocked report, engaging the universal in-place fallback chain so the question reaches the human; routable outcomes route by the node's declared edges.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability

@@ -18,7 +18,7 @@ The repository SHALL distinguish the external plugin surface published for consu
 
 #### Scenario: Consumer install
 - **WHEN** the plugin is installed into a consumer project
-- **THEN** every path a skill or agent resolves at runtime SHALL lie on the external surface, and no runtime behavior SHALL require reading `openspec/` or other internal reference content
+- **THEN** every path a skill or agent resolves at runtime SHALL lie on the external surface, and no runtime behavior SHALL require reading this plugin repository's own `openspec/` or other internal reference content (a consumer project's own workflow tools, OpenSpec included, are project material, not this plugin's internals)
 
 ### Requirement: Outsource what the factory need not own
 
