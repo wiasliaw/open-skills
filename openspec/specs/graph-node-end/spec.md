@@ -1,3 +1,7 @@
+## Purpose
+
+The abandonment terminal for work that is not needed, already exists, or was cancelled.
+
 ## Requirements
 
 ### Requirement: End purpose and type

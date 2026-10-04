@@ -1,3 +1,7 @@
+## Purpose
+
+Shared vocabulary, the complete 26-edge conditional edge set, loop caps, terminals, and design principles of the graph-engineering execution graph.
+
 ## Requirements
 
 ### Requirement: Graph vocabulary

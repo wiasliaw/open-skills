@@ -1,3 +1,7 @@
+## Purpose
+
+The rebuilt init skill: narrowed interview, tool-availability gate, and orchestrator-independent outputs.
+
 ## Requirements
 
 ### Requirement: Six-step session flow

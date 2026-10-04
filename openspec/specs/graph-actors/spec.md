@@ -1,3 +1,7 @@
+## Purpose
+
+The three generic, stage-agnostic agent definitions (implementor, reviewer, advisor) and their write confinement.
+
 ## Requirements
 
 ### Requirement: Three generic agents, stage identity as data

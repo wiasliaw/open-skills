@@ -1,3 +1,7 @@
+## Purpose
+
+The zero-dependency Node.js script owning work-unit folder mechanics as the single validated write gate.
+
 ## Requirements
 
 ### Requirement: Work-unit folder mechanics live in one script

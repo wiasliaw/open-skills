@@ -1,3 +1,7 @@
+## Purpose
+
+The deterministic pre-graph bootstrap that surveys the repository, checks tool availability, and records worktree setup needs.
+
 ## Requirements
 
 ### Requirement: init bootstrap purpose and type

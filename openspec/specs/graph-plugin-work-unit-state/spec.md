@@ -1,3 +1,7 @@
+## Purpose
+
+The work-unit folder layout and the field-level contract of state.json and log.ndjson, with lifecycle and consistency invariants.
+
 ## Requirements
 
 ### Requirement: Work-unit folder

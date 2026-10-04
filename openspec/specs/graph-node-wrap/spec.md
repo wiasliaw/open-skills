@@ -1,3 +1,7 @@
+## Purpose
+
+The merge moment and the only in-graph writer of long-term memory.
+
 ## Requirements
 
 ### Requirement: Wrap purpose and type

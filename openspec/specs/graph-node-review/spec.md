@@ -1,3 +1,7 @@
+## Purpose
+
+The independent validator that re-runs each ticket's declared verification commands, with capped failure loops.
+
 ## Requirements
 
 ### Requirement: Review purpose and type

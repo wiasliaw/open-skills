@@ -1,3 +1,7 @@
+## Purpose
+
+The last-resort human gate that unblocks or cancels work after the Advisor is exhausted.
+
 ## Requirements
 
 ### Requirement: Human Escalation purpose and type

@@ -1,3 +1,7 @@
+## Purpose
+
+The four fixed actor roles that realize the graph inside the plugin, with node identity as dispatch data.
+
 ## Requirements
 
 ### Requirement: Exactly four fixed actor roles

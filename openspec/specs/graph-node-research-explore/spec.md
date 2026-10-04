@@ -1,3 +1,7 @@
+## Purpose
+
+The research loop that gathers everything needed to judge the work and proposes a grading.
+
 ## Requirements
 
 ### Requirement: Research & Explore purpose and type

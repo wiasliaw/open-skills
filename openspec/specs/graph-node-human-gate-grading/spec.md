@@ -1,3 +1,7 @@
+## Purpose
+
+The mandatory human gate that approves or rejects the grading proposal and executes the routing.
+
 ## Requirements
 
 ### Requirement: Human Gate (grading approval) purpose and type

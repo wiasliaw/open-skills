@@ -1,3 +1,7 @@
+## Purpose
+
+How the orchestrator builds each per-stage dispatch (instructions, skills, restrictions, verification commands) from the node spec.
+
 ## Requirements
 
 ### Requirement: Dispatch is built from the node spec

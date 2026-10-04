@@ -1,3 +1,7 @@
+## Purpose
+
+The universal implementor-reviewer-route loop, the advisor escalation tier, and the synchronous human gates.
+
 ## Requirements
 
 ### Requirement: Universal implementor-reviewer-route loop

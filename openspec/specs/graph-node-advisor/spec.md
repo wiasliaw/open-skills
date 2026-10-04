@@ -1,3 +1,7 @@
+## Purpose
+
+The LLM escalation tier that performs root-cause analysis on blocked or repeatedly failing stages before any human escalation.
+
 ## Requirements
 
 ### Requirement: Advisor purpose and type

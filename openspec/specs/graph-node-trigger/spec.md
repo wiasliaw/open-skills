@@ -1,3 +1,7 @@
+## Purpose
+
+The entry node that receives incoming work and creates the work-unit folder.
+
 ## Requirements
 
 ### Requirement: Trigger purpose and type

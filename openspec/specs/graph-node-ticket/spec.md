@@ -1,3 +1,7 @@
+## Purpose
+
+The decomposition node that splits the spec into independently verifiable tickets with verification defined up front.
+
 ## Requirements
 
 ### Requirement: Ticket purpose and type

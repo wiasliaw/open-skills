@@ -1,3 +1,7 @@
+## Purpose
+
+The success terminal that completes delivery and archives the work-unit folder.
+
 ## Requirements
 
 ### Requirement: Ship purpose and type

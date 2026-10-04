@@ -1,3 +1,7 @@
+## Purpose
+
+The human gate that approves the spec or rejects it back to Research.
+
 ## Requirements
 
 ### Requirement: Human Gate (spec approval) purpose and type

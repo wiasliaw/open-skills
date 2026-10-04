@@ -1,3 +1,7 @@
+## Purpose
+
+The zero-dependency Node.js script owning the dangerous worktree mechanics for Build and codewalk.
+
 ## Requirements
 
 ### Requirement: Script location, invocation, and runtime

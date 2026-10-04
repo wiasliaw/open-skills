@@ -1,3 +1,7 @@
+## Purpose
+
+The implementation loop that builds one ticket at a time in an isolated worktree.
+
 ## Requirements
 
 ### Requirement: Build purpose and type

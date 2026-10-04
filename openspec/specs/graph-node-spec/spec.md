@@ -1,3 +1,7 @@
+## Purpose
+
+The node that converges research into the specification contract for all later stages.
+
 ## Requirements
 
 ### Requirement: Spec purpose and type

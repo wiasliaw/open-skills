@@ -1,3 +1,7 @@
+## Purpose
+
+The zero-dependency Node.js script that validates and atomically writes the two .harness config files.
+
 ## Requirements
 
 ### Requirement: Script location, invocation, and runtime

@@ -1,3 +1,7 @@
+## Purpose
+
+The shipped graph-flow orchestrator skill and its per-node dispatch reference.
+
 ## Requirements
 
 ### Requirement: graph-flow is the shipped orchestrator

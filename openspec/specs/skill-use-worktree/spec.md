@@ -1,3 +1,7 @@
+## Purpose
+
+The worktree policy page mounted on Build, delegating the dangerous mechanics to the worktree script.
+
 ## Requirements
 
 ### Requirement: Script-delegated, agent-agnostic worktree page
