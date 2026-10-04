@@ -12,6 +12,10 @@ The orchestrator SHALL be a skill run by the main session. It SHALL refuse to st
 - **WHEN** an actor reports a result for a node
 - **THEN** the orchestrator SHALL record the routing-relevant result in state, append the log line, and evaluate the node's outgoing edge guards to select the next node
 
+#### Scenario: Resume after interruption
+- **WHEN** a run is interrupted and a new orchestrator session takes over
+- **THEN** it SHALL resume from the work-unit folder alone — current node, counters, open escalations, and stage artifacts — with no dependency on the previous session's conversation
+
 ### Requirement: Generic actors, node identity as dispatch data
 
 Graph execution SHALL use a fixed set of generic, stage-agnostic actor roles — worker (implementor), reviewer, and advisor — plus the orchestrator. Node identity is data in the dispatch payload: node id, stage instructions, declared mounts, prompt-carried restrictions, verification commands, and the stage directory the actor writes into. There SHALL be no per-node agent definitions.

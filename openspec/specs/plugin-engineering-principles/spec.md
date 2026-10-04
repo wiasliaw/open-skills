@@ -10,7 +10,7 @@ Every skill SHALL present a compact entry page first and defer detail to referen
 
 #### Scenario: Reference loaded on demand
 - **WHEN** the orchestrator needs the dispatch data for one node
-- **THEN** it SHALL load the per-node reference (for example `references/nodes.md`) at that point, not as a precondition of starting the skill
+- **THEN** it SHALL load that node's section of the graph definition at that point, not as a precondition of starting the skill
 
 ### Requirement: External plugin surface is distinct from internal reference
 
@@ -30,12 +30,12 @@ Any step that needs a deterministic result or deterministic execution SHALL be i
 
 ### Requirement: State is externalized
 
-Settings for scripts and agents SHALL be recorded in config files (for example `.harness/config.json`, `.harness/worktree-setup.json`), written once by their declared producer and read by everyone else. What happens during execution SHALL be recorded in files (the work-unit folder: `state.json`, `log.ndjson`, stage artifacts), not held in conversation context. The Wrap stage SHALL converge this execution state at the end: fold durable results into long-term memory and clean the residue.
+Settings for scripts and agents SHALL be recorded in config files (for example `.harness/config.json`, `.harness/worktree-setup.json`), written once by their declared producer and read by everyone else. What happens during execution SHALL be recorded in files (the work-unit folder: `state.json`, `log.ndjson`, stage artifacts), not held in conversation context. The designated converge node SHALL converge this execution state at the end: fold durable results into long-term memory and clean the residue.
 
 #### Scenario: Execution record outlives the session
 - **WHEN** a session running the graph ends mid-flight
 - **THEN** the work unit's routing state, event log, and stage artifacts SHALL be fully recoverable from its folder without replaying the conversation
 
-#### Scenario: Wrap converges
-- **WHEN** a work unit reaches Wrap
+#### Scenario: Converge node converges
+- **WHEN** a work unit reaches the designated converge node
 - **THEN** durable outcomes SHALL be written to long-term memory, and temporary execution residue (worktree, intermediate artifacts) SHALL be removed
