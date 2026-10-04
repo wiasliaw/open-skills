@@ -1,8 +1,0 @@
-{
-  "version": 1,
-  "setup": ["{{dependency_install_command_or_remove_entry}}"],
-  "copy": [
-    { "path": "{{untracked_asset_repo_relative_path}}" },
-    { "path": "{{large_shared_asset_path}}", "readonly": true }
-  ]
-}

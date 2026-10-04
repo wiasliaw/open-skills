@@ -1,7 +1,0 @@
-{
-  "version": 1,
-  "vcs": "{{version_control_sentence}}",
-  "workflow": [
-    { "phase": "{{phase_name}}", "how": "{{runnable_command_or_manual_step}}", "kind": "{{command_manual_or_tbd}}" }
-  ]
-}
