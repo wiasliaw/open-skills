@@ -36,21 +36,25 @@ The skill SHALL remove execution residue — the worktree, temp files, intermedi
 - **WHEN** the work was driven through a workflow tool with its own lifecycle
 - **THEN** close-out SHALL complete that lifecycle (for example `openspec archive` for the applied change) rather than leave it dangling
 
-### Requirement: Close-out hands to integration with a verifiable result
+### Requirement: Close-out ends at handover
 
-The skill SHALL hand the work to the declared integration verification and record the result — when mounted, the commands its node mounts; the reference implementation: open a pull request and run CI. Delivery proceeds only on a mergeable branch with passing integration; a failing integration result and an unmergeable branch (merge conflict) are both failing outcomes that send the work back to implementation with the failure, never overridden. A line of work with no declared integration verification passes on mergeability alone.
+The skill SHALL end the line of work at handover: open the delivery channel the project uses (reference implementation: a pull request), record the handoff, and finish. It MUST NOT wait for asynchronous integration results — no unit holds open state for an external verification. An integration failure discovered after handover (red CI, a merge conflict needing a rebase) re-enters the factory as a new work unit through its own trigger — `ci-failure`, or the human's prompt — typically walking a short phase to fix it.
 
-#### Scenario: Integration fails
-- **WHEN** the declared integration verification fails after handover
-- **THEN** the work SHALL go back to implementation with the failure, and delivery SHALL NOT proceed
+#### Scenario: Handover finishes the unit
+- **WHEN** close-out has opened the delivery channel and written the handoff
+- **THEN** the unit SHALL proceed to its terminal and archive, holding no pending-integration state
 
-#### Scenario: Merge conflict
-- **WHEN** the line of work's branch cannot be merged
-- **THEN** the conflict SHALL be reported as a failing integration outcome handled like a failing verification, and delivery SHALL NOT proceed
+#### Scenario: CI fails after handover
+- **WHEN** CI fails on the delivered branch after the unit is archived
+- **THEN** the failure SHALL arrive as a new work unit with trigger source `ci-failure`, and the original unit SHALL NOT be reopened
+
+#### Scenario: Conflict needs a rebase
+- **WHEN** the delivered branch develops a merge conflict
+- **THEN** the human's prompt SHALL trigger a new short-phase unit to resolve it, not a loop inside the old unit
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: collect the draft deltas from the work unit's stage directories and carry the merged entries on the unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report exactly one of the outcomes `integration-green`, `integration-failed`, or `blocked`, leaving routing to the node's declared edges.
+When mounted on a node, the skill SHALL additionally: collect the draft deltas from the work unit's stage directories and carry the merged entries on the unit's own branch so concurrent runs serialize through version control; write the handoff record — the unit's closing summary (what was done, what was decided, what remains), written into the work-unit folder before archival; and report exactly one of the outcomes `handed-off` or `blocked`, leaving routing to the node's declared edges.
 
 #### Scenario: Mounted close-out
 - **WHEN** the skill runs as the close-out stage of a work unit
