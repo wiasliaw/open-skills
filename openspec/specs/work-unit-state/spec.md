@@ -40,6 +40,18 @@ Each work unit SHALL live in one folder at the work-units location declared in t
 - **WHEN** a unit's approved phase walks a path that excludes the ticket-owning node, in a graph that does declare tickets
 - **THEN** that unit's `state.json` SHALL likewise contain no ticket fields, and validation SHALL reject them if present
 
+### Requirement: Declared fields are materialized by the write gate
+
+The graph definition's state-field declaration is the single registry; no separate template file and no hand-added fields SHALL exist. The write gate SHALL derive each unit's concrete schema from that declaration: at creation the unit holds the core contract only, and when a field's applicability becomes true — the phase binding it is approved, or the node owning it is first dispatched — the gate materializes the field with its declared default. A unit therefore can never lack a field its path needs nor carry one it does not.
+
+#### Scenario: Custom phase approved
+- **WHEN** the human approves a custom phase whose declaration binds additional state fields
+- **THEN** the write gate SHALL materialize those fields with their declared defaults in the same write that records the approval
+
+#### Scenario: No template artifact
+- **WHEN** the per-unit schema is needed
+- **THEN** it SHALL be derived from the graph definition at validation time, and no generated schema file SHALL be stored as a second source of truth
+
 #### Scenario: Verdict recorded with pointer
 - **WHEN** the orchestrator records a review verdict
 - **THEN** the entry SHALL carry at least one evidence reference and a folder-relative pointer to the reviewer's report file
