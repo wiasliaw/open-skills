@@ -26,7 +26,7 @@ Each work unit SHALL live in one folder at the declared work-units location, hol
 
 ### Requirement: Routing state content
 
-`state.json` SHALL record, with the orchestrator as sole writer: the unit's identity (id, timestamps, trigger source and original request); the current node; the routing decisions in force (grading or equivalent, fast-path flag, contract reference, current ticket); the blocked node when escalation is in flight; the ticket list with per-ticket status and declared verification; failure counters keyed per ticket and per node; advisor consultations keyed per problem with a hard cap of two; review verdicts and human decisions, each with evidence references and a folder-relative file pointer to the full record; and the outcome with its reason. Full content lives in stage files; `state.json` holds verdicts, counts, enums, dates, and pointers.
+`state.json` SHALL record, with the orchestrator as sole writer: the unit's identity (an id matching `^[a-z0-9][a-z0-9-]*$`, timestamps, and the captured trigger: its source and the original request verbatim); the current node; the routing decisions in force (grading or equivalent, fast-path flag, contract reference, current ticket); the blocked node when escalation is in flight; the ticket list with per-ticket status and declared verification; failure counters keyed per ticket and per node; advisor consultations keyed per problem, capped at the graph's declared consultation cap; review verdicts and human decisions, each with evidence references and a folder-relative file pointer to the full record; and the outcome with its reason. Full content lives in stage files; `state.json` holds verdicts, counts, enums, dates, and pointers.
 
 #### Scenario: Verdict recorded with pointer
 - **WHEN** the orchestrator records a review verdict
@@ -46,7 +46,7 @@ The folder SHALL be created at the graph's entry node and archived at a terminal
 
 ### Requirement: Consistency invariants
 
-Every write SHALL be validated and rejected on violation, at minimum: `log.ndjson` is append-only (previous content is a byte-prefix of the new content, ids strictly increasing, every state change accompanied by a log line); immutable identity fields never change; the blocked node is set if and only if an escalation problem is open; advisor consultation counts never exceed two; outcome pairs with a terminal current node; every file pointer and folder-relative evidence reference resolves to an existing file inside the folder; unknown top-level fields are rejected.
+Every write SHALL be validated and rejected on violation, at minimum: `log.ndjson` is append-only (previous content is a byte-prefix of the new content, ids strictly increasing, every state change accompanied by a log line); immutable identity fields never change; the blocked node is set if and only if an escalation problem is open; advisor consultation counts never exceed the declared cap; outcome pairs with a terminal current node; every file pointer and folder-relative evidence reference resolves to an existing file inside the folder; unknown top-level fields are rejected.
 
 #### Scenario: Dangling pointer rejected
 - **WHEN** a write would add a pointer to a file that does not exist in the folder

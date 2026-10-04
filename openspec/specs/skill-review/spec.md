@@ -30,8 +30,8 @@ When the work carries restrictions, the reviewer SHALL check compliance and SHAL
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: write exactly one report file (`review-<n>.md`) into the dispatched stage directory as its only write; feed the failure counters that drive the escalation edges; and on a fast-path failure, trigger the declared upgrade edge instead of a retry loop.
+When mounted on a node, the skill SHALL additionally: write exactly one report file (`review-<n>.md`) into the dispatched stage directory as its only write; and report a verdict whose recorded outcome feeds the failure counters and the node's declared edges (including any declared fast-path upgrade edge), leaving routing to the orchestrator.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability
-- **THEN** its single write SHALL be the report in the stage directory, and the orchestrator SHALL record the verdict, counters, and pointer from it
+- **THEN** its single write SHALL be the report in the stage directory, and the orchestrator SHALL record the verdict, counters, and pointer from it and route by the node's edges

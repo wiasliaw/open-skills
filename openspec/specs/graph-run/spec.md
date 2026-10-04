@@ -6,7 +6,7 @@ The operating phase: running the factory. An orchestrator takes a work unit thro
 
 ### Requirement: The orchestrator owns the run
 
-The orchestrator SHALL be a skill run by the main session. It reads state, constructs each stage's dispatch from the graph definition, dispatches actors, records results, and routes by the node's edge guards. It SHALL be the only writer of the work unit's routing state and event log, and it MUST NOT produce stage deliverables itself.
+The orchestrator SHALL be a skill run by the main session. It SHALL refuse to start a run against a graph definition that has not passed graph-build validation. It reads state, constructs each stage's dispatch from the graph definition, dispatches actors, records results, and routes by the node's edge guards. It SHALL be the only writer of the work unit's routing state and event log, and it MUST NOT produce stage deliverables itself.
 
 #### Scenario: Actor reports back
 - **WHEN** an actor reports a result for a node
@@ -34,15 +34,15 @@ Every artifact-producing stage SHALL run worker, then reviewer, then route. The 
 
 ### Requirement: Tiered escalation
 
-A stage that is blocked, or fails its cap with the same error recurring, SHALL be routed to the advisor: the orchestrator records the blocked node, and the advisor — an analysis-only LLM actor — diagnoses root cause and writes concrete retry guidance as its only write. The advisor SHALL be consulted at most twice on the same problem; after two failed consultations the orchestrator SHALL route to human escalation, which resumes at the blocked node or cancels. Advice does not reset failure counters; only a pass or a human unblock does.
+A stage that is blocked, or reaches its declared failure cap with the same error recurring, SHALL be routed to the advisor: the orchestrator records the blocked node, and the advisor — an analysis-only LLM actor — diagnoses root cause and writes concrete retry guidance as its only write. Advisor consultations on the same problem SHALL be capped at the graph's declared consultation cap; when it is exhausted the orchestrator SHALL route to human escalation, which resumes at the blocked node or cancels. Both caps are declared at graph-build; the plugin's reference default is two for each. Advice does not reset failure counters; only a pass or a human unblock does.
 
-#### Scenario: Second failure
-- **WHEN** the same stage or ticket fails a second time with the same error
+#### Scenario: Failure cap reached
+- **WHEN** the same stage or ticket fails up to its declared cap with the same error
 - **THEN** the orchestrator SHALL record the blocked node and route to the advisor, not dispatch the worker again until advice is issued
 
 #### Scenario: Advisor cap reached
-- **WHEN** the advisor has advised twice on the same problem and the stage still fails
-- **THEN** the orchestrator SHALL route to human escalation and SHALL NOT consult the advisor a third time
+- **WHEN** the advisor has been consulted up to the declared consultation cap on the same problem and the stage still fails
+- **THEN** the orchestrator SHALL route to human escalation and SHALL NOT consult the advisor again
 
 #### Scenario: Human resolution
 - **WHEN** the human unblocks at escalation
@@ -50,7 +50,7 @@ A stage that is blocked, or fails its cap with the same error recurring, SHALL b
 
 ### Requirement: Human gates are synchronous orchestrator stops
 
-A human gate SHALL be a synchronous stop where the orchestrator puts a question to the human in the main session and records the answer before routing; it MUST NOT be an agent. Every human answer SHALL be recorded (decision record in the gate's stage directory, state entry, log line) before the route is taken. When in doubt the human rejects back for more work.
+A human gate SHALL be a synchronous stop where the orchestrator puts a question to the human in the main session and records the answer before routing; it MUST NOT be an agent. Every human answer SHALL be recorded (decision record in the gate's stage directory, state entry, log line) before the route is taken. When in doubt the human rejects back for more work. The grading gate SHALL be mandatory for every work unit — a grading that skips stages is itself the thing being approved, so no grade, however trivial, bypasses the gate.
 
 #### Scenario: Gate answered
 - **WHEN** the human answers a gate question

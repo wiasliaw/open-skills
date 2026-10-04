@@ -6,7 +6,7 @@ Standalone research skill: gather everything needed to judge and specify a piece
 
 ### Requirement: Research reads before it judges
 
-The skill SHALL gather from the codebase, long-term memory, and any external data or review feedback before proposing an assessment, and SHALL propose a grading (for example full, small, trivial, no-op) only after reading the relevant code, with its rationale recorded alongside the findings.
+The skill SHALL gather from the codebase, long-term memory, and any external data or review feedback before proposing an assessment, and SHALL propose a grading only after reading the relevant code, with its rationale recorded alongside the findings. The reference grading vocabulary is: `full` — a new contract is needed; `small` — an existing contract covers it; `trivial` — fast path straight to implementation; `no-op` — not needed or already exists, end the work. A graph MAY declare its own vocabulary; each grade's meaning and the stages it skips must be declared with it.
 
 #### Scenario: Grading proposed
 - **WHEN** research completes
@@ -30,8 +30,8 @@ When re-entered after a rejection, the skill SHALL read the recorded rejection f
 
 ### Requirement: Graph profile
 
-When mounted on a node, the skill SHALL additionally: write findings and the proposal into the dispatched stage directory; route the proposal to the grading gate as the node's only success edge; and report blocked rather than guess when the needed inputs are unavailable.
+When mounted on a node, the skill SHALL additionally: write findings and the proposal into the dispatched stage directory; report exactly one of the outcomes `proposal-produced` or `blocked` (never guessing when inputs are unavailable); and leave routing to the node's declared edges — the profile names outcomes, never targets.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability
-- **THEN** its outputs SHALL land in the stage directory and its only success route SHALL be the grading gate
+- **THEN** its outputs SHALL land in the stage directory, its report SHALL name one declared outcome, and the orchestrator SHALL route by the node's edges
