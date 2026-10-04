@@ -12,17 +12,17 @@ A graph definition SHALL be a single machine-readable JSON document declaring: t
 - **WHEN** a graph definition is read
 - **THEN** every node, edge, guard, cap, and mount SHALL be present as structured data, resolvable without parsing prose
 
-### Requirement: Location on the external surface
+### Requirement: No default factory — templates are build-time material
 
-The plugin SHALL ship its reference graph definition on the external plugin surface. A project MAY carry its own definition at the path declared in the project config; when none is declared, the reference definition applies. Runtime use of a graph definition MUST NOT depend on internal reference material such as `openspec/`.
+There SHALL be no default graph: a run uses only the definition the project config declares, and a project that declares none cannot run — the orchestrator refuses and points to graph-build. The plugin SHALL ship template graph definitions on the external plugin surface as build-time starting material only: graph-build instantiates a template explicitly into the project's own definition, which the project owns and edits from then on; a template never applies at run time by itself. Runtime use of a graph definition MUST NOT depend on internal reference material such as `openspec/`.
 
 #### Scenario: Project without its own graph
 - **WHEN** a project declares no graph definition
-- **THEN** runs SHALL use the plugin's shipped reference definition
+- **THEN** no run SHALL start, and the report SHALL point to graph-build
 
-#### Scenario: Project overrides
-- **WHEN** the project config declares a graph definition path
-- **THEN** runs SHALL use that definition, subject to the same validation as the reference one
+#### Scenario: Template instantiated
+- **WHEN** graph-build starts a project from a shipped template
+- **THEN** the template SHALL be copied into the project's own declared definition, validated, and owned by the project; later template updates in the plugin SHALL NOT change the project's definition
 
 ### Requirement: A deterministic validator gates the definition
 

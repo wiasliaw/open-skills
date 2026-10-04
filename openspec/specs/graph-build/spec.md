@@ -42,7 +42,7 @@ Before a graph definition is used, it SHALL be validated: every loop has an exit
 
 ### Requirement: Project bootstrap
 
-Graph-build SHALL include a per-project bootstrap (the init tier) run before any graph-run: survey the repository (structure, conventions, workflow); verify that every declared workflow command and required CLI actually runs — a missing required tool blocks the start and is reported by name; and record the project's declarations machine-readably in config files (at minimum the worktree setup config and the project config under `.harness/`), written through a deterministic script, never by hand. The bootstrap is the single writer of these configs; every other actor only reads them.
+Graph-build SHALL include a per-project bootstrap (the init tier) run before any graph-run: survey the repository (structure, conventions, workflow); verify that every declared workflow command and required CLI actually runs — a missing required tool blocks the start and is reported by name; and record the project's declarations machine-readably in one project config (`.harness/config.json`), written through a deterministic script, never by hand. The config SHALL carry a schema version and hold every project declaration as a section — at minimum VCS and workflow, the work-units and worktrees locations, the worktree-setup section (setup commands and copy entries), and optionally the graph definition path and integration verification. A consuming script SHALL validate the config against its declared schema version and consume only its own section, so one section's evolution is caught by versioning rather than silently breaking another consumer. The bootstrap is the single writer of this config; every other actor only reads it.
 
 #### Scenario: Tool missing
 - **WHEN** the bootstrap finds a required CLI, test, or deploy tool unavailable
@@ -50,7 +50,7 @@ Graph-build SHALL include a per-project bootstrap (the init tier) run before any
 
 #### Scenario: Worktree needs recorded
 - **WHEN** the bootstrap finds that a fresh worktree needs a dependency install command and an untracked env file
-- **THEN** it SHALL record the command and the copy entry in the worktree setup config, and SHALL write the config even when nothing is needed (explicitly empty lists)
+- **THEN** it SHALL record the command and the copy entry in the config's worktree-setup section, and SHALL write the section even when nothing is needed (explicitly empty lists)
 
 #### Scenario: Config written through the script
 - **WHEN** the bootstrap writes a config file

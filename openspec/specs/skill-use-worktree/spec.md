@@ -26,7 +26,7 @@ One worktree SHALL serve one line of work (one work unit), opened lazily at firs
 
 ### Requirement: Mechanics are script-owned
 
-Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a zero-dependency Node.js script (Node.js >= 20, built-in modules and git only, stdout-JSON plus distinct exit codes per failure class, idempotent subcommands, committed tests). The page carries policy; whoever works inside the worktree never improvises raw `git worktree` commands for creation, reuse, or recovery. Removal is the one operation outside the script: the worktree's owner (the converge step, or the user for read-only pins) removes it directly with `git worktree remove`, which is why the script deliberately ships no `remove`. The script SHALL provide: `ensure --branch wu/<id>` (create, reuse, reopen on an existing branch, or recover a stale registration whose directory is absent), `ensure --detach <sha>` (a read-only pinned worktree that never runs project code), and `setup --worktree <path>` (run the declared setup commands and copies from the project's worktree setup config). An existing directory that is not the expected worktree is a collision: never removed, never forced. There SHALL be no `remove` subcommand — a scripted remove would hand a destructive operation to workers that must not own it — and the script MUST NEVER run global `git worktree prune`.
+Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a zero-dependency Node.js script (Node.js >= 20, built-in modules and git only, stdout-JSON plus distinct exit codes per failure class, idempotent subcommands, committed tests). The page carries policy; whoever works inside the worktree never improvises raw `git worktree` commands for creation, reuse, or recovery. Removal is the one operation outside the script: the worktree's owner (the converge step, or the user for read-only pins) removes it directly with `git worktree remove`, which is why the script deliberately ships no `remove`. The script SHALL provide: `ensure --branch wu/<id>` (create, reuse, reopen on an existing branch, or recover a stale registration whose directory is absent), `ensure --detach <sha>` (a read-only pinned worktree that never runs project code), and `setup --worktree <path>` (run the declared setup commands and copies from the worktree-setup section of the project config). An existing directory that is not the expected worktree is a collision: never removed, never forced. There SHALL be no `remove` subcommand — a scripted remove would hand a destructive operation to workers that must not own it — and the script MUST NEVER run global `git worktree prune`.
 
 #### Scenario: Script fails
 - **WHEN** the script exits non-zero or cannot be resolved
@@ -38,7 +38,7 @@ Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a 
 
 #### Scenario: Setup from declared config
 - **WHEN** `setup` runs after a worktree is created or reopened
-- **THEN** it SHALL execute the setup commands and copies declared in the project's worktree setup config, read from the main checkout, rejecting unknown keys and traversal paths, and never symlinking a mutable entry
+- **THEN** it SHALL execute the setup commands and copies declared in the worktree-setup section of the project config, read from the main checkout, validating against the config's schema version and rejecting traversal paths, and never symlinking a mutable entry
 
 ### Requirement: Cleanup belongs to the owner, not the worker
 
