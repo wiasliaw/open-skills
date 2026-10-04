@@ -22,7 +22,7 @@ A ticket's declared test SHALL fail against the pre-implementation state — pro
 
 #### Scenario: Test already green
 - **WHEN** a ticket's declared test passes in the worktree before any implementation
-- **THEN** the ticket SHALL be revised or removed, not handed to implementation as-is
+- **THEN** the build worker SHALL report the graph-declared outcome `ticket-invalid`, which routes by a returning edge to the decomposition node for revision or removal and counts as no progress for the revisit counter
 
 ### Requirement: Contradictions go back to the contract
 

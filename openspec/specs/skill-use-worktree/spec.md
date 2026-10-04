@@ -18,7 +18,7 @@ One worktree SHALL serve one line of work (one work unit), opened lazily at firs
 
 #### Scenario: Worktrees never live among unit folders
 - **WHEN** a unit folder is archived
-- **THEN** no worktree SHALL be affected — worktrees live only under the worktrees area, and the post-review delivery steps removed the unit's worktree beforehand
+- **THEN** no worktree SHALL be affected — worktrees live only under the worktrees area, and the orchestrator's deterministic steps (delivery on success, the abandonment terminal's on abandonment) removed the unit's worktree beforehand
 
 #### Scenario: Reuse over reopen
 - **WHEN** work resumes and the recorded worktree is still present
@@ -42,7 +42,7 @@ Creating, reusing, recovering, and setting up worktrees SHALL be delegated to a 
 
 ### Requirement: Cleanup belongs to the owner, not the worker
 
-Whoever works inside the worktree MUST NOT remove it. Removal belongs to the deterministic delivery steps the orchestrator executes after close-out passes review (or to the user, for read-only pins). A missing worktree with the branch still present means reopen on the existing branch, not a new branch.
+Whoever works inside the worktree MUST NOT remove it. Removal belongs to the orchestrator's deterministic steps — on success the post-review delivery steps, on abandonment the abandonment terminal's steps (forced removal permitted there) — or to the user, for read-only pins. A missing worktree with the branch still present means reopen on the existing branch, not a new branch.
 
 #### Scenario: Reopen after removal
 - **WHEN** the recorded worktree is gone but branch `wu/<id>` exists
