@@ -6,11 +6,19 @@ Standalone worktree skill: isolate a line of work in its own git worktree, with 
 
 ### Requirement: Core policy
 
-One worktree SHALL serve one line of work (one work unit), opened lazily at first need and reused until its owner removes it. The identifier SHALL be the branch name `wu/<id>` (`<id>` matching `^[a-z0-9][a-z0-9-]*$`), and the worktree path SHALL be deterministic: `<parent-of-main-checkout>/<main-checkout-basename>.worktrees/wu/<id>`. All work SHALL happen inside the worktree; nothing outside it is written.
+One worktree SHALL serve one line of work (one work unit), opened lazily at first need and reused until its owner removes it. The identifier SHALL be the branch name `wu/<id>` (`<id>` matching `^[a-z0-9][a-z0-9-]*$`), and the worktree path SHALL be deterministic and inside the project: `<work-units-location>/worktree/wu/<id>`, where `<work-units-location>` is the location declared in the project config. The worktree area lives beside the unit folders, never inside one, because archiving moves a unit folder whole and must never move a registered worktree. Because the path is inside the main checkout's working tree, the script SHALL keep it out of version control by appending the worktree area to the repository's `info/exclude` (creating parent directories and the trailing newline as needed, never touching a tracked file). All work SHALL happen inside the worktree; nothing outside it is written.
 
 #### Scenario: Name derived from id
 - **WHEN** a worktree is opened for work unit `<id>`
-- **THEN** the branch SHALL be `wu/<id>` and the path SHALL end in `wu/<id>` under the project's `.worktrees` sibling directory
+- **THEN** the branch SHALL be `wu/<id>` and the path SHALL be `<work-units-location>/worktree/wu/<id>` inside the project
+
+#### Scenario: Worktree area excluded from git
+- **WHEN** the script creates the worktree area for the first time
+- **THEN** it SHALL append the area to `info/exclude` so the worktree never appears as untracked content, and SHALL append nothing when the entry is already present
+
+#### Scenario: Archive never moves a worktree
+- **WHEN** a unit folder is archived
+- **THEN** no worktree SHALL be inside it — the converge step removed the unit's worktree from the worktree area beforehand
 
 #### Scenario: Reuse over reopen
 - **WHEN** work resumes and the recorded worktree is still present
