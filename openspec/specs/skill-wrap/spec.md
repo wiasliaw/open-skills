@@ -38,7 +38,7 @@ The skill SHALL remove execution residue — the worktree, temp files, intermedi
 
 ### Requirement: Close-out hands to integration with a verifiable result
 
-The skill SHALL hand the work to the integration verification the project declares in its config and record the result (the reference implementation: open a pull request and run CI). Delivery proceeds only on a mergeable branch with passing integration; a failing integration result and an unmergeable branch (merge conflict) are both failing outcomes that send the work back to implementation with the failure, never overridden. A project that declares no integration verification passes on mergeability alone.
+The skill SHALL hand the work to the declared integration verification and record the result — when mounted, the commands its converge node mounts; the reference implementation: open a pull request and run CI. Delivery proceeds only on a mergeable branch with passing integration; a failing integration result and an unmergeable branch (merge conflict) are both failing outcomes that send the work back to implementation with the failure, never overridden. A line of work with no declared integration verification passes on mergeability alone.
 
 #### Scenario: Integration fails
 - **WHEN** the declared integration verification fails after handover
