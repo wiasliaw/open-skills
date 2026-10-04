@@ -50,7 +50,7 @@ A graph definition SHALL be a superset of any single execution path: each approv
 
 ### Requirement: Every loop has an exit and a cap
 
-A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedly with the same failure signature SHALL escalate rather than loop again, and a routable-outcome loop — an edge returning to an earlier node of the path — SHALL carry a revisit counter under the graph's declared cap, engaging the same fallback chain at the cap. Escalation SHALL be tiered and in place — the orchestrator stays at the current node: an LLM advisor absorbs the first escalations there, and the human is reached only after the advisor tier is exhausted. Because this fallback chain is universal, blocked states need no declared edges.
+A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedly with the same failure signature SHALL escalate rather than loop again, and because alternating signatures must not evade the cap, every scope also carries a signature-independent total failure cap (reference default: twice the failure cap) that engages the same chain regardless of signature. A routable-outcome loop — a declared edge returning to an earlier node of the path — SHALL carry a revisit counter that counts only revisits without progress: the counter resets whenever the traversal follows recorded progress (a scope item newly passed, state advanced) and otherwise engages the fallback chain at the graph's declared cap, with no signature involved. Escalation SHALL be tiered and in place — the orchestrator stays at the current node: an LLM advisor absorbs the first escalations there, and the human is reached only after the advisor tier is exhausted. Because this fallback chain is universal, blocked states need no declared edges.
 
 #### Scenario: Repeated failure
 - **WHEN** the same failure recurs at a stage up to the graph's declared cap
@@ -62,7 +62,7 @@ A valid graph SHALL give every loop an exit and a cap: a stage failing repeatedl
 
 ### Requirement: Legitimate terminals
 
-A valid graph SHALL have at least one success terminal and one abandonment terminal, both legitimate, with no outgoing edges. Abandonment SHALL NOT be treated as failure.
+A valid graph SHALL have exactly one success terminal and exactly one abandonment terminal, both legitimate, with no outgoing edges. Abandonment SHALL NOT be treated as failure.
 
 #### Scenario: Terminal reached
 - **WHEN** execution reaches a terminal

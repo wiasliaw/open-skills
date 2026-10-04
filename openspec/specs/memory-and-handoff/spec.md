@@ -54,7 +54,7 @@ Pending deltas SHALL be folded into the current-truth documents only by an apply
 
 ### Requirement: The index is generated, never hand-written
 
-A deterministic memory script SHALL own the mechanical side of this spec: it generates the index from entry frontmatter (id, title, date, type, status, relations) on demand — the index is never committed, so whole-file-addition merges stay conflict-free — and it performs the budget validation of current-truth documents and the threshold evaluation. The orchestrator SHALL invoke it at every run start; a breached threshold is reported as due maintenance, which the orchestrator turns into a work unit with trigger source `maintenance-due`. The index SHALL NOT be hand-edited and SHALL be regenerable at any time, including after a merge. The default view lists current-truth documents and pending deltas; applied and rejected entries appear only on request. Readers follow progressive disclosure: load the current truth and the index, pull individual entries on demand.
+A deterministic memory script SHALL own the mechanical side of this spec: it generates the index from entry frontmatter (id, title, date, type, status, relations) on demand — the index is never committed, so whole-file-addition merges stay conflict-free — and it performs the budget validation of current-truth documents and the threshold evaluation. The orchestrator SHALL invoke it at every run start; a breached threshold is reported to the human as due maintenance, and the maintenance unit (trigger source `maintenance-due`) is created only on the human's confirmation, never silently. The index SHALL NOT be hand-edited and SHALL be regenerable at any time, including after a merge. The default view lists current-truth documents and pending deltas; applied and rejected entries appear only on request. Readers follow progressive disclosure: load the current truth and the index, pull individual entries on demand.
 
 #### Scenario: Index after a merge
 - **WHEN** two branches each added delta entries and are merged
@@ -65,5 +65,5 @@ A deterministic memory script SHALL own the mechanical side of this spec: it gen
 Every work unit that reaches a terminal SHALL have a handoff record at the work-unit folder root (`handoff.md`) before archival: what was done, what was decided (the ids of delta entries it created), what remains or why it was abandoned. On success the close-out worker writes it as a reviewed deliverable in its own stage directory and the terminal's deterministic steps copy it to the root; at the abandonment terminal the orchestrator writes it directly. Its reader is the next session or human picking up the project.
 
 #### Scenario: Abandoned unit still hands off
-- **WHEN** a work unit ends because the phase approval judged it not needed, or through a cancellation
+- **WHEN** a work unit ends because the phase approval judged it not needed, or through a ruling's end disposition
 - **THEN** the handoff record SHALL state the conclusions and the abandonment reason before the folder is archived

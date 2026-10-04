@@ -50,4 +50,4 @@ Settings for scripts and agents SHALL be recorded in config (the sectioned, sche
 
 #### Scenario: Close-out converges
 - **WHEN** a work unit reaches its close-out stage
-- **THEN** durable outcomes SHALL be written to long-term memory, and temporary execution residue (worktree, intermediate artifacts) SHALL be removed
+- **THEN** durable outcomes SHALL be written to long-term memory, and temporary execution residue SHALL be removed — intermediate artifacts by the stage, the worktree by the post-review delivery steps

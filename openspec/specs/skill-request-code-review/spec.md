@@ -34,7 +34,7 @@ A verdict SHALL be an explicit pass or fail, scored per dimension, with evidence
 
 ### Requirement: Graph profile
 
-When mounted on a review node, the skill SHALL additionally: write exactly one report file (`review-<n>.md`) into the dispatched stage directory as the reviewer's only write; and report a verdict whose recorded outcome feeds the failure counters and the node's declared edges, leaving routing to the orchestrator.
+When mounted for the reviewer actor of a node, the skill SHALL additionally: write exactly one report file (`review-<n>.md`) into the dispatched stage directory as the reviewer's only write; and report a verdict of which only a pass releases a routable outcome for the node's declared edges — a failing verdict feeds the failure counters and the in-place retry or escalation, never an edge (except on a standalone validator node, whose verdict is its routable outcome), leaving routing to the orchestrator.
 
 #### Scenario: Mounted run
 - **WHEN** the skill runs as a mounted node capability
