@@ -106,7 +106,7 @@ test('ensure uses locations.worktrees and base ref from config', () => {
 });
 
 test('missing declared base ref fails distinctly', () => {
-  const repo = makeRepo(cfg({ vcs: { base_ref: 'nope' } }));
+  const repo = makeRepo(cfg({ vcs: { default_branch: 'nope' } }));
   const r = run(repo, 'ensure', '--branch', 'wu/x');
   assert.equal(r.code, 11);
   assert.equal(r.json.error, 'base_ref_missing');

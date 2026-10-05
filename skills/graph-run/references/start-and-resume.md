@@ -35,7 +35,7 @@ A new orchestrator session takes over with no memory of the previous conversatio
 
 1. `node "$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs" validate --graph "$GRAPH" --unit "$UNITS/<id>"`. A failure means the folder is inconsistent: report it to the human; do not repair it by hand.
 2. Read `state.json`: `current_node`, `phase`, `walked_path`, `fail_counters`, `advisor_consults` (open problem, consultation counts), `blocked_at`, `reviews`, `human_decisions`, and any graph-declared fields.
-3. Read the tail of `log.ndjson` (last 10-20 lines) and list the current node's stage directory to find the latest `report-<n>.md`, `review-<n>.md`, `advice-<n>.md`, `decision-<n>.md`, `steps-<n>.md`.
+3. Read the tail of `log.ndjson` (last 10-20 lines, `step` lines included) and list the current node's stage directory to find the latest `report-<n>.md`, `review-<n>.md`, `advice-<n>.md`, `decision-<n>.md`.
 4. Re-derive the position:
    - `blocked_at` set: an escalation is open. Continue at the escalation chain (`escalation.md`) using the open problem's consultation count; if the count equals the cap, the human ruling is pending: ask it again.
    - A worker report exists with no reviewer verdict recorded: dispatch the reviewer for it.

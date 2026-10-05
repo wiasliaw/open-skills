@@ -81,8 +81,7 @@ function validateConfig(cfg) {
 
   // vcs
   if (!isObj(cfg.vcs)) throw new Fail('config', '"vcs" section is required and must be an object');
-  checkKeys(cfg.vcs, ['strategy', 'default_branch', 'remote'], 'vcs');
-  if (!isStr(cfg.vcs.strategy)) throw new Fail('config', 'vcs.strategy must be a non-empty string');
+  checkKeys(cfg.vcs, ['default_branch', 'remote'], 'vcs');
   if (!isStr(cfg.vcs.default_branch)) throw new Fail('config', 'vcs.default_branch must be a non-empty string');
   if (cfg.vcs.remote !== undefined && !isStr(cfg.vcs.remote)) throw new Fail('config', 'vcs.remote must be a non-empty string');
 
@@ -118,9 +117,11 @@ function validateConfig(cfg) {
     const m = cfg.memory;
     if (!isObj(m)) throw new Fail('config', '"memory" must be an object');
     checkKeys(m, ['budgets', 'ledger', 'pending_delta_threshold', 'budget_pressure_threshold'], 'memory');
-    if (!isObj(m.budgets)) throw new Fail('config', 'memory.budgets must be an object mapping document path to line budget');
+    if (!isObj(m.budgets)) throw new Fail('config', 'memory.budgets must be an object mapping document name to line budget');
     for (const [doc, n] of Object.entries(m.budgets)) {
-      checkRelPath(doc, `memory.budgets key "${doc}"`);
+      if (!isStr(doc) || doc.includes('/') || doc.includes('\\') || doc === '.' || doc === '..') {
+        throw new Fail('config', `memory.budgets key must be a bare file name: ${doc}`);
+      }
       if (!Number.isInteger(n) || n <= 0) throw new Fail('config', `memory.budgets["${doc}"] must be a positive integer`);
     }
     if (m.ledger === undefined) throw new Fail('config', 'memory.ledger (ledger location) is required when the memory section is present');

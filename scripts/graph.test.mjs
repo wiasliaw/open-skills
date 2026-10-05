@@ -48,11 +48,11 @@ function base() {
       contract_ref: { type: 'object', nullable: true, phases: ['feat', 'fix'], default: null },
       tickets: { type: 'list', node: 'ticket', default: [] },
       current_ticket: { type: 'string', nullable: true, node: 'ticket', default: null },
+      pending_tickets: { type: 'list', node: 'ticket', default: [] },
       ticket_test: { type: 'string', nullable: true, node: 'ticket', executes: 'build', default: null },
       round: { type: 'integer', node: 'build', default: 0 },
       verdict_kind: { type: 'string', values: ['minor', 'major'], node: 'build', default: 'minor' },
     },
-    skill_state_needs: { 'open-skills:ticket': ['tickets'] },
     nodes: [
       { id: 'trigger', type: 'entry', purpose: 'Create the work unit.' },
       work('research', ['proposal-produced'], { human_approval: true }),
@@ -114,6 +114,7 @@ function assertRejects(mutate, code, check) {
 test('accepts a complete definition and identifies returning edges', () => {
   const res = run();
   assert.deepEqual(res.errors, []);
+  assert.deepEqual(res.warnings, []);
   assert.equal(res.summary.first_node, 'research');
   assert.equal(res.summary.close_out_node, 'wrap');
   assert.equal(res.summary.caps.total_failure, 4);
@@ -495,10 +496,22 @@ test('fields a node reads or a mounted skill needs must be declared and applicab
     assert.equal(h[0].field, 'nonexistent');
   });
   assertRejects((d) => { node(d, 'research').reads.push('state:tickets'); }, 'STATE_FIELD_INAPPLICABLE_AT_NODE');
-  assertRejects((d) => { d.skill_state_needs['open-skills:ticket'].push('missing_field'); }, 'STATE_FIELD_UNDECLARED');
+  // the skill-needs map ships with the validator: mounting the skill where its fields are not applicable fails
+  assertRejects((d) => { node(d, 'research').mounts.skills.push('open-skills:ticket'); }, 'SKILL_STATE_NEED_UNMET', (h) => {
+    assert.equal(h[0].node, 'research');
+    assert.equal(h[0].skill, 'open-skills:ticket');
+  });
+  assertRejects((d) => { delete d.state_fields.pending_tickets; }, 'SKILL_STATE_NEED_UNMET');
   assertRejects((d) => { delete d.state_fields.tickets; }, 'STATE_FIELD_UNDECLARED');
   // a node reading a field owned by an earlier node is fine
   assert.deepEqual(codes((d) => { node(d, 'review').reads.push('state:round'); }), []);
+});
+
+test('inline skill_state_needs is deprecated: ignored with a warning', () => {
+  const res = run((d) => { d.skill_state_needs = { 'open-skills:ticket': ['missing_field'] }; });
+  assert.deepEqual(res.errors, []);
+  assert.equal(res.warnings.length, 1);
+  assert.equal(res.warnings[0].code, 'SKILL_STATE_NEEDS_INLINE_DEPRECATED');
 });
 
 test('command-holding field names an executing node that mounts a family', () => {
@@ -510,6 +523,14 @@ test('command-holding field names an executing node that mounts a family', () =>
 // ---------------------------------------------------------------------------
 // Mounts, commands, slots, node contract
 // ---------------------------------------------------------------------------
+
+test('verification runner is reviewer or orchestrator', () => {
+  assert.deepEqual(codes((d) => { node(d, 'build').verification.runner = 'orchestrator'; }), []);
+  assert.deepEqual(codes((d) => { node(d, 'build').verification.runner = 'reviewer'; }), []);
+  assertRejects((d) => { node(d, 'build').verification.runner = 'worker'; }, 'NODE_FIELD_INVALID', (h) => {
+    assert.equal(h[0].field, 'verification.runner');
+  });
+});
 
 test('verification commands must be covered by the node mounts', () => {
   assertRejects((d) => { node(d, 'build').verification = { criteria: 'x', commands: ['pytest'] }; }, 'VERIFICATION_COMMAND_UNMOUNTED', (h) => {

@@ -15,22 +15,22 @@ Load at Tier 1. The config is `.harness/config.json`, written only through `scri
 | Section | Required | Content |
 |---|---|---|
 | `schema_version` | yes | `"1.0.0"` |
-| `vcs` | yes | `strategy` (plain description), `default_branch`, optional `remote` |
+| `vcs` | yes | `default_branch`, optional `remote` |
 | `locations` | yes | `work_units`, `archive`, `worktrees`: repo-relative paths, no `..` |
 | `worktree_setup` | yes | `setup`: commands run in a fresh worktree; `copy`: `{path, readonly}` entries. Write both lists even when empty |
-| `memory` | optional | `budgets` (document path to line budget), `ledger` (location, required when the section exists), optional `pending_delta_threshold` and `budget_pressure_threshold` (0 to 1] |
+| `memory` | optional | `budgets` (bare document file name to line budget — the name resolves under `.harness/`, never a path), `ledger` (location, required when the section exists), optional `pending_delta_threshold` and `budget_pressure_threshold` (0 to 1] |
 | `graph` | optional | repo-relative path of the project's definition; absent means not built, so no run |
 
 Unknown keys are rejected. Copy entries may be symlinked only when `readonly` is true.
 
 ## Interview prompts
 
-One question at a time, each with a recommended answer from the survey:
+The survey recommends; the user decides. One question at a time, each with a recommended answer from the survey, and every section below MUST receive the user's explicit confirmation before the draft is written — an unasked section blocks the write:
 
-1. Branching and delivery: strategy, default branch, remote name.
+1. Branching and delivery: default branch, remote name.
 2. Where work-unit folders, their archive, and worktrees should live (suggest `.project/work-units`, `.project/work-units/archive`, `.project/worktrees`; confirm the worktrees path is ignored by version control).
 3. What a fresh worktree needs: dependency install command; untracked files to copy and whether each is read-only.
-4. Long-term memory: which current-truth documents (reference: `.harness/ARCHITECTURE.md`, `.harness/CONSTRAINTS.md`) with line budgets, the ledger location (reference: `.harness/deltas`), optional maintenance thresholds.
+4. Long-term memory: which current-truth documents (reference: `ARCHITECTURE.md`, `CONSTRAINTS.md` — bare file names, they live under `.harness/`) with line budgets, the ledger location (reference: `.harness/deltas`), optional maintenance thresholds.
 
 Do not ask for test, lint, or delivery commands here: they are declared on graph nodes in Tier 2.
 
@@ -39,12 +39,16 @@ Do not ask for test, lint, or delivery commands here: they are declared on graph
 ```json
 {
   "schema_version": "1.0.0",
-  "vcs": { "strategy": "feature branch plus pull request into main", "default_branch": "main", "remote": "origin" },
+  "vcs": { "default_branch": "main", "remote": "origin" },
   "locations": { "work_units": ".project/work-units", "archive": ".project/work-units/archive", "worktrees": ".project/worktrees" },
   "worktree_setup": { "setup": ["npm ci"], "copy": [{ "path": ".env", "readonly": false }] },
-  "memory": { "budgets": { ".harness/ARCHITECTURE.md": 200, ".harness/CONSTRAINTS.md": 100 }, "ledger": ".harness/deltas", "pending_delta_threshold": 10 }
+  "memory": { "budgets": { "ARCHITECTURE.md": 200, "CONSTRAINTS.md": 100 }, "ledger": ".harness/deltas", "pending_delta_threshold": 10 }
 }
 ```
+
+## Skeleton current-truth documents
+
+After the config is written, create each budgeted document that does not yet exist as `.harness/<name>` with a single heading line (for example `# Architecture — current truth`), so the memory layer is operative from the first run. Never overwrite a document that exists. This is the one bootstrap write outside the config, and it is the bootstrap's duty, not `init.mjs`'s.
 
 ## Script contract
 

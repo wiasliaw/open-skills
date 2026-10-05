@@ -7,7 +7,7 @@ Load this when executing a node. Writes use the draft shapes in `state-writes.md
 | Node type | Execution |
 | -- | -- |
 | entry | The orchestrator creates the unit (done at start) and routes by the single unconditional edge to the shared first node. No actor. |
-| llm | Pre-steps, then worker, then reviewer, then gate, then (approval), then route, then post-steps as ordered below. |
+| llm | Pre-steps, then worker, then verification (a reviewer dispatch by default; the orchestrator itself when the node declares `verification.runner: "orchestrator"`), then gate, then (approval), then route, then post-steps as ordered below. |
 | validator | Reviewer only, no worker. Its verdict is the routable outcome (`pass` or `fail`). |
 | deterministic | The orchestrator runs the node's mounted commands in declared order. The outcome is fixed: `pass`. No actor. |
 | tool | The orchestrator invokes the node's mounted tool(s). The outcome is fixed: `pass`. No actor. |
@@ -24,23 +24,46 @@ A node that declares `pre_steps` (repository-writing nodes: build, close-out) is
 3. A fix unit (trigger names an existing branch) works on that branch: `--branch <trigger.branch> --id <id>`; the path is still derived from its own id.
 4. Pass the resulting `path` in the dispatch. The worktree is reused across all of the unit's tickets and by close-out.
 5. If a pre-step fails (nonzero exit, unresolvable script): stop and treat as a blocked report with the script's stable `error` code as the reason code. Do not fall back to raw `git worktree` commands and do not dispatch the worker.
-6. Record each pre-step result in `steps-<n>.md` in the node's stage directory (what ran, exit status, JSON output).
+6. Record each pre-step result as a `step` log line (command, exit status, output tail — truncate to the last ~20 lines).
 
 The build worker performs no VCS operations and confines repository writes to the given path; it records `worktree.md` (branch and path) in its stage directory. The orchestrator derives the authoritative path from the unit id.
 
 ## LLM node cycle
 
 1. **Materialization.** The first time a node is dispatched, the write gate materializes the graph-declared fields bound to that node (with defaults) in the write that sets `current_node`/`walked_path`. Never add them by hand.
-2. **Dispatch the worker** (`dispatch.md`). Log a `dispatch` line (orchestrator event) before it runs.
-3. **Worker report.** Read `report-<n>.md`. Log a `report` line (source `actor-report`, actor `worker`, `source_ref` the report file).
+2. **Dispatch the worker** (`dispatch.md`). Log a `dispatch` line (orchestrator event) before it runs. For a ticketed build, the "Ticketed build sequence" below runs first.
+3. **Worker report.** The worker returns its report as text; transcribe it verbatim into `report-<n>.md` in the stage directory (one provenance line on top, nothing edited). Log a `report` line (source `actor-report`, actor `worker`, `source_ref` the report file).
    - Status `blocked`: open or continue an escalation problem (signature = reason code + node; a script failure contributes its stable error code). Go to `escalation.md`. No reviewer.
    - Otherwise it is a claimed routable outcome from `node.outcomes`. An outcome not in that list is a defect: treat as blocked.
-4. **Dispatch the reviewer** with the worker's report, effective restrictions, verification commands, and dimensions. Even when the worker's self-check passed, the reviewer re-executes every command itself. A restriction violation fails the review regardless of command results. The reviewer also verifies the basis of an alternative outcome (`ticket-invalid`, `spec-contradiction`, ...).
-5. **Record the verdict.** Append a `reviews` entry (id `R-<n>`, node, target, verdict, dimensions, at least one evidence reference, the `review-<n>.md` pointer) plus a `verdict` log line (source `actor-report`, actor `reviewer`).
+4. **Verify.** Default runner: **dispatch the reviewer** with the worker's report, effective restrictions, verification commands, and dimensions. Even when the worker's self-check passed, the reviewer re-executes every command itself. A restriction violation fails the review regardless of command results. The reviewer also verifies the basis of an alternative outcome (`ticket-invalid`, `spec-contradiction`, ...). When the node declares `verification.runner: "orchestrator"`: run the declared checks yourself (see "Orchestrator-run verification" below) — no reviewer dispatch.
+5. **Record the verdict.** Reviewer runner: append a `reviews` entry (id `R-<n>`, node, target, verdict, dimensions, at least one evidence reference, the `review-<n>.md` pointer) plus a `verdict` log line (source `actor-report`, actor `reviewer`). Orchestrator runner: the verdict lives in the `step` lines and the counters write; no `reviews` entry (those are reviewer verdicts).
    - **pass**: the stage's outcome is released. Reset the node- and concept-scoped counters of this scope; resolve an open problem for it (status `resolved`, clear `blocked_at`). If the node's scope concept advances (a ticket reaching passed), that is recorded progress: see "Progress" in `escalation.md`. Continue to approval (if declared), then post-steps and routing.
    - **fail (in-node)**: not a routable outcome. Increment exactly one counter, the finest applicable scope, in the same write (`escalation.md`). Below the cap, re-dispatch the worker in place with the review evidence. At the cap with the signature recurring: open the problem and consult the advisor; do not dispatch the worker until advice exists.
 6. **Approval** (if `node.human_approval`): see below.
 7. **Route** and run **post-steps**: see below.
+
+## Ticketed build sequence (runner: orchestrator with a current ticket)
+
+Before dispatching the build worker for a newly selected ticket:
+
+1. **Land the tests.** Copy the ticket's test files from the decomposition stage directory into the worktree at the repo-relative target paths the ticket declares. A ticket without usable target paths is a decomposition defect: treat as blocked, do not improvise placements.
+2. **Red run.** Run the ticket's `verification_command` in the worktree. Expected: non-zero exit. Record it as a `step` line. Exit 0 means the ticket is already satisfied or mis-scoped: release `ticket-invalid` deterministically — no worker is dispatched, the red run is the evidence, and the outcome routes back to the decomposition node. Exit 126/127 or an unresolvable program is a defect (blocked class), never red.
+3. **Commit the tests** on the unit's branch: `git -C "$WU_WORKTREE" add -A && git -C "$WU_WORKTREE" commit -m "test: <ticket-id>"`. Note the commit as the red baseline.
+4. **Dispatch the worker** (implement-only; the dispatch says the tests are landed and must not be modified).
+
+On re-entry to build after a failed verification of the same ticket, the tests are already landed and committed: skip 1–3 and re-dispatch with the failure evidence.
+
+## Orchestrator-run verification (runner: orchestrator)
+
+After the worker's report (ticketed or not), run in order, each recorded as a `step` line:
+
+1. **Test integrity** (ticketed only): `git -C "$WU_WORKTREE" diff --name-only <red-commit> -- <test paths>`. Any listed file is a failing verdict on the test-integrity dimension, regardless of later command results.
+2. **Ticket command** (ticketed only): the ticket's `verification_command`, expected exit 0 (green).
+3. **Declared commands**: the node's `verification.commands` in order (full suite and static checks), expected exit 0 — a regression introduced by this ticket surfaces here, attributed to it.
+
+Derive the verdict: all checks pass → pass; any check fails → fail with the failing dimensions and command. Exit 126/127 or an unresolvable program anywhere is a defect (blocked class), not a failing verdict. The verdict counts exactly like a reviewer verdict (`escalation.md`): signature `dims:...|cmd:...`, finest applicable scope (`ticket:<id>` when one is current, else `node:<id>`); below the cap re-dispatch the worker with the failing `step` output as evidence. **On pass with a current ticket: the same write sets that ticket's status to `passed`** — including a pass that follows earlier failures — which is recorded progress (resets `edge:*` counters). Evidence references for these checks use `kind: "log"` pointing at the `step` lines.
+
+**Review-node entry check:** before routing into the whole-change review node of a ticketed unit, every ticket's status must be `passed`. Anything else is a state defect: stay in place, repair the state (the pass that was never flipped), never route past it.
 
 ## Validator node
 
@@ -86,7 +109,7 @@ A ruling (`escalation.md`) or an approval answer may move the unit somewhere oth
 
 After a reviewer pass (and approval, if any) and before the route write, run the node's `post_steps` in declared order as commands. For build this is the local commit of accepted output; for close-out it is commit, push, open the delivery channel, remove the worktree. Nothing leaves the machine before the close-out reviewer pass. No worker, reviewer, or advisor is dispatched for post-steps.
 
-- Record each step (command, exit status, output tail) in `steps-<n>.md` in the node's stage directory. The log vocabulary has no step event, so cite the file in the description of the next orchestrator line (`route`, or `dispatch` when a standalone line is needed); orchestrator events carry `source_ref: null`.
+- Record each step as a `step` log line (command, exit status, output tail, truncated); orchestrator events carry `source_ref: null`.
 - Steps are idempotent. On resume, re-run only steps not recorded as succeeded.
 - A failing post-step is that node's deterministic failure: signature `<command> exit <status>`, the fallback chain engaged in place, the recorded reviewer pass stays valid, and the retry re-runs only the failed step (and the ones after it).
 - Worktree removal here is the plain `git worktree remove "$WU_WORKTREE"`, never forced on the success path.
@@ -100,7 +123,7 @@ The node mounting the wrap skill is the unit's only memory writer. Dispatch its 
 Terminals carry steps instead of verification. Reaching one (success terminal by the close-out route; abandonment terminal only by a disposition: a not-needed approval or a ruling's end) is done in this order so a failing step can still be escalated in place.
 
 1. **Abandonment only:** write `handoff.md` at the folder root yourself: what was concluded, the abandonment reason, and the ids of any unmerged draft deltas (list `delta-<n>.md` files across the stage directories; they stay in place in the folder). On success, the handoff is the reviewed close-out artifact; the terminal's copy step puts it at the root.
-2. Run the terminal's `steps` in declared order, except the final archive step, with `current_node` still at the node you are leaving. Record the results in `steps-<n>.md` in the terminal's stage directory. Abandonment's steps remove any live worktree with force permitted (the unit folder already holds the drafts) and check that the handoff exists, so an abandoned unit leaves no residue. A failing step is a deterministic failure at the node you are leaving (the gate forbids an open problem at a terminal), with the failing command and its exit status as the signature; escalate in place per `escalation.md`, retry re-runs from the failed step.
+2. Run the terminal's `steps` in declared order, except the final archive step, with `current_node` still at the node you are leaving. Record each result as a `step` log line. Abandonment's steps remove any live worktree with force permitted (the unit folder already holds the drafts) and check that the handoff exists, so an abandoned unit leaves no residue. A failing step is a deterministic failure at the node you are leaving (the gate forbids an open problem at a terminal), with the failing command and its exit status as the signature; escalate in place per `escalation.md`, retry re-runs from the failed step.
 3. One `write` records the arrival: `current_node` to the terminal, `walked_path` append, `outcome` (`shipped` at the success terminal, `ended` at abandonment), `outcome_reason` (required for `ended`: why), a `route` log line, and the final `archive` log line (node = the terminal; the gate requires the outcome set and freezes the folder after it).
 4. Run the archive step (`work-unit.mjs archive --graph "$GRAPH" --unit "$WU_FOLDER"`); it moves the whole folder to the archive. After this nothing may be written. The archive gate needs `handoff.md` at the root and the archive line last.
 5. If the archive move itself fails, the folder is already frozen and the failure cannot be written to state: retry the archive command once after fixing the reported cause, otherwise report it to the human in the main session.

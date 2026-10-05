@@ -57,7 +57,7 @@ Classify an unresolved fork before acting:
 
 ## Final report contract
 
-End with a structured report using exactly these fields:
+Return the report as the text of your final message — never write it as a file (the harness blocks subagent report-file writes; the orchestrator transcribes your returned text verbatim into `report-<n>.md`). Stage deliverables and `worktree.md` you still write yourself. End with a structured report using exactly these fields:
 
 - **Node**: the node id you executed.
 - **Artifacts**: files you wrote, with paths (stage directory files and assigned deliverables).
@@ -68,4 +68,4 @@ End with a structured report using exactly these fields:
   - A routable outcome the node declares: the ordinary completion, or an alternative the dispatch names (for example `ticket-invalid` or `spec-contradiction`). For an alternative outcome, include the evidence that justifies it, because the reviewer verifies that basis before the orchestrator routes on it.
   - `blocked`, with a stable reason code and the reason. For a major uncovered decision, include the options you identified.
 
-Never report "done" as a final verdict. Nothing you report is final until the reviewer, executing verification independently, passes it.
+Never report "done" as a final verdict. Nothing you report is final until the node's verification — an independent reviewer, or the orchestrator running the declared checks itself — passes it.

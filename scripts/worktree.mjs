@@ -12,7 +12,7 @@
 // shell that runs project-declared setup commands.
 //
 // Configuration: .harness/config.json in the main checkout (optional for
-// ensure; sections used: vcs.base_ref | vcs.default_branch | vcs.remote,
+// ensure; sections used: vcs.default_branch | vcs.remote,
 // locations.worktrees default ".project/worktrees", and worktree_setup for
 // setup). schema_version must have major version 1.
 //
@@ -292,8 +292,7 @@ function branchExistsLocal(main, branch) {
 // Resolves the start point for a brand-new branch from the config's vcs section.
 function resolveBase(main, cfg) {
   const vcs = (cfg && cfg.vcs) || {};
-  const declared = typeof vcs.base_ref === 'string' && vcs.base_ref !== '' ? vcs.base_ref
-    : typeof vcs.default_branch === 'string' && vcs.default_branch !== '' ? vcs.default_branch : null;
+  const declared = typeof vcs.default_branch === 'string' && vcs.default_branch !== '' ? vcs.default_branch : null;
   if (declared === null) {
     const h = runGit(['rev-parse', '--verify', '--quiet', 'HEAD^{commit}'], { cwd: main });
     if (!h.ok) throw new Fail('not_a_git_repository', 'main checkout has no commits: ' + main);

@@ -25,11 +25,20 @@ Always read the template's own `slots` block for the current list rather than tr
 
 ## Run-time variables are not slots
 
-`run_time_variables` (`CLAUDE_PLUGIN_ROOT`, `WU_ID`, `WU_BRANCH`, `WU_WORKTREE`, and so on) are expanded by the orchestrator at run time. Leave them untouched; do not ask the user for them.
+`$`-prefixed run-time variables inside commands and steps (`CLAUDE_PLUGIN_ROOT`, `WU_ID`, `WU_BRANCH`, `WU_WORKTREE`, and so on) are expanded by the orchestrator at run time. Leave them untouched; do not ask the user for them. The catalog lives in graph-run's `dispatch.md`.
 
 ## Interviewing for a slot
 
-Offer a concrete recommendation from the survey (for example `npm test` from package.json scripts), ask for confirmation or a correction, and confirm the command works from a fresh worktree after the config's setup commands. A command that needs an argument pattern (a family, as `test_command` is for ticket tests) stays the base program plus leading arguments, as the template declares it.
+Offer a concrete recommendation from the survey (for example `npm test` from package.json scripts), ask for confirmation or a correction, and confirm the command works from a fresh worktree after the config's setup commands. A slot is never filled from the survey alone: no confirmation, no fill. A command that needs an argument pattern (a family, as `test_command` is for ticket tests) stays the base program plus leading arguments, as the template declares it.
+
+## Delivery variants (coding-factory)
+
+The shipped wrap post_steps assume a remote: commit, push, `{{open_pr_command}}`, remove the worktree. When the config declares no remote, that flow cannot be instantiated — ask the user which declared variant applies instead of improvising:
+
+- **Remote delivery** (shipped default): keep the post_steps as shipped and fill `open_pr_command`.
+- **Local merge**: replace the push and `{{open_pr_command}}` steps with `git merge --no-ff --no-edit "$WU_BRANCH"` (run in the main checkout), and remove the `open_pr_command` entry from `slots` together with that step — the slot and its only use leave together, so `SLOT_UNFILLED` cannot fire.
+
+These two are the only sanctioned deviations at instantiation time; anything else is a Tier 3 edit the user must request, re-validated as usual.
 
 ## Instantiation checklist
 

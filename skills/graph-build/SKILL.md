@@ -19,22 +19,22 @@ Ask which applies, or infer from the repo:
 
 ## Tier 1 - Bootstrap (init)
 
-Survey before asking: directory structure, README and any root CLAUDE.md, manifests and lockfiles, CI config, git history and remote, untracked-but-needed files (env files, fixtures). Then interview one question at a time. Draft the config JSON in a scratch file outside the repo, validate it, show it to the user, and only then write it:
+Survey before asking: directory structure, README and any root CLAUDE.md, manifests and lockfiles, CI config, git history and remote, untracked-but-needed files (env files, fixtures). The survey produces recommendations, never answers: every config section MUST be confirmed by the user, one question at a time, each question presenting the recommended answer and its source. A section never put to the user is not answered — stop and ask rather than draft around it. Then draft the config JSON in a scratch file outside the repo, validate it, show it to the user, and only then write it:
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/init.mjs" validate --from <draft.json>
 node "${CLAUDE_PLUGIN_ROOT}/scripts/init.mjs" write    --from <draft.json>
 ```
 
-The config has a schema version and one section per fact: `vcs`, `locations` (work units, archive, worktrees), `worktree_setup` (always present, explicit empty lists when nothing is needed), optional `memory` and `graph`. It holds no command catalog. Section-by-section interview guidance and a full example: `references/bootstrap.md`.
+The config has a schema version and one section per fact: `vcs`, `locations` (work units, archive, worktrees), `worktree_setup` (always present, explicit empty lists when nothing is needed), optional `memory` and `graph`. It holds no command catalog. After the write, create each budgeted current-truth document that does not exist as a skeleton under `.harness/` (never overwrite one). Section-by-section interview guidance and a full example: `references/bootstrap.md`.
 
 ## Tier 2 - Instantiate a template
 
 1. Copy the shipped template `${CLAUDE_PLUGIN_ROOT}/skills/graph-build/templates/coding-factory.json` into the project's own definition path (default `.harness/graph.json`). The copy is the project's from now on; never edit the template in the plugin.
-2. Interview to fill every command slot the template declares under `slots`. A node executes only what it mounts, so each answer becomes a mounted command. Prefer the project's real commands found in the survey.
+2. Interview to fill every command slot the template declares under `slots`. A node executes only what it mounts, so each answer becomes a mounted command. Recommend the project's real commands found in the survey, but every slot MUST be confirmed by the user — never filled from the survey alone. When the project declares no remote and the template's delivery steps assume one, put the template's declared delivery variants to the user (see `references/templates.md`) and apply exactly the chosen one; any structural deviation outside the declared variants is a Tier 3 edit the user must request.
 3. Substitute each `{{slot}}` placeholder throughout the copy and remove the build-time `slots` block.
 4. Check mounts: every mounted skill must be installed, or be a skill without graph profile obligations (it then degrades to instructions at run time). A mounted skill that defines a graph profile and is unavailable blocks the stage, so install it or choose another.
-5. Run the full validation: structure first, then the tool gate (every mounted command and every worktree-setup command is probed for existence and startability only, never run for effect):
+5. Run the full validation: structure first, then the tool gate (every mounted command and every worktree-setup command is probed for existence and startability only, never run for effect). Do not reach this step with any slot or config section the user never confirmed — stop and ask first:
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/graph.mjs" validate <definition.json> --config .harness/config.json
@@ -60,4 +60,4 @@ Node behavior changes by editing the definition, never an agent file. Make the e
 
 ## Report
 
-State what was written (config, definition path), the validator summary (nodes, edges, phases), the tool gate result, and the next step: graph-run.
+State what was written (config, definition path), the confirmed interview answers (question, answer, and whether the user took the recommendation or corrected it), the validator summary (nodes, edges, phases), the tool gate result, and the next step: graph-run.

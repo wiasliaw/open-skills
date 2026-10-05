@@ -92,7 +92,7 @@ function nextLines(sb, id, specs) {
   return specs.map(function (s) {
     n += 1;
     const type = s.event_type || 'route';
-    const src = { create: 'orchestrator', dispatch: 'orchestrator', route: 'orchestrator', archive: 'orchestrator', report: 'actor-report', verdict: 'actor-report', 'advisor-consultation': 'actor-report', 'human-decision': 'human-answer' }[type];
+    const src = { create: 'orchestrator', dispatch: 'orchestrator', route: 'orchestrator', step: 'orchestrator', archive: 'orchestrator', report: 'actor-report', verdict: 'actor-report', 'advisor-consultation': 'actor-report', 'human-decision': 'human-answer' }[type];
     return Object.assign({
       id: 'L-' + String(n).padStart(4, '0'),
       timestamp: s.timestamp || T0,
@@ -318,6 +318,14 @@ test('phase-bound field is rejected outside its phases', () => {
   const { sb, id } = approvedUnit('feat');
   const r = write(sb, id, (s) => { s.maint_notes = []; });
   assertRejected(r, 'field-inapplicable');
+});
+
+test('step is a valid orchestrator log event', () => {
+  const sb = sandbox();
+  create(sb, 's1');
+  const r = write(sb, 's1', (s) => { s.current_node = 'plan'; s.walked_path.push('plan'); },
+    [{ event_type: 'step', node: 'plan', description: 'npm test exit 1 | tail: 1 failing' }, { event_type: 'route', node: 'plan' }]);
+  assert.equal(r.code, 0, r.stdout);
 });
 
 test('write accepts a log-full draft whose prefix is the stored log', () => {

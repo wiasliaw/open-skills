@@ -11,7 +11,7 @@ const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), 'init.mjs
 function good() {
   return {
     schema_version: '1.0.0',
-    vcs: { strategy: 'github-flow', default_branch: 'main' },
+    vcs: { default_branch: 'main' },
     locations: { work_units: '.project/work-units', archive: '.project/archive', worktrees: '.project/worktrees' },
     graph: '.harness/graph.json',
     worktree_setup: { setup: ['npm ci'], copy: [{ path: '.env', readonly: false }] },
@@ -84,6 +84,7 @@ test('rejects missing or malformed worktree_setup', () => {
 test('rejects bad vcs and locations', () => {
   rejects((d) => { delete d.vcs; }, /vcs/);
   rejects((d) => { delete d.vcs.default_branch; }, /default_branch/);
+  rejects((d) => { d.vcs.strategy = 'github-flow'; }, /unknown key/);
   rejects((d) => { delete d.locations.archive; }, /archive/);
   rejects((d) => { d.locations.worktrees = '/abs/path'; }, /relative/);
   rejects((d) => { d.locations.work_units = 'a/../../b'; }, /\.\./);
@@ -92,6 +93,7 @@ test('rejects bad vcs and locations', () => {
 test('rejects bad memory section', () => {
   rejects((d) => { delete d.memory.ledger; }, /ledger/);
   rejects((d) => { d.memory.budgets['X.md'] = 0; }, /positive integer/);
+  rejects((d) => { d.memory.budgets['.harness/X.md'] = 10; }, /bare file name/);
   rejects((d) => { d.memory.pending_delta_threshold = -1; }, /pending_delta_threshold/);
   rejects((d) => { d.memory.budget_pressure_threshold = 2; }, /budget_pressure_threshold/);
   rejects((d) => { d.memory.extra = 1; }, /unknown key/);

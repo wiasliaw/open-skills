@@ -18,6 +18,7 @@ The same error is judged by signature, a stable string you compose:
 | Failure | Signature |
 | -- | -- |
 | Reviewed stage, failing verdict | `dims:<failing dimension names, sorted, comma-joined>\|cmd:<failing verification command, or none>` from the reviewer's verdict |
+| Orchestrator-run verification (`verification.runner: "orchestrator"`), failing check | same form: `dims:<failing dimensions>\|cmd:<failing command>` — a verdict, counted like a reviewed stage, never the deterministic-node class |
 | Deterministic or tool node, or a failing pre-step/post-step/terminal step | `cmd:<command>\|exit:<status>` |
 | Blocked report | `blocked:<reason code>@<node id>` (a script failure contributes its stable error code as the reason code) |
 | Edge-revisit cap | `edge-revisit:<from>-<to>` |
@@ -29,7 +30,7 @@ The same error is judged by signature, a stable string you compose:
 
 - **Scope.** A failing verdict increments exactly one counter: the finest applicable scope. When the node is working on a selected item of a graph-declared scope kind (reference graph: build with a `current_ticket`), the scope is `<kind>:<id>` (`ticket:<id>`). Otherwise it is `node:<id>`. A `ticket:` scope exists only where tickets exist. Never increment two scopes for one failure.
 - **On a failing in-node verdict**: if `counters.signature` equals the new signature, `count += 1`; otherwise `signature` = new, `count = 1` (the per-signature counter restarts at one, for bookkeeping only). Always `total += 1`. Written in the same write that records the verdict.
-- **Not counted here:** blocked reports, deterministic/tool/step failures, and guard defects open problems directly and do not increment node counters (they have no verdict). A validator node's failing verdict increments no node counter; its returning edge counter is incremented when the edge is taken (below).
+- **Not counted here:** blocked reports, deterministic/tool/step failures, and guard defects open problems directly and do not increment node counters (they have no verdict). An orchestrator-run verification failure is NOT in that class: it is a failing in-node verdict and counts like a reviewer's (a check that cannot run — exit 126/127, unresolvable program — is blocked class instead). A validator node's failing verdict increments no node counter; its returning edge counter is incremented when the edge is taken (below).
 - **Edge scope** `edge:<from>-<to>`: `{signature: null, count: n, total: n}`; count only traversals of a declared returning edge (target earlier on the approved path). Checked before taking the route; at or above E the orchestrator stays and escalates instead of routing. Declared selection-only re-entry never accumulates.
 
 ### Progress (the only edge-counter reset)
@@ -82,7 +83,7 @@ A later failure on the same scope after a ruling opens a new problem (`<scope>#<
 
 | Situation | Action |
 | -- | -- |
-| In-node verdict fail, `count < F`, `total < T`, no open problem | Counter +1, re-dispatch worker in place |
+| In-node verdict fail (reviewer or orchestrator-run), `count < F`, `total < T`, no open problem | Counter +1, re-dispatch worker in place |
 | `count >= F` (same signature) or `total >= T` | Open problem (`signature` / `total`), advisor |
 | Blocked report, step failure, guard defect | Open problem (`blocked`), advisor |
 | Open problem, new failure, same signature or total-opened | Stay open, next tier |

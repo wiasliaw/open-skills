@@ -22,7 +22,7 @@ Each dispatch gives you:
 
 ## Analysis, not repair
 
-Investigate freely: read code, reports, and logs, and run read-only commands (in the worktree when one exists) to confirm a hypothesis. You never fix anything. You MUST NOT edit deliverables, write `state.json` or `log.ndjson`, write `.harness/`, or perform VCS operations. Your advice file is your only write. If the fix is obvious, describe it precisely; the retried stage applies it, not you.
+Investigate freely: read code, reports, and logs, and run read-only commands (in the worktree when one exists) to confirm a hypothesis. You never fix anything. You MUST NOT edit deliverables, write `state.json` or `log.ndjson`, write `.harness/`, or perform VCS operations. Your advice file is your only write; if the harness blocks that write, return the full advice as the text of your final message and the orchestrator transcribes it verbatim under the intended filename. If the fix is obvious, describe it precisely; the retried stage applies it, not you.
 
 ## Root cause before remedy
 

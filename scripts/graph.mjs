@@ -14,7 +14,9 @@
 //
 // Output: exactly one JSON object on stdout, always. Shape:
 //   { ok, command, accepted, file, errors: [{code, invariant, message, ...context}],
-//     summary, returning_edges, tool_gate }
+//     warnings: [{code, message}], summary, returning_edges, tool_gate }
+//   Warnings never affect acceptance (currently: SKILL_STATE_NEEDS_INLINE_DEPRECATED
+//   when a definition still carries the retired skill_state_needs section).
 //   Every error names the violated invariant (`invariant`) and the node, edge, cycle,
 //   outcome, or phase involved (`node`, `edge`, `cycle`, `outcome`, `phase`, `path`).
 //
@@ -36,13 +38,13 @@
 //                   phase-approval node and ends at the success terminal through the close-out node
 //   state_fields    { <name>: { type, values?, nullable?, default, node | phases, executes? } }
 //                   type: string | integer | number | boolean | object | list
-//   skill_state_needs?  { <skill>: [fieldName...] }  fields a mounted skill reads or writes
 //   nodes           [{ id, type, purpose, reads, produces, verification, outcomes, mounts,
 //                      restrictions, human_approval, pre_steps?, post_steps?, re_entry?,
 //                      terminal_kind (terminal only: success | abandonment), steps (terminal only) }]
 //                   type: entry | llm | deterministic | tool | validator | terminal
 //                   mounts: { skills: [string], commands: [string | {base, args?}], mcp: [string] }
-//                   verification: string | [string] | { criteria, commands: [string] }
+//                   verification: string | [string] | { criteria, commands: [string],
+//                     runner?: "reviewer" (default) | "orchestrator" }
 //                   reads/produces entries of the form `state:<field>` reference state fields
 //                   re_entry: { list_field, order, progress_field }
 //   edges           [{ from, to, outcome, guard: [{field, op, value?}] }]
@@ -70,6 +72,7 @@
 //   Graph      LOOP_NO_EXIT LOOP_UNCOUNTED NODE_UNREACHABLE NODE_NO_PATH_TO_SUCCESS
 //   State      STATE_FIELD_INVALID STATE_FIELD_APPLICABILITY_INVALID STATE_FIELD_CORE_COLLISION
 //              STATE_FIELD_UNDECLARED STATE_FIELD_INAPPLICABLE_AT_NODE STATE_FIELD_EXECUTOR_INVALID
+//              SKILL_STATE_NEED_UNMET (a mounted skill's need, per the plugin-shipped map)
 //   Gate       TOOL_MISSING TOOL_NOT_STARTABLE
 //   Usage/IO   USAGE INPUT_UNREADABLE INPUT_INVALID_JSON CONFIG_INVALID INTERNAL
 
@@ -87,6 +90,13 @@ const NODE_TYPES = ['entry', 'terminal', ...WORK_TYPES];
 const FIELD_TYPES = ['string', 'integer', 'number', 'boolean', 'object', 'list'];
 const OPS = ['eq', 'ne', 'in', 'not-in', 'lt', 'lte', 'gt', 'gte', 'empty', 'not-empty'];
 const CLOSE_OUT_SKILLS = new Set(['open-skills:wrap', 'wrap']);
+// Plugin-shipped source of truth: the state fields each shipped skill reads or
+// writes. Applied at every validation; a skill absent here is unchecked. An
+// inline skill_state_needs section in a definition is deprecated: ignored with
+// a warning, never merged with this map.
+const SKILL_STATE_NEEDS = {
+  'open-skills:ticket': ['tickets', 'current_ticket', 'pending_tickets'],
+};
 const FORBIDDEN_RE = /(human[-_ ]?gate|advisor|blocked|escalat)/i;
 const SLOT_RE = /\{\{\s*([A-Za-z0-9_.-]+)\s*\}\}/g;
 const NODE_ID_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
@@ -165,6 +175,7 @@ const INVARIANTS = {
   STATE_FIELD_UNDECLARED: 'every state field a node or skill needs is declared',
   STATE_FIELD_INAPPLICABLE_AT_NODE: 'every state field a node uses is applicable at that node',
   STATE_FIELD_EXECUTOR_INVALID: 'a command-holding field names an executing node that mounts a command family',
+  SKILL_STATE_NEED_UNMET: 'every state field a mounted skill needs is declared and applicable at the mounting node',
   TOOL_MISSING: 'every mounted tool exists',
   TOOL_NOT_STARTABLE: 'every mounted tool starts',
 };
@@ -285,11 +296,13 @@ function findSlots(value, where, out) {
 
 export function validateDefinition(def) {
   const errors = [];
+  const warnings = [];
   const err = (code, message, ctx = {}) =>
     errors.push({ code, invariant: INVARIANTS[code] ?? code, message, ...ctx });
 
   const result = () => ({
     errors,
+    warnings,
     summary: summary,
     returning_edges: returningEdges,
     commands: gateCommands,
@@ -515,6 +528,9 @@ export function validateDefinition(def) {
     const v = n.verification;
     let vCommands = [];
     if (isObj(v)) {
+      if (has(v, 'runner') && v.runner !== 'reviewer' && v.runner !== 'orchestrator') {
+        err('NODE_FIELD_INVALID', `${w('verification.runner')} must be "reviewer" or "orchestrator".`, { node: n.id, field: 'verification.runner' });
+      }
       if (has(v, 'commands')) {
         if (!isArr(v.commands) || v.commands.some((c) => !isStr(c))) {
           err('NODE_FIELD_INVALID', `${w('verification.commands')} must be an array of command strings.`, { node: n.id, field: 'verification.commands' });
@@ -672,7 +688,12 @@ export function validateDefinition(def) {
   }
 
   // state references by nodes, mounted skills, and re-entry rules
-  const skillNeeds = isObj(def.skill_state_needs) ? def.skill_state_needs : {};
+  if (has(def, 'skill_state_needs')) {
+    warnings.push({
+      code: 'SKILL_STATE_NEEDS_INLINE_DEPRECATED',
+      message: 'skill_state_needs in a definition is deprecated and ignored; the validator ships the skill-needs map. Remove the section.',
+    });
+  }
   const needField = (nodeId, name, via) => {
     if (CORE_FIELDS.has(name)) return;
     if (!has(def.state_fields, name)) {
@@ -682,6 +703,16 @@ export function validateDefinition(def) {
       err('STATE_FIELD_INAPPLICABLE_AT_NODE', `Node "${nodeId}" needs state field "${name}" (${via}), which is not applicable at that node.`, { node: nodeId, field: name });
     }
   };
+  const needSkillField = (nodeId, skill, name) => {
+    if (CORE_FIELDS.has(name)) return;
+    const hint = 'declare the field in state_fields via the graph-build edit flow (Tier 3) and revalidate';
+    if (!has(def.state_fields, name)) {
+      return err('SKILL_STATE_NEED_UNMET', `Node "${nodeId}" mounts skill "${skill}", which needs state field "${name}" — not declared in state_fields; ${hint}.`, { node: nodeId, skill, field: name });
+    }
+    if (fields.has(name) && !applicable.get(name).has(nodeId)) {
+      err('SKILL_STATE_NEED_UNMET', `Node "${nodeId}" mounts skill "${skill}", which needs state field "${name}" — not applicable at that node; ${hint}.`, { node: nodeId, skill, field: name });
+    }
+  };
   for (const n of work) {
     for (const k of ['reads', 'produces']) {
       for (const e of arr(n[k])) {
@@ -689,7 +720,7 @@ export function validateDefinition(def) {
       }
     }
     for (const s of arr(n.mounts?.skills)) {
-      if (isArr(skillNeeds[s])) skillNeeds[s].forEach((f) => needField(n.id, f, `skill ${s}`));
+      if (isArr(SKILL_STATE_NEEDS[s])) SKILL_STATE_NEEDS[s].forEach((f) => needSkillField(n.id, s, f));
     }
     if (has(n, 're_entry')) {
       const r = n.re_entry;
@@ -704,11 +735,6 @@ export function validateDefinition(def) {
           else if (k === 'list_field' && f.type !== 'list') bad(`list_field "${r.list_field}" must be a list field.`);
         }
       }
-    }
-  }
-  for (const s of Object.keys(skillNeeds)) {
-    if (!isArr(skillNeeds[s]) || skillNeeds[s].some((x) => typeof x !== 'string')) {
-      err('NODE_FIELD_INVALID', `skill_state_needs["${s}"] must be an array of field names.`, { path: `skill_state_needs.${s}` });
     }
   }
 
@@ -1300,7 +1326,7 @@ export function main(argv) {
   }
 
   const res = validateDefinition(def);
-  const base = { command: 'validate', file, summary: res.summary, returning_edges: res.returning_edges };
+  const base = { command: 'validate', file, summary: res.summary, returning_edges: res.returning_edges, warnings: res.warnings };
   if (res.errors.length) {
     return emit({ ok: false, ...base, accepted: false, errors: res.errors, tool_gate: { status: 'skipped', reason: 'structure-invalid' } }, EXIT.REJECTED);
   }

@@ -119,6 +119,7 @@ const EVENT_SOURCE = {
   'create': 'orchestrator',
   'dispatch': 'orchestrator',
   'route': 'orchestrator',
+  'step': 'orchestrator',
   'archive': 'orchestrator',
   'report': 'actor-report',
   'verdict': 'actor-report',

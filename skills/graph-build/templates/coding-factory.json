@@ -1,20 +1,10 @@
 {
   "schema_version": "1.0.0",
   "name": "coding-factory",
-  "description": "Template graph definition for a software-delivery factory. Build-time material only: graph-build copies it into the project's own definition, fills every named command slot from the instantiation interview, runs the validator and tool gate, and the project owns the result from then on. There is no default factory at run time.",
   "slots": {
     "test_command": "The project's test command (for example the full-suite runner). Run in the unit's worktree; also the base of the family covering each ticket's declared test invocation.",
     "lint_command": "The project's static-check command (lint, type check, or format check). Use any harmless always-green check when the project has none.",
     "open_pr_command": "Opens the project's delivery channel for the pushed unit branch (reference: a pull request). MUST be idempotent: succeed when the channel is already open for the branch."
-  },
-  "run_time_variables": {
-    "CLAUDE_PLUGIN_ROOT": "Installed plugin root; scripts are invoked as node \"$CLAUDE_PLUGIN_ROOT/scripts/<script>.mjs\".",
-    "WU_ID": "The work unit id.",
-    "WU_BRANCH": "The unit's branch: wu/<id>, or the existing branch a fix unit's trigger names.",
-    "WU_FOLDER": "The unit's work-unit folder.",
-    "WU_WORKTREE": "The unit's worktree path, derived from the id under the config's worktrees location.",
-    "WU_REMOTE": "The git remote declared in the config's VCS section.",
-    "WU_COMMIT_MESSAGE": "The Conventional Commits message the orchestrator composes for the unit's branch."
   },
   "caps": {
     "failure": 2,
@@ -25,19 +15,46 @@
   "phase": {
     "feat": {
       "meaning": "A new capability that needs a contract: research, specify, decompose into tickets, build, review, close out.",
-      "path": ["research", "spec", "ticket", "build", "review", "wrap", "ship"]
+      "path": [
+        "research",
+        "spec",
+        "ticket",
+        "build",
+        "review",
+        "wrap",
+        "ship"
+      ]
     },
     "fix": {
       "meaning": "A defect that an existing contract already covers, so no contract stage runs: research, decompose, build, review, close out.",
-      "path": ["research", "ticket", "build", "review", "wrap", "ship"]
+      "path": [
+        "research",
+        "ticket",
+        "build",
+        "review",
+        "wrap",
+        "ship"
+      ]
     },
     "chore": {
       "meaning": "Small housekeeping that changes neither behavior nor contract: research, build, review, close out.",
-      "path": ["research", "build", "review", "wrap", "ship"]
+      "path": [
+        "research",
+        "build",
+        "review",
+        "wrap",
+        "ship"
+      ]
     },
     "maintenance": {
       "meaning": "Reserved. Memory apply: fold pending delta entries into the current-truth documents and flip their status. Only a unit with trigger source maintenance-due records it.",
-      "path": ["research", "build", "review", "wrap", "ship"],
+      "path": [
+        "research",
+        "build",
+        "review",
+        "wrap",
+        "ship"
+      ],
       "restriction_overrides": {
         "build": [
           "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
@@ -56,10 +73,22 @@
       "type": "object",
       "nullable": true,
       "default": null,
-      "phases": ["feat", "fix"],
+      "phases": [
+        "feat",
+        "fix"
+      ],
       "fields": {
-        "kind": { "type": "string", "values": ["openspec-change", "path", "url"] },
-        "ref": { "type": "string" }
+        "kind": {
+          "type": "string",
+          "values": [
+            "openspec-change",
+            "path",
+            "url"
+          ]
+        },
+        "ref": {
+          "type": "string"
+        }
       }
     },
     "tickets": {
@@ -71,10 +100,30 @@
       "items": {
         "type": "object",
         "fields": {
-          "id": { "type": "string" },
-          "status": { "type": "string", "values": ["pending", "in-progress", "passed", "failed", "blocked"] },
-          "verification_command": { "type": "string", "command": true },
-          "evidence_refs": { "type": "list", "items": { "type": "object", "evidence": true } }
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "values": [
+              "pending",
+              "in-progress",
+              "passed",
+              "failed",
+              "blocked"
+            ]
+          },
+          "verification_command": {
+            "type": "string",
+            "command": true
+          },
+          "evidence_refs": {
+            "type": "list",
+            "items": {
+              "type": "object",
+              "evidence": true
+            }
+          }
         }
       }
     },
@@ -88,11 +137,10 @@
       "type": "list",
       "default": [],
       "node": "ticket",
-      "items": { "type": "string" }
+      "items": {
+        "type": "string"
+      }
     }
-  },
-  "skill_state_needs": {
-    "open-skills:ticket": ["tickets", "current_ticket", "pending_tickets"]
   },
   "nodes": [
     {
@@ -104,10 +152,23 @@
       "id": "research",
       "type": "llm",
       "purpose": "Gather what is needed to judge the work and propose a phase with a rationale. This node carries the mandatory phase approval for every unit.",
-      "reads": ["request", "codebase", "memory"],
-      "produces": ["findings", "phase-proposal"],
+      "reads": [
+        "request",
+        "codebase",
+        "memory"
+      ],
+      "produces": [
+        "findings",
+        "phase-proposal"
+      ],
       "verification": "Findings cite code and records that were actually read. The proposal names exactly one declared phase with a rationale. A fix or chore proposal confirms that no contract change is needed, and a fix proposal names the existing contract that covers the defect (kind and ref, for the orchestrator to record as contract_ref).",
-      "mounts": { "skills": ["deep-research"], "commands": [], "mcp": [] },
+      "mounts": {
+        "skills": [
+          "deep-research"
+        ],
+        "commands": [],
+        "mcp": []
+      },
       "restrictions": [
         "MUST NOT modify the repository or the main checkout.",
         "MUST NOT write .harness/ or any long-term memory.",
@@ -115,17 +176,32 @@
         "MUST NOT write outside its stage directory."
       ],
       "human_approval": true,
-      "outcomes": ["proposal-produced"],
+      "outcomes": [
+        "proposal-produced"
+      ],
       "instructions": "Investigate read-only. Write findings and a phase proposal into the stage directory. Propose feat when the work needs a new or changed contract, fix when an existing contract already covers it, chore for small housekeeping, and maintenance only when the unit's trigger source is maintenance-due. Report proposal-produced. The human approval records the phase; when the answer is a send-back, revise the same proposal for the same unit."
     },
     {
       "id": "spec",
       "type": "llm",
       "purpose": "Author the contract for a new capability so decomposition has an approved contract to work from.",
-      "reads": ["request", "findings", "memory"],
-      "produces": ["contract", "state:contract_ref"],
+      "reads": [
+        "request",
+        "findings",
+        "memory"
+      ],
+      "produces": [
+        "contract",
+        "state:contract_ref"
+      ],
       "verification": "The contract states testable requirements, is internally consistent, and covers the approved request without scope beyond it. contract_ref names the document it was written to.",
-      "mounts": { "skills": ["openspec-propose"], "commands": [], "mcp": [] },
+      "mounts": {
+        "skills": [
+          "openspec-propose"
+        ],
+        "commands": [],
+        "mcp": []
+      },
       "restrictions": [
         "MUST NOT modify the repository or the main checkout.",
         "MUST NOT write .harness/ or any long-term memory.",
@@ -133,17 +209,34 @@
         "MUST NOT write outside its stage directory."
       ],
       "human_approval": true,
-      "outcomes": ["contract-produced"],
+      "outcomes": [
+        "contract-produced"
+      ],
       "instructions": "Write the contract as a document in the stage directory and report where it lives so the orchestrator can record contract_ref. When this node is re-entered after a spec-contradiction, revise the contract to resolve the recorded contradiction instead of starting over. Report contract-produced."
     },
     {
       "id": "ticket",
       "type": "llm",
       "purpose": "Decompose the approved contract into tickets, each defined by an executable test authored before any implementation. Also the node whose declared re-entry selects the next pending ticket.",
-      "reads": ["state:contract_ref", "contract", "codebase"],
-      "produces": ["tickets", "state:tickets", "state:pending_tickets", "state:current_ticket"],
-      "verification": "Every ticket has a scope and an executable test command that one run settles, and the test is written as a stage artifact. Every ticket test command is covered by the command family the build node mounts. Tickets are independently verifiable. No ticket is produced around a contradictory or unsatisfiable contract.",
-      "mounts": { "skills": ["open-skills:ticket"], "commands": [], "mcp": [] },
+      "reads": [
+        "state:contract_ref",
+        "contract",
+        "codebase"
+      ],
+      "produces": [
+        "tickets",
+        "state:tickets",
+        "state:pending_tickets",
+        "state:current_ticket"
+      ],
+      "verification": "Every ticket has a scope and an executable test command that one run settles, and the test is written as a stage artifact. Every ticket test command is covered by the command family the build node mounts. Tickets are independently verifiable. No ticket is produced around a contradictory or unsatisfiable contract. Every ticket names the repo-relative target path(s) of its test files.",
+      "mounts": {
+        "skills": [
+          "open-skills:ticket"
+        ],
+        "commands": [],
+        "mcp": []
+      },
       "restrictions": [
         "MUST NOT modify the repository or the main checkout.",
         "MUST NOT write .harness/ or any long-term memory.",
@@ -152,27 +245,49 @@
         "MUST NOT decompose a contract that is not approved."
       ],
       "human_approval": false,
-      "outcomes": ["tickets-produced", "spec-contradiction"],
+      "outcomes": [
+        "tickets-produced",
+        "spec-contradiction"
+      ],
       "re_entry": {
         "list_field": "pending_tickets",
         "order": "declared",
         "progress_field": "current_ticket"
       },
-      "instructions": "Write the full ticket text, including each test, as artifacts in the stage directory, and hand the routing entries (id, status, verification command) to the orchestrator. Report tickets-produced, or spec-contradiction when the contract contradicts itself or cannot be satisfied (record the contradiction in the stage directory). When a build report of ticket-invalid returns here, revise or drop the named ticket. After a ticket passes and tickets remain pending, the orchestrator performs the selection-only re-entry deterministically, dispatching no actor."
+      "instructions": "Write the full ticket text, including each test, as artifacts in the stage directory, and hand the routing entries (id, status, verification command) to the orchestrator. Report tickets-produced, or spec-contradiction when the contract contradicts itself or cannot be satisfied (record the contradiction in the stage directory). When a build report of ticket-invalid returns here, revise or drop the named ticket. After a ticket passes and tickets remain pending, the orchestrator performs the selection-only re-entry deterministically, dispatching no actor. Every ticket also names the repo-relative target path(s) of its test files; the orchestrator lands them at those paths and runs the red check itself before any build dispatch."
     },
     {
       "id": "build",
       "type": "llm",
       "purpose": "Implement the current ticket (or, on a ticketless path, the whole approved change) inside the unit's worktree, red before green.",
-      "reads": ["state:tickets", "state:current_ticket", "contract", "worktree"],
-      "produces": ["code-changes", "worktree-record", "red-run-evidence", "green-run-evidence", "state:tickets"],
+      "reads": [
+        "state:tickets",
+        "state:current_ticket",
+        "contract",
+        "worktree"
+      ],
+      "produces": [
+        "code-changes",
+        "worktree-record"
+      ],
       "verification": {
-        "criteria": "Tests and static checks pass in the worktree. For a ticketed unit the declared test was landed in the worktree and recorded as a failing run before implementation, then passes after it, and the reviewer can confirm red then green from the recorded evidence. Repository writes stay inside the worktree. worktree.md records branch and path. No VCS operation was run by the worker.",
-        "commands": ["{{test_command}}", "{{lint_command}}"]
+        "criteria": "Tests and static checks pass in the worktree. For a ticketed unit: the red run was recorded by the orchestrator before implementation (step log line), the landed test files are unchanged since the red commit (test-integrity), the ticket's declared test passes, and the full suite passes. Repository writes stay inside the worktree. worktree.md records branch and path. No VCS operation was run by the worker.",
+        "commands": [
+          "{{test_command}}",
+          "{{lint_command}}"
+        ],
+        "runner": "orchestrator"
       },
       "mounts": {
-        "skills": ["open-skills:use-worktree"],
-        "commands": [{ "base": "{{test_command}}" }, "{{lint_command}}"],
+        "skills": [
+          "open-skills:use-worktree"
+        ],
+        "commands": [
+          {
+            "base": "{{test_command}}"
+          },
+          "{{lint_command}}"
+        ],
         "mcp": []
       },
       "pre_steps": [
@@ -187,25 +302,44 @@
         "MUST NOT write .harness/ (current-truth documents, ledger, config, graph definition) or any long-term memory.",
         "MUST NOT run any VCS operation: no git commit, branch, staging, or worktree command, and never the worktree script.",
         "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable. Report blocked when no usable worktree path is given.",
-        "MUST NOT remove the worktree."
+        "MUST NOT remove the worktree.",
+        "MUST NOT modify the current ticket's declared test files; the orchestrator verifies them unchanged against the red commit."
       ],
       "human_approval": false,
-      "outcomes": ["ready-for-review", "ticket-invalid"],
-      "instructions": "Work only inside the dispatched worktree path and record the branch and path in worktree.md in the stage directory. For a ticketed unit, take up the current ticket: land its declared test in the worktree, run it, and record the failing (red) result as evidence before writing any implementation; then implement until it passes (green) and record that run. When the declared test already passes before any implementation, make no implementation changes and report ticket-invalid with the passing run as evidence: the ticket is mis-scoped or already satisfied, and the outcome returns to the ticket node for revision or removal and counts as no progress. On a ticketless path, implement the approved change and run the full test and static-check commands. When returning from a failed review, address the review findings against the whole change. Report ready-for-review once the work is done."
+      "outcomes": [
+        "ready-for-review",
+        "ticket-invalid"
+      ],
+      "instructions": "Work only inside the dispatched worktree path and record the branch and path in worktree.md in the stage directory. For a ticketed unit, the orchestrator has already landed and committed the current ticket's declared test files in the worktree and observed the failing (red) run; implement until the ticket's declared test passes, and do not modify the landed test files. On a ticketless path, implement the approved change and run the full test and static-check commands. When returning from a failed verification, address the failing output (and the review findings, when the failure came from the review node) against the whole change. Report ready-for-review once the work is done."
     },
     {
       "id": "review",
       "type": "validator",
       "purpose": "Independent review of the whole change against the approved contract and restrictions. The verdict is the node's routable outcome.",
-      "reads": ["request", "contract", "worktree", "review-scope"],
-      "produces": ["review-report"],
+      "reads": [
+        "request",
+        "contract",
+        "worktree",
+        "review-scope"
+      ],
+      "produces": [
+        "review-report"
+      ],
       "verification": {
         "criteria": "Dimensions scored pass or fail: correctness (declared commands pass when the reviewer runs them itself), contract coverage (every requirement of the approved contract is met, with no unrelated changes), restriction compliance (no forbidden write), and clean state (no debugging residue). Evidence references resolve for a third party; every failure states WHAT, WHY, and FIX.",
-        "commands": ["{{test_command}}", "{{lint_command}}"]
+        "commands": [
+          "{{test_command}}",
+          "{{lint_command}}"
+        ]
       },
       "mounts": {
-        "skills": ["open-skills:request-code-review"],
-        "commands": ["{{test_command}}", "{{lint_command}}"],
+        "skills": [
+          "open-skills:request-code-review"
+        ],
+        "commands": [
+          "{{test_command}}",
+          "{{lint_command}}"
+        ],
         "mcp": []
       },
       "restrictions": [
@@ -214,15 +348,28 @@
         "MUST write exactly one report file, review-<n>.md, into the dispatched stage directory as its only write."
       ],
       "human_approval": false,
-      "outcomes": ["pass", "fail"],
+      "outcomes": [
+        "pass",
+        "fail"
+      ],
       "instructions": "Run every declared verification command yourself in the unit's worktree and never rely on the author's claims. Report pass or fail with the per-dimension verdict."
     },
     {
       "id": "wrap",
       "type": "llm",
       "purpose": "Close-out: leave the project in a clean state a successor can resume cold, merge durable outcomes into the ledger as pending delta entries, and write the handoff record. This is the graph's only long-term memory write point; the post-steps deliver the unit.",
-      "reads": ["request", "contract", "draft-deltas", "worktree", "memory"],
-      "produces": ["ledger-deltas", "handoff", "worktree-record"],
+      "reads": [
+        "request",
+        "contract",
+        "draft-deltas",
+        "worktree",
+        "memory"
+      ],
+      "produces": [
+        "ledger-deltas",
+        "handoff",
+        "worktree-record"
+      ],
       "verification": {
         "criteria": "The test suite is green in the worktree, delta entries validate, no temporary or debugging residue remains, and the handoff states what was done, what was decided, and what remains. No current-truth document changed and no workflow tool is left mid-flight.",
         "commands": [
@@ -231,7 +378,10 @@
         ]
       },
       "mounts": {
-        "skills": ["open-skills:wrap", "open-skills:use-worktree"],
+        "skills": [
+          "open-skills:wrap",
+          "open-skills:use-worktree"
+        ],
         "commands": [
           "{{test_command}}",
           "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
@@ -257,7 +407,9 @@
         "MUST NOT wait for asynchronous integration results."
       ],
       "human_approval": false,
-      "outcomes": ["handed-off"],
+      "outcomes": [
+        "handed-off"
+      ],
       "instructions": "Work inside the worktree provisioned for this node. Read the draft deltas from the unit's stage directories in the main checkout, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into the ledger inside the worktree so they travel on the unit's branch. Remove execution residue, complete the lifecycle of any workflow tool the work used, and write the handoff record (what was done, what was decided, what remains) as handoff.md in the stage directory. Report handed-off. After the reviewer passes this stage, the orchestrator runs the post-steps (commit, push, open the delivery channel, remove the worktree)."
     },
     {
@@ -283,26 +435,162 @@
     }
   ],
   "edges": [
-    { "from": "trigger", "to": "research", "guard": [] },
-
-    { "from": "research", "to": "spec", "outcome": "proposal-produced", "guard": [{ "field": "phase", "op": "eq", "value": "feat" }] },
-    { "from": "research", "to": "ticket", "outcome": "proposal-produced", "guard": [{ "field": "phase", "op": "eq", "value": "fix" }] },
-    { "from": "research", "to": "build", "outcome": "proposal-produced", "guard": [{ "field": "phase", "op": "in", "value": ["chore", "maintenance"] }] },
-
-    { "from": "spec", "to": "ticket", "outcome": "contract-produced", "guard": [] },
-
-    { "from": "ticket", "to": "build", "outcome": "tickets-produced", "guard": [] },
-    { "from": "ticket", "to": "spec", "outcome": "spec-contradiction", "guard": [{ "field": "phase", "op": "eq", "value": "feat" }] },
-    { "from": "ticket", "to": "research", "outcome": "spec-contradiction", "guard": [{ "field": "phase", "op": "eq", "value": "fix" }] },
-
-    { "from": "build", "to": "ticket", "outcome": "ready-for-review", "guard": [{ "field": "phase", "op": "in", "value": ["feat", "fix"] }, { "field": "pending_tickets", "op": "not-empty" }] },
-    { "from": "build", "to": "review", "outcome": "ready-for-review", "guard": [{ "field": "phase", "op": "in", "value": ["feat", "fix"] }, { "field": "pending_tickets", "op": "empty" }] },
-    { "from": "build", "to": "review", "outcome": "ready-for-review", "guard": [{ "field": "phase", "op": "in", "value": ["chore", "maintenance"] }] },
-    { "from": "build", "to": "ticket", "outcome": "ticket-invalid", "guard": [] },
-
-    { "from": "review", "to": "wrap", "outcome": "pass", "guard": [] },
-    { "from": "review", "to": "build", "outcome": "fail", "guard": [] },
-
-    { "from": "wrap", "to": "ship", "outcome": "handed-off", "guard": [] }
+    {
+      "from": "trigger",
+      "to": "research",
+      "guard": []
+    },
+    {
+      "from": "research",
+      "to": "spec",
+      "outcome": "proposal-produced",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "feat"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "ticket",
+      "outcome": "proposal-produced",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "fix"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "build",
+      "outcome": "proposal-produced",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "in",
+          "value": [
+            "chore",
+            "maintenance"
+          ]
+        }
+      ]
+    },
+    {
+      "from": "spec",
+      "to": "ticket",
+      "outcome": "contract-produced",
+      "guard": []
+    },
+    {
+      "from": "ticket",
+      "to": "build",
+      "outcome": "tickets-produced",
+      "guard": []
+    },
+    {
+      "from": "ticket",
+      "to": "spec",
+      "outcome": "spec-contradiction",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "feat"
+        }
+      ]
+    },
+    {
+      "from": "ticket",
+      "to": "research",
+      "outcome": "spec-contradiction",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "fix"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "ticket",
+      "outcome": "ready-for-review",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "in",
+          "value": [
+            "feat",
+            "fix"
+          ]
+        },
+        {
+          "field": "pending_tickets",
+          "op": "not-empty"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "review",
+      "outcome": "ready-for-review",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "in",
+          "value": [
+            "feat",
+            "fix"
+          ]
+        },
+        {
+          "field": "pending_tickets",
+          "op": "empty"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "review",
+      "outcome": "ready-for-review",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "in",
+          "value": [
+            "chore",
+            "maintenance"
+          ]
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "ticket",
+      "outcome": "ticket-invalid",
+      "guard": []
+    },
+    {
+      "from": "review",
+      "to": "wrap",
+      "outcome": "pass",
+      "guard": []
+    },
+    {
+      "from": "review",
+      "to": "build",
+      "outcome": "fail",
+      "guard": []
+    },
+    {
+      "from": "wrap",
+      "to": "ship",
+      "outcome": "handed-off",
+      "guard": []
+    }
   ]
 }

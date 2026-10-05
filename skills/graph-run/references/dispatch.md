@@ -30,7 +30,7 @@ Send to the `worker` agent. Prompt layout:
 
 ```
 Node: <node id>
-Stage directory: <abs path>/<node id>/   (write your report to report-<n>.md here)
+Stage directory: <abs path>/<node id>/   (stage artifacts go here; return your report as text)
 Worktree path: <abs path>                (only when the unit has one)
 Purpose / instructions / reads / produces: <verbatim from the node>
 Routable outcomes: <list>; report exactly one, or blocked with a stable reason code.
@@ -48,11 +48,11 @@ Rules for the restrictions block:
 - Maintenance phase: the unit's phase-level `restriction_overrides` replace the node's list; do not merge them with the default.
 - Non-close-out nodes always get "MUST NOT write long-term memory" semantics from the node list; a ledger or current-truth write outside close-out (and outside the maintenance override) is a restriction violation.
 
-The worker writes its final report to `report-<n>.md` in the stage directory as well as returning it; the orchestrator needs the file as the log line's `source_ref`.
+The worker returns its final report as text and writes no report file (the execution harness blocks subagent report-file writes). The orchestrator transcribes the returned report verbatim into `report-<n>.md` in the stage directory — one fixed provenance line at the top ("Transcribed verbatim by the orchestrator from the worker's returned report."), nothing else edited — and uses that file as the log line's `source_ref`.
 
 ## Reviewer dispatch
 
-Send to the `reviewer` agent after a worker report (or alone for a validator node). Carry:
+Send to the `reviewer` agent for a validator node, and for an LLM node whose verification declares no runner or `runner: "reviewer"`. A node declaring `verification.runner: "orchestrator"` dispatches no reviewer: the orchestrator runs the declared verification itself (`node-execution.md`). Carry:
 
 - Node id, stage instructions, and acceptance criteria exactly as given to the worker.
 - The worker's restrictions (the same effective list), so it can check compliance, and the worker's report path (a claim to check, not evidence).
@@ -63,13 +63,15 @@ Send to the `reviewer` agent after a worker report (or alone for a validator nod
 
 Ask the reviewer to name, at the end of its report, the failing dimensions and the failing verification command (if any) in a stable form, because the orchestrator derives the failure signature from them (see `escalation.md`).
 
+Reviewer and advisor write their own files (`review-<n>.md`, `advice-<n>.md`). If the harness blocks that write, the actor returns the full report text instead and the orchestrator transcribes it verbatim under the intended filename, with the same one-line provenance note as a worker report.
+
 ## Advisor dispatch
 
 Send to the `advisor` agent only from the escalation chain. Carry: the problem (key, scope, signature, blocked node), the failure history (review reports, worker reports, counters, any earlier `advice-<n>.md` on the same problem, which did not resolve it), the node's dispatch reference (instructions, restrictions, verification commands, worktree path), and the stage directory plus `advice-<n>.md` filename. The advisor analyses only; its single write is the advice file.
 
 ## Dispatch for a ticketed unit
 
-When the graph declares a decomposition concept (the template's `tickets`, `current_ticket`), add to the build and review payloads the current ticket's routing entry (id, verification command) and the pointer to its full text in the decomposition stage directory. The ticket's `verification_command` is a run-time invocation: it is valid only when a mounted command family of the node named by the field's `executes` covers it (the write gate checks this; include it in the build worker's verification commands for that ticket).
+When the graph declares a decomposition concept (the template's `tickets`, `current_ticket`), add to the build and review payloads the current ticket's routing entry (id, verification command) and the pointer to its full text in the decomposition stage directory. The ticket's `verification_command` is a run-time invocation: it is valid only when a mounted command family of the node named by the field's `executes` covers it (the write gate checks this; include it in the build verification commands for that ticket). The build worker's dispatch states that the ticket's test files are already landed and committed in the worktree at their declared paths with the red run recorded — the worker implements only and must not modify them (`node-execution.md`, "Ticketed build sequence").
 
 ## Orchestrator-run commands (not dispatches)
 
