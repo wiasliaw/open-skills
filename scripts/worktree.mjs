@@ -321,8 +321,12 @@ function ensureBranch(branch, idFlag) {
     throw new Fail('usage', '<id> must match ^[a-z0-9][a-z0-9-]*$, got: ' + String(id));
   }
   if (!wu && /^(pin-)/.test(id)) throw new Fail('usage', 'id must not start with pin-: reserved for detach pins');
-  if (!runGit(['check-ref-format', '--branch', branch]).ok || branch.startsWith('-')) {
-    throw new Fail('usage', 'invalid branch name: ' + branch);
+  if (branch.startsWith('-')) throw new Fail('usage', 'invalid branch name: ' + branch);
+  // LC_ALL=C pins git's message so the stderr match below stays stable across locales.
+  const refCheck = runGit(['check-ref-format', '--branch', branch], { env: { LC_ALL: 'C' } });
+  if (!refCheck.ok) {
+    if (/not a valid branch name/.test(refCheck.err)) throw new Fail('usage', 'invalid branch name: ' + branch);
+    throw new Fail('git_failed', 'check-ref-format failed: ' + refCheck.err);
   }
 
   const found = resolveMain();

@@ -32,7 +32,11 @@ function writeConfig(dir, cfg) {
 }
 
 function run(cwd, ...args) {
-  const r = spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8' });
+  return runEnv(cwd, {}, ...args);
+}
+
+function runEnv(cwd, env, ...args) {
+  const r = spawnSync(process.execPath, [SCRIPT, ...args], { cwd, encoding: 'utf8', env: Object.assign({}, process.env, env) });
   const lines = r.stdout.trim().split('\n');
   assert.equal(lines.length, 1, 'exactly one stdout line, got: ' + r.stdout);
   return { code: r.status, json: JSON.parse(lines[0]) };
@@ -55,6 +59,21 @@ test('usage errors', () => {
   assert.equal(run(repo, 'ensure', '--branch', 'wu/Bad').json.error, 'usage');
   assert.equal(run(repo, 'ensure', '--detach', 'abc').json.error, 'usage');
   assert.equal(run(repo, 'setup').json.error, 'usage');
+});
+
+test('check-ref-format failures are classified', () => {
+  const repo = makeRepo();
+  const invalid = run(repo, 'ensure', '--branch', 'bad..name', '--id', 'bad-name');
+  assert.equal(invalid.code, 2);
+  assert.equal(invalid.json.error, 'usage');
+  assert.match(invalid.json.message, /invalid branch name/);
+
+  const brokenCfg = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'wt-test-')), 'gitconfig');
+  fs.writeFileSync(brokenCfg, '[[[broken\n');
+  const envFail = runEnv(repo, { GIT_CONFIG_GLOBAL: brokenCfg }, 'ensure', '--branch', 'wu/env-fail');
+  assert.equal(envFail.code, 9);
+  assert.equal(envFail.json.error, 'git_failed');
+  assert.match(envFail.json.message, /bad config/);
 });
 
 test('not a git repository', () => {
