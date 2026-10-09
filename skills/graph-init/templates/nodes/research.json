@@ -1,0 +1,20 @@
+{
+  "id": "research",
+  "kind": "work",
+  "purpose": "Judge the work and fix the unit's phase; carries the mandatory human phase approval.",
+  "pipeline": [
+    {
+      "use": "research-request",
+      "on": { "proposal-produced": "next" }
+    },
+    {
+      "use": "approve-phase",
+      "on": {
+        "approved": "phase-approved",
+        "send-back": "goto:research-request",
+        "not-needed": "not-needed"
+      }
+    }
+  ],
+  "outcomes": ["phase-approved", "not-needed"]
+}

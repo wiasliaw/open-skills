@@ -1,0 +1,13 @@
+{
+  "executor": "script",
+  "purpose": "Provision the unit's git worktree and run the fresh-worktree setup.",
+  "run": [
+    "node \"$CLAUDE_PLUGIN_ROOT/scripts/worktree.mjs\" ensure --branch \"$WU_BRANCH\" --id \"$WU_ID\"",
+    "node \"$CLAUDE_PLUGIN_ROOT/scripts/worktree.mjs\" setup --worktree \"$WU_WORKTREE\""
+  ],
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": [],
+  "produces": ["worktree"],
+  "restrictions": [],
+  "exit": { "outcomes": ["ok", "failed"] }
+}

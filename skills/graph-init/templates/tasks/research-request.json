@@ -1,0 +1,22 @@
+{
+  "executor": "llm",
+  "purpose": "Gather what is needed to judge the work and propose a phase with a rationale.",
+  "instructions": "Investigate read-only. Write findings and a phase proposal into the stage directory. Propose feat when the work needs a new or changed contract, fix when an existing contract already covers it (name that contract's kind and ref so the approval can record contract_ref), chore for small housekeeping, and maintenance only when the unit's trigger source is maintenance-due. On re-entry after a send-back, revise the same proposal for the same unit.",
+  "equipment": {
+    "skills": ["deep-research"],
+    "commands": [],
+    "mcp": []
+  },
+  "reads": ["request", "codebase", "memory"],
+  "produces": ["findings", "phase-proposal"],
+  "restrictions": [
+    "MUST NOT modify the repository or the main checkout.",
+    "MUST NOT write .harness/ or any long-term memory.",
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST NOT write outside its stage directory."
+  ],
+  "exit": {
+    "outcomes": ["proposal-produced"],
+    "artifact": "proposal.md"
+  }
+}

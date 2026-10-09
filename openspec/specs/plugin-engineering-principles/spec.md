@@ -22,7 +22,7 @@ The repository SHALL distinguish the external plugin surface published for consu
 
 ### Requirement: Outsource what the factory need not own
 
-A node capability MAY be fulfilled by an external skill — another plugin's skill or a platform command — mounted at graph-build exactly like an in-house one: equipment the plant does not own is bought, not rebuilt. The plugin SHALL ship its own skill only where the capability is core to the factory's own contracts (state, memory, isolation, convergence, verification) or no adequate external option exists. An external mount that is unavailable at run time degrades per the graph-build rule.
+A node capability MAY be fulfilled by an external skill — another plugin's skill or a platform command — mounted at graph-init exactly like an in-house one: equipment the plant does not own is bought, not rebuilt. The plugin SHALL ship its own skill only where the capability is core to the factory's own contracts (state, memory, isolation, convergence, verification) or no adequate external option exists. An external mount that is unavailable at run time degrades per the graph-init rule.
 
 #### Scenario: Research outsourced
 - **WHEN** a research node needs deep investigation

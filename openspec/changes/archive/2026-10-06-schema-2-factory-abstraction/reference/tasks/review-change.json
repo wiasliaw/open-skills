@@ -1,0 +1,22 @@
+{
+  "executor": "validator",
+  "runner": "reviewer",
+  "purpose": "Independent review of the whole change against the approved contract and restrictions.",
+  "instructions": "Run every declared verification command yourself in the unit's worktree and never rely on the author's claims. Score each dimension pass or fail: correctness (declared commands pass when you run them yourself), contract coverage (every requirement of the approved contract is met, with no unrelated changes), restriction compliance (no forbidden write), and clean state (no debugging residue). Evidence references must resolve for a third party; every failure states WHAT, WHY, and FIX. Report pass or fail with the per-dimension verdict.",
+  "equipment": {
+    "skills": ["open-skills:request-code-review"],
+    "commands": ["{{test_command}}", "{{lint_command}}"],
+    "mcp": []
+  },
+  "reads": ["request", "contract", "worktree", "review-scope"],
+  "produces": ["review-report"],
+  "restrictions": [
+    "MUST NOT modify the repository, the worktree, or any deliverable.",
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST write exactly one report file, review-<n>.md, into the dispatched stage directory as its only write."
+  ],
+  "exit": {
+    "outcomes": ["pass", "fail"],
+    "artifact": "review-<n>.md"
+  }
+}

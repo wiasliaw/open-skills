@@ -49,7 +49,7 @@ A missing worktree with branch `wu/<id>` still present means reopen on the exist
 
 ## Graph profile
 
-Applies when the skill is mounted on a node that needs repository writes (build, close-out).
+Applies when the skill is mounted on a task that needs repository writes (for example the build and close-out tasks).
 
 - The orchestrator provisions: it runs `ensure` and `setup` before dispatching the worker, on a unit's first build entry, a fix unit's first entry on its inherited branch, and whenever the recorded worktree is gone (for example a close-out). It passes the resulting path in the dispatch; that path is also the working directory for every verification command.
 - The worker performs no VCS operations: it does not invoke the script or any `git worktree`, branch, commit, or staging command. It works only inside the dispatched path, with its stage directory still writable, and reports blocked when no usable path is given.

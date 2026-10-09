@@ -1,0 +1,212 @@
+{
+  "schema_version": "2.0.0",
+  "name": "coding-factory",
+  "slots": {
+    "phase_values": "The phase values this project routes on. Reserved value `maintenance` is required; the reference set is feat, fix, chore, maintenance.",
+    "test_command": "The project's test command (for example the full-suite runner). Run in the unit's worktree; also the base of the family covering each ticket's declared test invocation.",
+    "lint_command": "The project's static-check command (lint, type check, or format check). Use any harmless always-green check when the project has none.",
+    "open_pr_command": "Opens the project's delivery channel for the pushed unit branch (reference: a pull request). MUST be idempotent: succeed when the channel is already open for the branch."
+  },
+  "caps": {
+    "failure": 2,
+    "advisor_consultations": 2,
+    "edge_revisit": 2,
+    "total_failure": 4
+  },
+  "nodes": [
+    "trigger",
+    "research",
+    "spec",
+    "ticket",
+    "build",
+    "build-direct",
+    "maintain",
+    "review",
+    "wrap",
+    "ship",
+    "end"
+  ],
+  "edges": [
+    {
+      "from": "trigger",
+      "to": "research",
+      "guard": []
+    },
+    {
+      "from": "research",
+      "to": "spec",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "feat"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "ticket",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "fix"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "build-direct",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "chore"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "maintain",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "maintenance"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "end",
+      "outcome": "not-needed",
+      "guard": []
+    },
+    {
+      "from": "spec",
+      "to": "ticket",
+      "outcome": "contract-produced",
+      "guard": []
+    },
+    {
+      "from": "spec",
+      "to": "end",
+      "outcome": "not-needed",
+      "guard": []
+    },
+    {
+      "from": "ticket",
+      "to": "build",
+      "outcome": "tickets-produced",
+      "guard": []
+    },
+    {
+      "from": "ticket",
+      "to": "spec",
+      "outcome": "spec-contradiction",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "feat"
+        }
+      ]
+    },
+    {
+      "from": "ticket",
+      "to": "research",
+      "outcome": "spec-contradiction",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "fix"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "ticket",
+      "outcome": "ticket-done",
+      "guard": [
+        {
+          "field": "pending_tickets",
+          "op": "not-empty"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "review",
+      "outcome": "ticket-done",
+      "guard": [
+        {
+          "field": "pending_tickets",
+          "op": "empty"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "ticket",
+      "outcome": "ticket-invalid",
+      "guard": []
+    },
+    {
+      "from": "build-direct",
+      "to": "review",
+      "outcome": "ready-for-review",
+      "guard": []
+    },
+    {
+      "from": "maintain",
+      "to": "review",
+      "outcome": "ready-for-review",
+      "guard": []
+    },
+    {
+      "from": "review",
+      "to": "wrap",
+      "outcome": "pass",
+      "guard": []
+    },
+    {
+      "from": "review",
+      "to": "build-direct",
+      "outcome": "fail",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "in",
+          "value": [
+            "feat",
+            "fix",
+            "chore"
+          ]
+        }
+      ]
+    },
+    {
+      "from": "review",
+      "to": "maintain",
+      "outcome": "fail",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "maintenance"
+        }
+      ]
+    },
+    {
+      "from": "wrap",
+      "to": "ship",
+      "outcome": "handed-off",
+      "guard": []
+    }
+  ]
+}

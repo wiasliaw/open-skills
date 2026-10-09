@@ -1,0 +1,21 @@
+{
+  "id": "spec",
+  "kind": "work",
+  "purpose": "Author the contract for a new capability so decomposition has an approved contract to work from.",
+  "pipeline": [
+    {
+      "use": "author-contract",
+      "with": { "change_dir": "openspec/changes" },
+      "on": { "contract-produced": "next" }
+    },
+    {
+      "use": "approve-contract",
+      "on": {
+        "approved": "contract-produced",
+        "send-back": "goto:author-contract",
+        "not-needed": "not-needed"
+      }
+    }
+  ],
+  "outcomes": ["contract-produced", "not-needed"]
+}

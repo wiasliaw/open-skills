@@ -1,0 +1,21 @@
+{
+  "executor": "script",
+  "purpose": "Land the current ticket's declared test files in the worktree, commit them, and observe the failing (red) run before any implementation; an already-green test surfaces ticket-invalid.",
+  "run": [
+    "node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" land-tests --graph .harness/graph.json --unit \"$WU_FOLDER\" --worktree \"$WU_WORKTREE\" --ticket \"$WU_CURRENT_TICKET\"",
+    "git -C \"$WU_WORKTREE\" add -A && git -C \"$WU_WORKTREE\" diff --cached --quiet || git -C \"$WU_WORKTREE\" commit -m \"test(red): $WU_CURRENT_TICKET\"",
+    {
+      "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" expect-red --graph .harness/graph.json --unit \"$WU_FOLDER\" --worktree \"$WU_WORKTREE\" --ticket \"$WU_CURRENT_TICKET\"",
+      "codes": { "11": "ticket-invalid" }
+    }
+  ],
+  "equipment": {
+    "skills": [],
+    "commands": [{ "source": "state:tickets.verification_command", "family": "{{test_command}}" }],
+    "mcp": []
+  },
+  "reads": ["state:current_ticket", "state:tickets"],
+  "produces": ["red-commit"],
+  "restrictions": [],
+  "exit": { "outcomes": ["ok", "failed", "ticket-invalid"] }
+}

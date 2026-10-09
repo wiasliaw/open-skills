@@ -1,0 +1,13 @@
+{
+  "executor": "script",
+  "purpose": "Copy the reviewed handoff to the folder root and archive the work-unit folder.",
+  "run": [
+    "node -e \"const fs = require('node:fs'); const d = process.env.WU_FOLDER; fs.copyFileSync(d + '/wrap/handoff.md', d + '/handoff.md')\"",
+    "test ! -d \"$WU_FOLDER\" || node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" archive --graph .harness/graph.json --unit \"$WU_FOLDER\""
+  ],
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": [],
+  "produces": [],
+  "restrictions": [],
+  "exit": { "outcomes": ["ok", "failed"] }
+}

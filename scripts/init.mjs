@@ -27,6 +27,8 @@
 //   2  usage         unknown subcommand or missing/duplicate/unknown flags
 //   3  config        draft/config missing, unreadable, invalid JSON, or schema-invalid
 //   4  write_failed  the config file could not be written
+//   5  in_worktree   write refused: invoked inside a linked worktree (the config is
+//                    only ever written in the main checkout)
 //   7  node_version  Node.js older than 20
 
 import { spawnSync } from 'node:child_process';
@@ -35,7 +37,7 @@ import path from 'node:path';
 
 const SUPPORTED_VERSIONS = ['1.0.0'];
 const CONFIG_REL = path.join('.harness', 'config.json');
-const EXIT = { ok: 0, internal: 1, usage: 2, config: 3, write_failed: 4, node_version: 7 };
+const EXIT = { ok: 0, internal: 1, usage: 2, config: 3, write_failed: 4, in_worktree: 5, node_version: 7 };
 const SECTIONS = ['vcs', 'locations', 'graph', 'worktree_setup', 'memory'];
 
 class Fail extends Error {
@@ -171,6 +173,22 @@ function resolveRoot(flag) {
   return process.cwd();
 }
 
+// The config writer only ever writes in the main checkout, so .harness/ cannot
+// diverge between a worktree and the main checkout. A directory outside any git
+// repository is not a worktree.
+function inLinkedWorktree(dir) {
+  const r = spawnSync('git', ['rev-parse', '--git-dir', '--git-common-dir'], {
+    cwd: dir,
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  if (r.error || r.status !== 0) return false;
+  const lines = (r.stdout || '').trim().split('\n');
+  if (lines.length < 2) return false;
+  return path.resolve(dir, lines[0]) !== path.resolve(dir, lines[1]);
+}
+
 function readJson(file, label) {
   let text;
   try { text = fs.readFileSync(file, 'utf8'); }
@@ -217,7 +235,11 @@ function run(argv) {
   const draft = readJson(f['--from'], 'draft');
   validateConfig(draft);
   if (sub === 'validate') return { ok: true, action: 'valid', schema_version: draft.schema_version };
-  const target = path.join(resolveRoot(f['--root']), CONFIG_REL);
+  const root = resolveRoot(f['--root']);
+  if (inLinkedWorktree(root)) {
+    throw new Fail('in_worktree', 'refusing to write the config from inside a linked worktree; run from the main checkout so .harness/ cannot diverge');
+  }
+  const target = path.join(root, CONFIG_REL);
   atomicWrite(target, draft);
   return { ok: true, action: 'written', path: target, schema_version: draft.schema_version };
 }

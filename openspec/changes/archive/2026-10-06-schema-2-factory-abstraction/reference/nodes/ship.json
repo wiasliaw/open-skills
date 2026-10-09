@@ -1,0 +1,12 @@
+{
+  "id": "ship",
+  "kind": "terminal",
+  "terminal_kind": "success",
+  "purpose": "Success terminal: the unit was delivered. Copy the reviewed handoff to the folder root and archive the folder.",
+  "pipeline": [
+    {
+      "use": "archive-shipped",
+      "on": { "ok": "done", "failed": "escalate" }
+    }
+  ]
+}

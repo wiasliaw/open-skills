@@ -88,10 +88,10 @@ otherwise list for later.
 
 ## Graph profile
 
-When a graph node mounts this skill, the two halves split by role: the
+When a graph task mounts this skill, the two halves split by role: the
 orchestrator's dispatch construction fulfills Step 1, and the mounted
 reviewer actor owns independence, verdict shape, the single report
 write, and verdict release. Load
 [references/graph-profile.md](references/graph-profile.md) when running
-as a mounted node capability; the standalone pipeline above does not
+as a mounted task capability; the standalone pipeline above does not
 apply there.

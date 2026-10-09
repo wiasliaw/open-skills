@@ -10,8 +10,8 @@ explicit pass or fail verdict with evidence.
 - You finished a feature and want it reviewed before merging.
 - You want a second opinion that does not rely on your own claims that
   "the tests pass".
-- A graph node mounts it as its reviewer capability (see the graph
-  profile below).
+- A graph validator task mounts it as its reviewer capability (see the
+  graph profile below).
 
 ## Usage
 
@@ -65,17 +65,17 @@ with accounting of merged and refuted findings.
 
 ## Graph profile
 
-When mounted on a graph node, the request half is the orchestrator's
-dispatch (scope, commands, restrictions, and criteria come from the
-node's declaration). The dispatched reviewer actor then:
+When mounted on a graph validator task, the request half is the
+orchestrator's dispatch (scope, commands, restrictions, and criteria
+come from the task's declaration). The dispatched reviewer actor then:
 
 - runs every declared command itself and checks restrictions;
 - writes exactly one `review-<n>.md` into the stage directory, its only
   write;
-- reports a verdict. Only a pass releases a routable outcome for the
-  node's edges; a failure feeds the failure counters and the in-place
-  retry or escalation. On a standalone validator node, the verdict
-  itself is the routable outcome.
+- reports a verdict. In a pipeline only a pass lets the work proceed;
+  a failure feeds the failure counters and the in-place retry or
+  escalation. On a standalone validator node, the verdict itself is
+  the node's routable outcome.
 
 Routing stays with the orchestrator.
 

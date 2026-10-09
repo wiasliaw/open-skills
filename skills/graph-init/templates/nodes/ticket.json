@@ -1,0 +1,21 @@
+{
+  "id": "ticket",
+  "kind": "work",
+  "purpose": "Decompose the approved contract into tickets; its declared re-entry selects the next pending ticket without dispatching an actor.",
+  "pipeline": [
+    {
+      "use": "decompose-tickets",
+      "on": {
+        "tickets-produced": "tickets-produced",
+        "spec-contradiction": "spec-contradiction"
+      }
+    }
+  ],
+  "outcomes": ["tickets-produced", "spec-contradiction"],
+  "re_entry": {
+    "list_field": "pending_tickets",
+    "order": "declared",
+    "progress_field": "current_ticket",
+    "items_field": "tickets"
+  }
+}

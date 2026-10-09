@@ -1,0 +1,14 @@
+{
+  "executor": "script",
+  "purpose": "Deliver the unit: push the branch, open the delivery channel, remove the worktree.",
+  "run": [
+    "git -C \"$WU_WORKTREE\" push --set-upstream \"$WU_REMOTE\" \"$WU_BRANCH\"",
+    "{{open_pr_command}}",
+    "test ! -d \"$WU_WORKTREE\" || git worktree remove \"$WU_WORKTREE\""
+  ],
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": ["worktree"],
+  "produces": [],
+  "restrictions": [],
+  "exit": { "outcomes": ["ok", "failed"] }
+}

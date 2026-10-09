@@ -1,0 +1,24 @@
+{
+  "id": "maintain",
+  "kind": "work",
+  "purpose": "Memory apply: fold pending delta entries into the current-truth documents inside the worktree.",
+  "pipeline": [
+    {
+      "use": "provision-worktree",
+      "on": { "ok": "next", "failed": "escalate" }
+    },
+    {
+      "use": "fold-deltas",
+      "on": { "done": "next" }
+    },
+    {
+      "use": "verify-memory",
+      "on": { "pass": "next", "fail": "goto:fold-deltas" }
+    },
+    {
+      "use": "commit-work",
+      "on": { "ok": "ready-for-review", "failed": "escalate" }
+    }
+  ],
+  "outcomes": ["ready-for-review"]
+}

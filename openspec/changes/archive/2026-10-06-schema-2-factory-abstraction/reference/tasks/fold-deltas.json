@@ -1,0 +1,25 @@
+{
+  "executor": "llm",
+  "purpose": "Memory apply: fold pending delta entries into the current-truth documents and flip their status.",
+  "instructions": "Inside the dispatched worktree, fold every pending delta entry (including residue from earlier units) into the current-truth documents under .harness/, respecting each document's line budget. Flip each folded entry's status to applied (or rejected with a stated reason), changing no other field and deleting no entry.",
+  "equipment": {
+    "skills": [],
+    "commands": ["node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""],
+    "mcp": []
+  },
+  "reads": ["memory", "worktree"],
+  "produces": ["memory-updates"],
+  "restrictions": [
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST NOT run any VCS operation: no git commit, branch, staging, or worktree command, and never the worktree script.",
+    "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable.",
+    "MAY edit the current-truth documents under .harness/ in the worktree, only to fold pending delta entries into them.",
+    "MAY flip the status of delta entries under .harness/deltas/ in the worktree (pending to applied or rejected), changing no other field and deleting no entry.",
+    "MUST NOT write .harness/config.json or the graph definition.",
+    "MUST NOT write any other long-term memory."
+  ],
+  "exit": {
+    "outcomes": ["done"],
+    "artifact": "report-<n>.md"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "executor": "llm",
+  "purpose": "Author the contract for a new capability via OpenSpec.",
+  "instructions": "Run the OpenSpec propose flow for the approved request. Write the change (proposal, design, delta specs, tasks) into {{change_dir}} inside the stage directory. Report where the contract lives so the orchestrator can record contract_ref. On re-entry after a spec-contradiction or a send-back, revise the same change to resolve the recorded objection instead of starting over.",
+  "equipment": {
+    "skills": ["openspec-propose"],
+    "commands": [{ "base": "openspec", "args": "validate|show" }],
+    "mcp": []
+  },
+  "reads": ["request", "findings", "memory"],
+  "produces": ["contract", "state:contract_ref"],
+  "restrictions": [
+    "MUST NOT modify the repository or the main checkout.",
+    "MUST NOT write .harness/ or any long-term memory.",
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST NOT write outside its stage directory."
+  ],
+  "exit": {
+    "outcomes": ["contract-produced"],
+    "artifact": "proposal.md"
+  },
+  "params": {
+    "change_dir": "Stage-relative directory for the OpenSpec change"
+  }
+}

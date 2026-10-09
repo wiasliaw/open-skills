@@ -1,0 +1,40 @@
+{
+  "phase": {
+    "type": "string",
+    "values": "{{phase_values}}",
+    "nullable": true,
+    "default": null
+  },
+  "contract_ref": {
+    "type": "object",
+    "nullable": true,
+    "default": null,
+    "fields": {
+      "kind": { "type": "string", "values": ["openspec-change", "path", "url"] },
+      "ref": { "type": "string" }
+    }
+  },
+  "tickets": {
+    "type": "list",
+    "default": [],
+    "items": {
+      "type": "object",
+      "fields": {
+        "id": { "type": "string" },
+        "status": { "type": "string", "values": ["pending", "in-progress", "passed", "failed", "blocked"] },
+        "verification_command": { "type": "command" },
+        "evidence_refs": { "type": "list", "items": { "type": "evidence-ref" } }
+      }
+    }
+  },
+  "current_ticket": {
+    "type": "string",
+    "nullable": true,
+    "default": null
+  },
+  "pending_tickets": {
+    "type": "list",
+    "default": [],
+    "items": { "type": "string" }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "id": "build-direct",
+  "kind": "work",
+  "purpose": "Implement the whole approved change inside the unit's worktree: the ticketless path for chore, and the whole-change fix after a failed review.",
+  "pipeline": [
+    {
+      "use": "provision-worktree",
+      "on": { "ok": "next", "failed": "escalate" }
+    },
+    {
+      "use": "implement-change",
+      "on": { "done": "next" }
+    },
+    {
+      "use": "verify-build",
+      "on": { "pass": "next", "fail": "goto:implement-change" }
+    },
+    {
+      "use": "commit-work",
+      "on": { "ok": "ready-for-review", "failed": "escalate" }
+    }
+  ],
+  "outcomes": ["ready-for-review"]
+}

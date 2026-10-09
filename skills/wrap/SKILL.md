@@ -41,9 +41,9 @@ Standalone, finish by telling the human that the deliverables are ready and what
 
 ## Graph profile
 
-When mounted on a graph node (exactly one node per graph), additionally:
+When mounted on a graph task (exactly one task per graph; its node is the close-out stage), additionally:
 
 - Work inside the worktree the orchestrator provisions for this node, exactly as for a build node (reused when the unit's worktree is live). See the `use-worktree` skill.
 - Read the draft deltas from the work unit's stage directories in the **main checkout**; merge the entries into the ledger **inside the worktree**, so they travel on the unit's own branch.
 - Write the handoff record as a deliverable in your own stage directory (`handoff.md`). The terminal's deterministic steps copy it to the work-unit folder root. Do not write to the folder root, `state.json`, or `log.ndjson`.
-- Report the outcome `handed-off`. The orchestrator routes by the node's declared edges. If you cannot finish, report blocked; the universal in-place fallback chain takes over.
+- Report exactly one of the dispatched task's declared exit outcomes (`done` for the library's `close-out` task). The orchestrator applies the pipeline entry's `on` action; delivery and routing follow from the node's pipeline and edges. If you cannot finish, report blocked; the universal in-place fallback chain takes over.

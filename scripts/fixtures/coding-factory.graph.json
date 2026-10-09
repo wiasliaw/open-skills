@@ -1,0 +1,1106 @@
+{
+  "schema_version": "2.0.0",
+  "name": "coding-factory",
+  "caps": {
+    "failure": 2,
+    "advisor_consultations": 2,
+    "edge_revisit": 2,
+    "total_failure": 4
+  },
+  "tasks": {
+    "research-request": {
+      "executor": "llm",
+      "purpose": "Gather what is needed to judge the work and propose a phase with a rationale.",
+      "instructions": "Investigate read-only. Write findings and a phase proposal into the stage directory. Propose feat when the work needs a new or changed contract, fix when an existing contract already covers it (name that contract's kind and ref so the approval can record contract_ref), chore for small housekeeping, and maintenance only when the unit's trigger source is maintenance-due. On re-entry after a send-back, revise the same proposal for the same unit.",
+      "equipment": {
+        "skills": [
+          "deep-research"
+        ],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [
+        "request",
+        "codebase",
+        "memory"
+      ],
+      "produces": [
+        "findings",
+        "phase-proposal"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository or the main checkout.",
+        "MUST NOT write .harness/ or any long-term memory.",
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT write outside its stage directory."
+      ],
+      "exit": {
+        "outcomes": [
+          "proposal-produced"
+        ],
+        "artifact": "proposal.md"
+      }
+    },
+    "approve-phase": {
+      "executor": "human",
+      "purpose": "Mandatory phase approval for every unit; the answer fixes the unit's phase for good.",
+      "instructions": "Approve the proposed phase, send the proposal back with feedback, or judge the work not needed. A fix approval also confirms the existing contract the proposal names.",
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [
+        "phase-proposal"
+      ],
+      "produces": [
+        "state:phase",
+        "state:contract_ref"
+      ],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "approved",
+          "send-back",
+          "not-needed"
+        ],
+        "artifact": "decision-<n>.md"
+      }
+    },
+    "author-contract": {
+      "executor": "llm",
+      "purpose": "Author the contract for a new capability via OpenSpec.",
+      "instructions": "Run the OpenSpec propose flow for the approved request. Write the change (proposal, design, delta specs, tasks) into {{change_dir}} inside the stage directory. Report where the contract lives so the orchestrator can record contract_ref. On re-entry after a spec-contradiction or a send-back, revise the same change to resolve the recorded objection instead of starting over.",
+      "equipment": {
+        "skills": [
+          "openspec-propose"
+        ],
+        "commands": [
+          {
+            "base": "openspec",
+            "args": "validate|show"
+          }
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "request",
+        "findings",
+        "memory"
+      ],
+      "produces": [
+        "contract",
+        "state:contract_ref"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository or the main checkout.",
+        "MUST NOT write .harness/ or any long-term memory.",
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT write outside its stage directory."
+      ],
+      "exit": {
+        "outcomes": [
+          "contract-produced"
+        ],
+        "artifact": "proposal.md"
+      },
+      "params": {
+        "change_dir": "Stage-relative directory for the OpenSpec change"
+      }
+    },
+    "approve-contract": {
+      "executor": "human",
+      "purpose": "Human approval of the authored contract before decomposition works from it.",
+      "instructions": "Approve the contract, send it back with feedback, or judge the work not needed.",
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [
+        "contract"
+      ],
+      "produces": [],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "approved",
+          "send-back",
+          "not-needed"
+        ],
+        "artifact": "decision-<n>.md"
+      }
+    },
+    "decompose-tickets": {
+      "executor": "llm",
+      "purpose": "Decompose the approved contract into tickets, each defined by an executable test authored before any implementation.",
+      "instructions": "Write the full ticket text, including each test, as artifacts in the stage directory, and hand the routing entries (id, status, verification command) to the orchestrator. Place each ticket's test files under tests/<ticket-id>/ in the stage directory, laid out at their repo-relative target paths (tests/T-1/test/foo.test.js lands at test/foo.test.js); the orchestrator lands that tree and runs the red check before any build dispatch. Report spec-contradiction when the contract contradicts itself or cannot be satisfied, recording the contradiction in the stage directory. When a build report of ticket-invalid returns here, revise or drop the named ticket.",
+      "equipment": {
+        "skills": [
+          "open-skills:ticket"
+        ],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [
+        "state:contract_ref",
+        "contract",
+        "codebase"
+      ],
+      "produces": [
+        "tickets",
+        "state:tickets",
+        "state:pending_tickets",
+        "state:current_ticket"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository or the main checkout.",
+        "MUST NOT write .harness/ or any long-term memory.",
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT write outside its stage directory.",
+        "MUST NOT decompose a contract that is not approved."
+      ],
+      "exit": {
+        "outcomes": [
+          "tickets-produced",
+          "spec-contradiction"
+        ],
+        "artifact": "tickets.md"
+      }
+    },
+    "provision-worktree": {
+      "executor": "script",
+      "purpose": "Provision the unit's git worktree and run the fresh-worktree setup.",
+      "run": [
+        "node \"$CLAUDE_PLUGIN_ROOT/scripts/worktree.mjs\" ensure --branch \"$WU_BRANCH\" --id \"$WU_ID\"",
+        "node \"$CLAUDE_PLUGIN_ROOT/scripts/worktree.mjs\" setup --worktree \"$WU_WORKTREE\""
+      ],
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [],
+      "produces": [
+        "worktree"
+      ],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "ok",
+          "failed"
+        ]
+      }
+    },
+    "red-check": {
+      "executor": "script",
+      "purpose": "Land the current ticket's declared test files in the worktree, commit them, and observe the failing (red) run before any implementation; an already-green test surfaces ticket-invalid.",
+      "run": [
+        "node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" land-tests --graph .harness/graph.json --unit \"$WU_FOLDER\" --worktree \"$WU_WORKTREE\" --ticket \"$WU_CURRENT_TICKET\"",
+        "git -C \"$WU_WORKTREE\" add -A && git -C \"$WU_WORKTREE\" diff --cached --quiet || git -C \"$WU_WORKTREE\" commit -m \"test(red): $WU_CURRENT_TICKET\"",
+        {
+          "command": "node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" expect-red --graph .harness/graph.json --unit \"$WU_FOLDER\" --worktree \"$WU_WORKTREE\" --ticket \"$WU_CURRENT_TICKET\"",
+          "codes": {
+            "11": "ticket-invalid"
+          }
+        }
+      ],
+      "equipment": {
+        "skills": [],
+        "commands": [
+          {
+            "source": "state:tickets.verification_command",
+            "family": "npm test"
+          }
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "state:current_ticket",
+        "state:tickets"
+      ],
+      "produces": [
+        "red-commit"
+      ],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "ok",
+          "failed",
+          "ticket-invalid"
+        ]
+      }
+    },
+    "implement-ticket": {
+      "executor": "llm",
+      "purpose": "Implement the current ticket inside the unit's worktree, red before green.",
+      "instructions": "Work only inside the dispatched worktree path and record the branch and path in worktree.md in the stage directory. The orchestrator has already landed and committed the current ticket's declared test files and observed the failing (red) run; implement until the ticket's declared test passes, and do not modify the landed test files. When returning from a failed verification, address the failing output (and the review findings, when the failure came from the review stage) against the whole change.",
+      "equipment": {
+        "skills": [
+          "open-skills:use-worktree"
+        ],
+        "commands": [
+          {
+            "base": "npm test"
+          },
+          "npm run lint",
+          {
+            "source": "state:tickets.verification_command",
+            "family": "npm test"
+          }
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "state:tickets",
+        "state:current_ticket",
+        "contract",
+        "worktree"
+      ],
+      "produces": [
+        "code-changes",
+        "worktree-record"
+      ],
+      "restrictions": [
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT write .harness/ (current-truth documents, ledger, config, graph definition) or any long-term memory.",
+        "MUST NOT run any VCS operation: no git commit, branch, staging, or worktree command, and never the worktree script.",
+        "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable. Report blocked when no usable worktree path is given.",
+        "MUST NOT remove the worktree.",
+        "MUST NOT modify the current ticket's declared test files; the orchestrator verifies them unchanged against the red commit."
+      ],
+      "exit": {
+        "outcomes": [
+          "done",
+          "ticket-invalid"
+        ],
+        "artifact": "report-<n>.md"
+      }
+    },
+    "verify-build": {
+      "executor": "validator",
+      "runner": "orchestrator",
+      "purpose": "Orchestrator-run verification of the build work in the worktree.",
+      "instructions": "Pass means: tests and static checks pass in the worktree. For a ticketed unit: the red run was recorded before implementation (step log line), the landed test files are unchanged since the red commit (test-integrity), the ticket's declared test passes, and the full suite passes. Repository writes stay inside the worktree. worktree.md records branch and path. No VCS operation was run by the worker.",
+      "equipment": {
+        "skills": [],
+        "commands": [
+          "npm test",
+          "npm run lint",
+          {
+            "source": "state:tickets.verification_command",
+            "family": "npm test"
+          }
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "worktree",
+        "state:tickets",
+        "state:current_ticket"
+      ],
+      "produces": [
+        "verification-record"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository, the worktree, or any deliverable."
+      ],
+      "exit": {
+        "outcomes": [
+          "pass",
+          "fail"
+        ],
+        "artifact": "verify-<n>.md"
+      }
+    },
+    "commit-work": {
+      "executor": "script",
+      "purpose": "Commit everything in the worktree, skipping cleanly when there is nothing to commit.",
+      "run": [
+        "git -C \"$WU_WORKTREE\" add -A && git -C \"$WU_WORKTREE\" diff --cached --quiet || git -C \"$WU_WORKTREE\" commit -m \"$WU_COMMIT_MESSAGE\""
+      ],
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [
+        "worktree"
+      ],
+      "produces": [],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "ok",
+          "failed"
+        ]
+      }
+    },
+    "implement-change": {
+      "executor": "llm",
+      "purpose": "Implement the whole approved change inside the unit's worktree (ticketless path).",
+      "instructions": "Work only inside the dispatched worktree path and record the branch and path in worktree.md in the stage directory. Implement the approved change and run the full test and static-check commands. When returning from a failed verification, address the failing output (and the review findings, when the failure came from the review stage) against the whole change.",
+      "equipment": {
+        "skills": [
+          "open-skills:use-worktree"
+        ],
+        "commands": [
+          {
+            "base": "npm test"
+          },
+          "npm run lint"
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "request",
+        "contract",
+        "worktree"
+      ],
+      "produces": [
+        "code-changes",
+        "worktree-record"
+      ],
+      "restrictions": [
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT write .harness/ (current-truth documents, ledger, config, graph definition) or any long-term memory.",
+        "MUST NOT run any VCS operation: no git commit, branch, staging, or worktree command, and never the worktree script.",
+        "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable. Report blocked when no usable worktree path is given.",
+        "MUST NOT remove the worktree."
+      ],
+      "exit": {
+        "outcomes": [
+          "done"
+        ],
+        "artifact": "report-<n>.md"
+      }
+    },
+    "fold-deltas": {
+      "executor": "llm",
+      "purpose": "Memory apply: fold pending delta entries into the current-truth documents and flip their status.",
+      "instructions": "Inside the dispatched worktree, fold every pending delta entry (including residue from earlier units) into the current-truth documents under .harness/, respecting each document's line budget. Flip each folded entry's status to applied (or rejected with a stated reason), changing no other field and deleting no entry.",
+      "equipment": {
+        "skills": [],
+        "commands": [
+          "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "memory",
+        "worktree"
+      ],
+      "produces": [
+        "memory-updates"
+      ],
+      "restrictions": [
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT run any VCS operation: no git commit, branch, staging, or worktree command, and never the worktree script.",
+        "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable.",
+        "MAY edit the current-truth documents under .harness/ in the worktree, only to fold pending delta entries into them.",
+        "MAY flip the status of delta entries under .harness/deltas/ in the worktree (pending to applied or rejected), changing no other field and deleting no entry.",
+        "MUST NOT write .harness/config.json or the graph definition.",
+        "MUST NOT write any other long-term memory."
+      ],
+      "exit": {
+        "outcomes": [
+          "done"
+        ],
+        "artifact": "report-<n>.md"
+      }
+    },
+    "verify-memory": {
+      "executor": "validator",
+      "runner": "orchestrator",
+      "purpose": "Check the folded memory: entries validate, budgets hold, the suite is still green.",
+      "instructions": "Pass means: memory.mjs validate accepts every entry and every budget. No delta entry was deleted or edited beyond its status field. The test suite passes in the worktree.",
+      "equipment": {
+        "skills": [],
+        "commands": [
+          "npm test",
+          "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "worktree",
+        "memory"
+      ],
+      "produces": [
+        "verification-record"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository, the worktree, or any deliverable."
+      ],
+      "exit": {
+        "outcomes": [
+          "pass",
+          "fail"
+        ],
+        "artifact": "verify-<n>.md"
+      }
+    },
+    "review-change": {
+      "executor": "validator",
+      "runner": "reviewer",
+      "purpose": "Independent review of the whole change against the approved contract and restrictions.",
+      "instructions": "Run every declared verification command yourself in the unit's worktree and never rely on the author's claims. Score each dimension pass or fail: correctness (declared commands pass when you run them yourself), contract coverage (every requirement of the approved contract is met, with no unrelated changes), restriction compliance (no forbidden write), and clean state (no debugging residue). Evidence references must resolve for a third party; every failure states WHAT, WHY, and FIX. Report pass or fail with the per-dimension verdict.",
+      "equipment": {
+        "skills": [
+          "open-skills:request-code-review"
+        ],
+        "commands": [
+          "npm test",
+          "npm run lint"
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "request",
+        "contract",
+        "worktree",
+        "review-scope"
+      ],
+      "produces": [
+        "review-report"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository, the worktree, or any deliverable.",
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST write exactly one report file, review-<n>.md, into the dispatched stage directory as its only write."
+      ],
+      "exit": {
+        "outcomes": [
+          "pass",
+          "fail"
+        ],
+        "artifact": "review-<n>.md"
+      }
+    },
+    "close-out": {
+      "executor": "llm",
+      "purpose": "Close-out: leave the project resumable cold, merge durable outcomes into the ledger as pending delta entries, write the handoff record.",
+      "instructions": "Work inside the worktree provisioned for this stage. Read the draft deltas from the unit's stage directories in the main checkout, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into the ledger inside the worktree so they travel on the unit's branch. Remove execution residue, complete the lifecycle of any workflow tool the work used, and write the handoff record (what was done, what was decided, what remains) as handoff.md in the stage directory.",
+      "equipment": {
+        "skills": [
+          "open-skills:wrap",
+          "open-skills:use-worktree"
+        ],
+        "commands": [
+          "npm test",
+          "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "request",
+        "contract",
+        "draft-deltas",
+        "worktree",
+        "memory"
+      ],
+      "produces": [
+        "ledger-deltas",
+        "handoff",
+        "worktree-record"
+      ],
+      "restrictions": [
+        "MUST NOT edit a current-truth document directly; merge outcomes into the ledger as pending delta entries only.",
+        "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+        "MUST NOT write .harness/config.json or the graph definition.",
+        "MUST NOT run any VCS operation and MUST NOT remove the worktree; delivery belongs to the deliver step.",
+        "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable.",
+        "MUST NOT wait for asynchronous integration results."
+      ],
+      "exit": {
+        "outcomes": [
+          "done"
+        ],
+        "artifact": "handoff.md"
+      }
+    },
+    "verify-wrap": {
+      "executor": "validator",
+      "runner": "reviewer",
+      "purpose": "Independent check of the close-out before delivery.",
+      "instructions": "Run every declared command yourself in the unit's worktree. Pass means: the test suite is green in the worktree, delta entries validate, no temporary or debugging residue remains, and the handoff states what was done, what was decided, and what remains. No current-truth document changed and no workflow tool is left mid-flight. Report pass or fail.",
+      "equipment": {
+        "skills": [],
+        "commands": [
+          "npm test",
+          "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+        ],
+        "mcp": []
+      },
+      "reads": [
+        "worktree",
+        "handoff",
+        "memory"
+      ],
+      "produces": [
+        "review-report"
+      ],
+      "restrictions": [
+        "MUST NOT modify the repository, the worktree, or any deliverable.",
+        "MUST write exactly one report file, review-<n>.md, into the dispatched stage directory as its only write."
+      ],
+      "exit": {
+        "outcomes": [
+          "pass",
+          "fail"
+        ],
+        "artifact": "review-<n>.md"
+      }
+    },
+    "deliver": {
+      "executor": "script",
+      "purpose": "Deliver the unit: push the branch, open the delivery channel, remove the worktree.",
+      "run": [
+        "git -C \"$WU_WORKTREE\" push --set-upstream \"$WU_REMOTE\" \"$WU_BRANCH\"",
+        "gh pr create --fill",
+        "test ! -d \"$WU_WORKTREE\" || git worktree remove \"$WU_WORKTREE\""
+      ],
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [
+        "worktree"
+      ],
+      "produces": [],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "ok",
+          "failed"
+        ]
+      }
+    },
+    "archive-shipped": {
+      "executor": "script",
+      "purpose": "Copy the reviewed handoff to the folder root and archive the work-unit folder.",
+      "run": [
+        "node -e \"const fs = require('node:fs'); const d = process.env.WU_FOLDER; fs.copyFileSync(d + '/wrap/handoff.md', d + '/handoff.md')\"",
+        "test ! -d \"$WU_FOLDER\" || node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" archive --graph .harness/graph.json --unit \"$WU_FOLDER\""
+      ],
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [],
+      "produces": [],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "ok",
+          "failed"
+        ]
+      }
+    },
+    "archive-abandoned": {
+      "executor": "script",
+      "purpose": "Force-remove any live worktree, confirm the orchestrator wrote the handoff naming unmerged drafts, archive the folder.",
+      "run": [
+        "test ! -d \"$WU_WORKTREE\" || git worktree remove --force \"$WU_WORKTREE\"",
+        "test -f \"$WU_FOLDER/handoff.md\"",
+        "test ! -d \"$WU_FOLDER\" || node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" archive --graph .harness/graph.json --unit \"$WU_FOLDER\""
+      ],
+      "equipment": {
+        "skills": [],
+        "commands": [],
+        "mcp": []
+      },
+      "reads": [],
+      "produces": [],
+      "restrictions": [],
+      "exit": {
+        "outcomes": [
+          "ok",
+          "failed"
+        ]
+      }
+    }
+  },
+  "nodes": [
+    {
+      "id": "trigger",
+      "kind": "entry",
+      "purpose": "Entry point: the orchestrator creates the work-unit folder from the captured trigger and routes unconditionally onward."
+    },
+    {
+      "id": "research",
+      "kind": "work",
+      "purpose": "Judge the work and fix the unit's phase; carries the mandatory human phase approval.",
+      "pipeline": [
+        {
+          "use": "research-request",
+          "on": {
+            "proposal-produced": "next"
+          }
+        },
+        {
+          "use": "approve-phase",
+          "on": {
+            "approved": "phase-approved",
+            "send-back": "goto:research-request",
+            "not-needed": "not-needed"
+          }
+        }
+      ],
+      "outcomes": [
+        "phase-approved",
+        "not-needed"
+      ]
+    },
+    {
+      "id": "spec",
+      "kind": "work",
+      "purpose": "Author the contract for a new capability so decomposition has an approved contract to work from.",
+      "pipeline": [
+        {
+          "use": "author-contract",
+          "with": {
+            "change_dir": "openspec/changes"
+          },
+          "on": {
+            "contract-produced": "next"
+          }
+        },
+        {
+          "use": "approve-contract",
+          "on": {
+            "approved": "contract-produced",
+            "send-back": "goto:author-contract",
+            "not-needed": "not-needed"
+          }
+        }
+      ],
+      "outcomes": [
+        "contract-produced",
+        "not-needed"
+      ]
+    },
+    {
+      "id": "ticket",
+      "kind": "work",
+      "purpose": "Decompose the approved contract into tickets; its declared re-entry selects the next pending ticket without dispatching an actor.",
+      "pipeline": [
+        {
+          "use": "decompose-tickets",
+          "on": {
+            "tickets-produced": "tickets-produced",
+            "spec-contradiction": "spec-contradiction"
+          }
+        }
+      ],
+      "outcomes": [
+        "tickets-produced",
+        "spec-contradiction"
+      ],
+      "re_entry": {
+        "list_field": "pending_tickets",
+        "order": "declared",
+        "progress_field": "current_ticket",
+        "items_field": "tickets"
+      }
+    },
+    {
+      "id": "build",
+      "kind": "work",
+      "purpose": "Implement the current ticket inside the unit's worktree, red before green.",
+      "pipeline": [
+        {
+          "use": "provision-worktree",
+          "on": {
+            "ok": "next",
+            "failed": "escalate"
+          }
+        },
+        {
+          "use": "red-check",
+          "on": {
+            "ok": "next",
+            "failed": "escalate",
+            "ticket-invalid": "ticket-invalid"
+          }
+        },
+        {
+          "use": "implement-ticket",
+          "on": {
+            "done": "next",
+            "ticket-invalid": "ticket-invalid"
+          }
+        },
+        {
+          "use": "verify-build",
+          "on": {
+            "pass": "next",
+            "fail": "goto:implement-ticket"
+          }
+        },
+        {
+          "use": "commit-work",
+          "on": {
+            "ok": "ticket-done",
+            "failed": "escalate"
+          }
+        }
+      ],
+      "outcomes": [
+        "ticket-done",
+        "ticket-invalid"
+      ]
+    },
+    {
+      "id": "build-direct",
+      "kind": "work",
+      "purpose": "Implement the whole approved change inside the unit's worktree: the ticketless path for chore, and the whole-change fix after a failed review.",
+      "pipeline": [
+        {
+          "use": "provision-worktree",
+          "on": {
+            "ok": "next",
+            "failed": "escalate"
+          }
+        },
+        {
+          "use": "implement-change",
+          "on": {
+            "done": "next"
+          }
+        },
+        {
+          "use": "verify-build",
+          "on": {
+            "pass": "next",
+            "fail": "goto:implement-change"
+          }
+        },
+        {
+          "use": "commit-work",
+          "on": {
+            "ok": "ready-for-review",
+            "failed": "escalate"
+          }
+        }
+      ],
+      "outcomes": [
+        "ready-for-review"
+      ]
+    },
+    {
+      "id": "maintain",
+      "kind": "work",
+      "purpose": "Memory apply: fold pending delta entries into the current-truth documents inside the worktree.",
+      "pipeline": [
+        {
+          "use": "provision-worktree",
+          "on": {
+            "ok": "next",
+            "failed": "escalate"
+          }
+        },
+        {
+          "use": "fold-deltas",
+          "on": {
+            "done": "next"
+          }
+        },
+        {
+          "use": "verify-memory",
+          "on": {
+            "pass": "next",
+            "fail": "goto:fold-deltas"
+          }
+        },
+        {
+          "use": "commit-work",
+          "on": {
+            "ok": "ready-for-review",
+            "failed": "escalate"
+          }
+        }
+      ],
+      "outcomes": [
+        "ready-for-review"
+      ]
+    },
+    {
+      "id": "review",
+      "kind": "work",
+      "purpose": "Independent review of the whole change; the verdict is the node's routable outcome.",
+      "pipeline": [
+        {
+          "use": "review-change",
+          "on": {
+            "pass": "pass",
+            "fail": "fail"
+          }
+        }
+      ],
+      "outcomes": [
+        "pass",
+        "fail"
+      ]
+    },
+    {
+      "id": "wrap",
+      "kind": "work",
+      "purpose": "Close-out and delivery: ledger deltas, handoff, commit, push, open the delivery channel, remove the worktree.",
+      "pipeline": [
+        {
+          "use": "provision-worktree",
+          "on": {
+            "ok": "next",
+            "failed": "escalate"
+          }
+        },
+        {
+          "use": "close-out",
+          "on": {
+            "done": "next"
+          }
+        },
+        {
+          "use": "verify-wrap",
+          "on": {
+            "pass": "next",
+            "fail": "goto:close-out"
+          }
+        },
+        {
+          "use": "commit-work",
+          "on": {
+            "ok": "next",
+            "failed": "escalate"
+          }
+        },
+        {
+          "use": "deliver",
+          "on": {
+            "ok": "handed-off",
+            "failed": "escalate"
+          }
+        }
+      ],
+      "outcomes": [
+        "handed-off"
+      ]
+    },
+    {
+      "id": "ship",
+      "kind": "terminal",
+      "terminal_kind": "success",
+      "purpose": "Success terminal: the unit was delivered. Copy the reviewed handoff to the folder root and archive the folder.",
+      "pipeline": [
+        {
+          "use": "archive-shipped",
+          "on": {
+            "ok": "done",
+            "failed": "escalate"
+          }
+        }
+      ]
+    },
+    {
+      "id": "end",
+      "kind": "terminal",
+      "terminal_kind": "abandonment",
+      "purpose": "Abandonment terminal: force-remove any live worktree, confirm the handoff names unmerged drafts, archive the folder with the drafts preserved in place.",
+      "pipeline": [
+        {
+          "use": "archive-abandoned",
+          "on": {
+            "ok": "done",
+            "failed": "escalate"
+          }
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "trigger",
+      "to": "research",
+      "guard": []
+    },
+    {
+      "from": "research",
+      "to": "spec",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "feat"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "ticket",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "fix"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "build-direct",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "chore"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "maintain",
+      "outcome": "phase-approved",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "maintenance"
+        }
+      ]
+    },
+    {
+      "from": "research",
+      "to": "end",
+      "outcome": "not-needed",
+      "guard": []
+    },
+    {
+      "from": "spec",
+      "to": "ticket",
+      "outcome": "contract-produced",
+      "guard": []
+    },
+    {
+      "from": "spec",
+      "to": "end",
+      "outcome": "not-needed",
+      "guard": []
+    },
+    {
+      "from": "ticket",
+      "to": "build",
+      "outcome": "tickets-produced",
+      "guard": []
+    },
+    {
+      "from": "ticket",
+      "to": "spec",
+      "outcome": "spec-contradiction",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "feat"
+        }
+      ]
+    },
+    {
+      "from": "ticket",
+      "to": "research",
+      "outcome": "spec-contradiction",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "fix"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "ticket",
+      "outcome": "ticket-done",
+      "guard": [
+        {
+          "field": "pending_tickets",
+          "op": "not-empty"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "review",
+      "outcome": "ticket-done",
+      "guard": [
+        {
+          "field": "pending_tickets",
+          "op": "empty"
+        }
+      ]
+    },
+    {
+      "from": "build",
+      "to": "ticket",
+      "outcome": "ticket-invalid",
+      "guard": []
+    },
+    {
+      "from": "build-direct",
+      "to": "review",
+      "outcome": "ready-for-review",
+      "guard": []
+    },
+    {
+      "from": "maintain",
+      "to": "review",
+      "outcome": "ready-for-review",
+      "guard": []
+    },
+    {
+      "from": "review",
+      "to": "wrap",
+      "outcome": "pass",
+      "guard": []
+    },
+    {
+      "from": "review",
+      "to": "build-direct",
+      "outcome": "fail",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "in",
+          "value": [
+            "feat",
+            "fix",
+            "chore"
+          ]
+        }
+      ]
+    },
+    {
+      "from": "review",
+      "to": "maintain",
+      "outcome": "fail",
+      "guard": [
+        {
+          "field": "phase",
+          "op": "eq",
+          "value": "maintenance"
+        }
+      ]
+    },
+    {
+      "from": "wrap",
+      "to": "ship",
+      "outcome": "handed-off",
+      "guard": []
+    }
+  ]
+}

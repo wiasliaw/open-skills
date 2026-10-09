@@ -7,7 +7,7 @@ triaged against the code and the work's contract before anything changes.
 ## When to use
 
 - You have PR/MR comments or pasted review text to act on.
-- Review feedback arrives at a graph node (see the graph profile below).
+- Review feedback arrives at a graph task (see the graph profile below).
 
 For producing a review rather than receiving one, use `request-code-review`.
 
@@ -40,11 +40,12 @@ is unknown, you are told what is missing and asked to paste the text.
 
 ## Graph profile
 
-When mounted on a graph node, the skill also writes the triage record into the
-node's stage directory, and reports the outcome `feedback-digested` only when no
-item remains at needs-clarification. Otherwise it reports blocked, and the
-in-place fallback chain carries the question to you. The orchestrator routes by
-the node's declared edges.
+When mounted on a graph task, the skill also writes the triage record into the
+dispatched stage directory, and reports the outcome `feedback-digested` only when
+no item remains at needs-clarification. Otherwise it reports blocked, and the
+in-place fallback chain carries the question to you. The orchestrator applies the
+pipeline entry's `on` action to the outcome, and the node's declared edges route
+what it surfaces.
 
 ## Requirements
 

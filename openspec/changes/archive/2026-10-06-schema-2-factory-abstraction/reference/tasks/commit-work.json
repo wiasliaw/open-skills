@@ -1,0 +1,12 @@
+{
+  "executor": "script",
+  "purpose": "Commit everything in the worktree, skipping cleanly when there is nothing to commit.",
+  "run": [
+    "git -C \"$WU_WORKTREE\" add -A && git -C \"$WU_WORKTREE\" diff --cached --quiet || git -C \"$WU_WORKTREE\" commit -m \"$WU_COMMIT_MESSAGE\""
+  ],
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": ["worktree"],
+  "produces": [],
+  "restrictions": [],
+  "exit": { "outcomes": ["ok", "failed"] }
+}

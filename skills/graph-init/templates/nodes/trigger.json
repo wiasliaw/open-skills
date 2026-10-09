@@ -1,0 +1,5 @@
+{
+  "id": "trigger",
+  "kind": "entry",
+  "purpose": "Entry point: the orchestrator creates the work-unit folder from the captured trigger and routes unconditionally onward."
+}

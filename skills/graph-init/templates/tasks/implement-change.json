@@ -1,0 +1,23 @@
+{
+  "executor": "llm",
+  "purpose": "Implement the whole approved change inside the unit's worktree (ticketless path).",
+  "instructions": "Work only inside the dispatched worktree path and record the branch and path in worktree.md in the stage directory. Implement the approved change and run the full test and static-check commands. When returning from a failed verification, address the failing output (and the review findings, when the failure came from the review stage) against the whole change.",
+  "equipment": {
+    "skills": ["open-skills:use-worktree"],
+    "commands": [{ "base": "{{test_command}}" }, "{{lint_command}}"],
+    "mcp": []
+  },
+  "reads": ["request", "contract", "worktree"],
+  "produces": ["code-changes", "worktree-record"],
+  "restrictions": [
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST NOT write .harness/ (current-truth documents, ledger, config, graph definition) or any long-term memory.",
+    "MUST NOT run any VCS operation: no git commit, branch, staging, or worktree command, and never the worktree script.",
+    "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable. Report blocked when no usable worktree path is given.",
+    "MUST NOT remove the worktree."
+  ],
+  "exit": {
+    "outcomes": ["done"],
+    "artifact": "report-<n>.md"
+  }
+}

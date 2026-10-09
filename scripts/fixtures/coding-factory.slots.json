@@ -1,0 +1,6 @@
+{
+  "phase_values": ["feat", "fix", "chore", "maintenance"],
+  "test_command": "npm test",
+  "lint_command": "npm run lint",
+  "open_pr_command": "gh pr create --fill"
+}

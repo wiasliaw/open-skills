@@ -1,0 +1,27 @@
+{
+  "executor": "llm",
+  "purpose": "Close-out: leave the project resumable cold, merge durable outcomes into the ledger as pending delta entries, write the handoff record.",
+  "instructions": "Work inside the worktree provisioned for this stage. Read the draft deltas from the unit's stage directories in the main checkout, consolidate them (deduplicate, resolve relations, drop drafts the reviews rejected), and merge them into the ledger inside the worktree so they travel on the unit's branch. Remove execution residue, complete the lifecycle of any workflow tool the work used, and write the handoff record (what was done, what was decided, what remains) as handoff.md in the stage directory.",
+  "equipment": {
+    "skills": ["open-skills:wrap", "open-skills:use-worktree"],
+    "commands": [
+      "{{test_command}}",
+      "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+    ],
+    "mcp": []
+  },
+  "reads": ["request", "contract", "draft-deltas", "worktree", "memory"],
+  "produces": ["ledger-deltas", "handoff", "worktree-record"],
+  "restrictions": [
+    "MUST NOT edit a current-truth document directly; merge outcomes into the ledger as pending delta entries only.",
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST NOT write .harness/config.json or the graph definition.",
+    "MUST NOT run any VCS operation and MUST NOT remove the worktree; delivery belongs to the deliver step.",
+    "MUST confine repository writes to the worktree path given in the dispatch; the stage directory stays writable.",
+    "MUST NOT wait for asynchronous integration results."
+  ],
+  "exit": {
+    "outcomes": ["done"],
+    "artifact": "handoff.md"
+  }
+}

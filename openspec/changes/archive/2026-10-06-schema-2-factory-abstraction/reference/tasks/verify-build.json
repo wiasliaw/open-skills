@@ -1,0 +1,24 @@
+{
+  "executor": "validator",
+  "runner": "orchestrator",
+  "purpose": "Orchestrator-run verification of the build work in the worktree.",
+  "instructions": "Pass means: tests and static checks pass in the worktree. For a ticketed unit: the red run was recorded before implementation (step log line), the landed test files are unchanged since the red commit (test-integrity), the ticket's declared test passes, and the full suite passes. Repository writes stay inside the worktree. worktree.md records branch and path. No VCS operation was run by the worker.",
+  "equipment": {
+    "skills": [],
+    "commands": [
+      "{{test_command}}",
+      "{{lint_command}}",
+      { "source": "state:tickets.verification_command", "family": "{{test_command}}" }
+    ],
+    "mcp": []
+  },
+  "reads": ["worktree", "state:tickets", "state:current_ticket"],
+  "produces": ["verification-record"],
+  "restrictions": [
+    "MUST NOT modify the repository, the worktree, or any deliverable."
+  ],
+  "exit": {
+    "outcomes": ["pass", "fail"],
+    "artifact": "verify-<n>.md"
+  }
+}

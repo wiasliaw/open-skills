@@ -167,3 +167,41 @@ test('read rejects a hand-edited invalid config', () => {
   const r = run(['read', '--root', t.dir]);
   assert.equal(r.status, 3);
 });
+
+// ---------------------------------------------------------------------------
+// Linked-worktree guard
+
+function git(args, cwd) {
+  const r = spawnSync('git', ['-c', 'user.email=t@t', '-c', 'user.name=t', ...args], { cwd, encoding: 'utf8' });
+  assert.equal(r.status, 0, `git ${args.join(' ')} failed: ${r.stderr}`);
+}
+
+function repoWithWorktree() {
+  const t = setup();
+  const main = path.join(t.dir, 'main');
+  const wt = path.join(t.dir, 'wt');
+  fs.mkdirSync(main, { recursive: true });
+  git(['init', '-q', '-b', 'main'], main);
+  git(['commit', '--allow-empty', '-q', '-m', 'init'], main);
+  git(['worktree', 'add', '-q', wt, '-b', 'unit'], main);
+  return { ...t, main, wt };
+}
+
+test('write refuses inside a linked worktree with in_worktree and writes nothing', () => {
+  const t = repoWithWorktree();
+  fs.writeFileSync(t.draft, JSON.stringify(good()));
+  const r = run(['write', '--from', t.draft, '--root', t.wt]);
+  assert.equal(r.status, 5);
+  assert.equal(r.out.ok, false);
+  assert.equal(r.out.error, 'in_worktree');
+  assert.equal(fs.existsSync(path.join(t.wt, '.harness')), false, 'nothing written in the worktree');
+});
+
+test('write succeeds in the main checkout of a repo that has worktrees', () => {
+  const t = repoWithWorktree();
+  fs.writeFileSync(t.draft, JSON.stringify(good()));
+  const r = run(['write', '--from', t.draft, '--root', t.main]);
+  assert.equal(r.status, 0);
+  assert.equal(r.out.action, 'written');
+  assert.equal(fs.existsSync(path.join(t.main, '.harness', 'config.json')), true);
+});

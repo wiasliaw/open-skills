@@ -1,0 +1,12 @@
+{
+  "id": "end",
+  "kind": "terminal",
+  "terminal_kind": "abandonment",
+  "purpose": "Abandonment terminal: force-remove any live worktree, confirm the handoff names unmerged drafts, archive the folder with the drafts preserved in place.",
+  "pipeline": [
+    {
+      "use": "archive-abandoned",
+      "on": { "ok": "done", "failed": "escalate" }
+    }
+  ]
+}

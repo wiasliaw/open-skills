@@ -1,0 +1,13 @@
+{
+  "executor": "human",
+  "purpose": "Human approval of the authored contract before decomposition works from it.",
+  "instructions": "Approve the contract, send it back with feedback, or judge the work not needed.",
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": ["contract"],
+  "produces": [],
+  "restrictions": [],
+  "exit": {
+    "outcomes": ["approved", "send-back", "not-needed"],
+    "artifact": "decision-<n>.md"
+  }
+}

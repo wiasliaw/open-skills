@@ -1,0 +1,23 @@
+{
+  "executor": "validator",
+  "runner": "orchestrator",
+  "purpose": "Check the folded memory: entries validate, budgets hold, the suite is still green.",
+  "instructions": "Pass means: memory.mjs validate accepts every entry and every budget. No delta entry was deleted or edited beyond its status field. The test suite passes in the worktree.",
+  "equipment": {
+    "skills": [],
+    "commands": [
+      "{{test_command}}",
+      "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+    ],
+    "mcp": []
+  },
+  "reads": ["worktree", "memory"],
+  "produces": ["verification-record"],
+  "restrictions": [
+    "MUST NOT modify the repository, the worktree, or any deliverable."
+  ],
+  "exit": {
+    "outcomes": ["pass", "fail"],
+    "artifact": "verify-<n>.md"
+  }
+}

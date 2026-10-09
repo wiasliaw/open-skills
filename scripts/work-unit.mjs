@@ -1,9 +1,9 @@
-// work-unit.mjs - the single write gate for the work-unit folder. It creates a
-// unit, validates a stored unit, gates every state/log write, and archives a
-// unit at a terminal. The orchestrator drafts state and log lines; this script
-// validates the draft against the work-unit-state contract plus the unit's
-// graph declaration and applies it atomically. Hand-editing state.json or
-// log.ndjson is forbidden.
+// work-unit.mjs - the single write gate for the work-unit folder (Schema 2.0). It creates
+// a unit, validates a stored unit, gates every state/log write, archives a unit at a
+// terminal, and owns the red-check surface (land-tests, expect-red) the build pipeline's
+// script tasks call. The orchestrator drafts state and log lines; this script validates the
+// draft against the work-unit-state contract plus the unit's graph and type catalogs and
+// applies it atomically. Hand-editing state.json or log.ndjson is forbidden.
 //
 // Usage (run through node, with the consumer project as the cwd):
 //   node work-unit.mjs create   --graph <graph.json> --units <dir> --id <id> --source <source>
@@ -12,55 +12,129 @@
 //   node work-unit.mjs write    --graph <graph.json> --unit <dir> --state <draft.json>
 //                               (--log <lines.json> | --log-full <log.ndjson draft>)
 //   node work-unit.mjs archive  --graph <graph.json> --unit <dir> [--to <archive dir>]
+//   node work-unit.mjs land-tests --graph <graph.json> --unit <dir> --worktree <path> --ticket <id>
+//   node work-unit.mjs expect-red --graph <graph.json> --unit <dir> --worktree <path> --ticket <id>
 //   node work-unit.mjs --help
 //
-// --graph is the project's graph definition (the per-unit schema is derived
-// from it at validation time; no schema file is stored). `--log` is a JSON
-// file holding one log-line object or an array of them, appended to the
-// existing log. `--log-full` is the complete new log.ndjson content; the gate
-// requires the existing bytes to be a byte-prefix of it. `--archive` defaults
-// to <units>/archive. `--remote` is the git remote (name or URL) whose
-// `wu/<id>` branches the id must not collide with; it defaults to `origin`
-// when that remote exists and is skipped when it does not; `none` skips it.
+// Every subcommand that takes --graph also accepts --types <project types.json> (default:
+// .harness/types.json under the cwd) and --plugin-types <plugin types.json> (default: the
+// catalog shipped with the plugin). The two catalogs are merged in memory by types.mjs, the
+// same loader graph.mjs uses; no schema or registry file is stored.
 //
-// Graph definition fields this script reads (see the graph-definition spec):
-//   nodes[]{id,type,mounts.commands,terminal|kind|outcome}, edges[]{from,to},
-//   caps{consultation|advisor_consultations,...}, phase{<name>:{path[]}}
-//   (also accepted as `phases`), state_fields{<name>:<field declaration>}.
-// A field declaration: {type: string|integer|number|boolean|object|list,
-//   nullable, values, items, fields, default, node | phases, scope_kind,
-//   executes}. Spec keys inside items/fields: pointer (string is a
-//   folder-relative file pointer), evidence (object is an evidence ref),
-//   command (string is a run-time-generated invocation), optional (object
-//   key may be absent). `scope_kind` on a list of {id} objects declares a
-//   failure-counter scope kind `<scope_kind>:<id>`. `executes` names the node
-//   whose mounts must cover each command-marked value. A declaration named
-//   like a core field is ignored (the core contract wins).
+// --graph is the project's flattened 2.0 graph definition. The gate never backs a unit with
+// a definition graph.mjs `validateDefinition` rejects (nor with a catalog that fails to
+// load): any structural or catalog error is a `graph` failure whose violations are the
+// validator's error codes. `--log` is a JSON file holding one log-line object or an array of
+// them, appended to the existing log. `--log-full` is the complete new log.ndjson content;
+// the gate requires the existing bytes to be a byte-prefix of it. `--archive` defaults to
+// <units>/archive. `--remote` is the git remote (name or URL) whose `wu/<id>` branches the id
+// must not collide with; it defaults to `origin` when that remote exists and is skipped when
+// it does not; `none` skips it.
+//
+// What the gate derives from the definition (nothing else is read):
+//   nodes[]{id, kind, pipeline[]{use}, terminal_kind, re_entry}, edges[]{from, to},
+//   caps.advisor_consultations (the consultation cap), tasks{<id>{reads, produces,
+//   equipment.commands}}, and - through the catalogs - the `phase` vocabulary and the type of
+//   every graph-declared field.
+// Graph-declared fields: every top-level F named by some task's `produces: "state:F"`, except
+//   core names (`phase` is core state, typed by the catalog). F is typed by its catalog entry
+//   (types.mjs resolveField) and carries a copy of the entry's default. F is applicable in a
+//   unit iff some node whose pipeline references a task producing state:F is in walked_path
+//   or is current_node; it is materialized with its default by the write that makes it
+//   applicable, present while applicable, and invalid outside its applicability.
+// Core state adds `current_task`: null or a task id in the pipeline of current_node (the
+//   pipeline position). State schema_version is "2.0.0".
+//
+// Value checking follows the catalog type: string, integer, number, boolean, object (every
+// declared field required - a nullable one may be null - and undeclared keys rejected), list
+// (items checked), `command` (non-empty string), `pointer` (folder-relative file pointer),
+// `evidence-ref` ({kind, ref}); `values` is a membership list.
+//
+// Command coverage: every task equipment entry {source: "state:<path>", family: "<base>"}
+//   binds the command values found at <path> in the state (lists are walked, so
+//   `tickets.verification_command` is each tickets[i].verification_command): the invocation's
+//   token prefix must equal the family's tokens, else `command-not-mounted`.
+//
+// Scopes (fail_counters keys, advisor_consults[].scope and problem_key prefix):
+//   <node>.<task>           a declared node and a task of its pipeline
+//   <node>.<task>:<item-id> additionally the task reads state:<progress_field> of some re_entry
+//                           rule R and <item-id> is the id of a record of state[R.items_field]
+//   edge:<from>-<to>        a declared edge
+// reviews[].scope takes the first two forms only. The 1.x forms node:<id> and <kind>:<id> are
+// rejected.
+//
+// Write authorization (`write` only; create and validate of a stored unit check none): for
+// every graph-declared field F and for `phase`, the baseline is the stored value (or the
+// catalog default when the field is new), and F is changed iff the draft value differs. The
+// task in flight is the stored pipeline position (the stored current_task, before the write).
+// A changed F is authorized when that task's `produces` contains state:F. Otherwise it must be
+// re-entry bookkeeping of some re_entry rule: a selection (list_field/progress_field - the
+// progress field takes an element of the list field, which loses exactly that element; the
+// first one under order "declared") or an update of existing items_field records (same
+// number, same ids in the same order, every command-typed record field unchanged).
+//
+// Red-check surface (design D7/D9): both subcommands find the re_entry rule whose items_field
+// holds a record with id = --ticket in the unit's state.
+//   land-tests copies every regular file under <unit>/<rule node>/tests/<ticket>/ to the same
+//     relative path under --worktree (directories created, existing files overwritten, so a
+//     re-run is idempotent). Symlinks and paths escaping the worktree are refused.
+//   expect-red runs the record's single command-typed field through the shell in --worktree and
+//     expects a failure: exit 0 is `already_green`, exit 126/127, a spawn error, or a signal is
+//     `not_runnable`, any other non-zero exit is `red-observed`. Success and failure bodies
+//     both carry command, exit_status, signal, and output_tail (last 2000 chars of stdout then
+//     stderr) so the orchestrator can transcribe a `step` log line.
 //
 // Output contract: exactly one JSON object on stdout, diagnostics on stderr.
-//   success: {"ok": true, "action": "created" | "valid" | "written" | "archived" | "help", ...}
+//   success: {"ok": true, "action": "created" | "valid" | "written" | "archived" |
+//             "tests-landed" | "red-observed" | "help", ...}
 //   failure: {"ok": false, "error": "<code>", "message": "...", "violations": [{"rule","message"}]}
 //
-// Exit codes (consumers branch on the "error" code; the exit code is the
-// coarse signal):
+// Exit codes (consumers branch on the "error" code; the exit code is the coarse signal):
 //   0  ok
 //   1  internal          unexpected exception inside the script
 //   2  usage             unknown subcommand or missing/duplicate/invalid flags
-//   3  state             draft or stored unit violates the contract or an invariant
-//   4  write_failed      the folder or a file could not be written or moved
-//   5  not_found         the work-unit folder, a required file, or the graph file is missing
+//   3  state             draft or stored unit violates the contract or an invariant; also a
+//                        land-tests/expect-red ticket the unit does not hold, or a stage
+//                        directory holding symlinks or special files
+//   4  write_failed      the folder or a file could not be written or moved; also a land-tests
+//                        destination that is a symlink or escapes the worktree
+//   5  not_found         the work-unit folder, a required file, the graph file, the worktree, or
+//                        a ticket's declared test files are missing
 //   6  already_exists    create or archive target already exists
 //   7  node_version      Node.js older than 20
-//   8  graph             the graph definition cannot back a work unit
+//   8  graph             the graph definition or a type catalog cannot back a work unit (also an
+//                        expect-red ticket record with zero or several command-typed fields)
 //   9  id_collision      the id exists in the work-units location, the archive, or as a remote wu/<id> branch
 //   10 remote_unreachable the remote could not be queried for wu/<id> branches
+//   11 already_green     expect-red: the ticket's command exited 0 (the red-check run line maps
+//                        this status to the declared ticket-invalid outcome)
+//   12 not_runnable      expect-red: the command could not run (exit 126/127, spawn error, signal)
+//
+// Violation rules (state failures; every violation is {rule, message}):
+//   Identity/log   state-invalid id-grammar identity-changed frozen updated-at-mismatch
+//                  log-malformed log-line-invalid log-ids-not-increasing log-timestamps-decrease
+//                  log-not-prefix no-log-line
+//   Position       node-undeclared task-invalid walked-path-rewritten outcome-invalid
+//                  outcome-terminal-pairing blocked-iff-open
+//   Phase          phase-undeclared phase-immutable phase-unrecorded maintenance-binding
+//   Declared state undeclared-field field-inapplicable field-missing type-mismatch
+//                  value-not-allowed scope-id-invalid command-not-mounted write-unauthorized
+//   Pointers       pointer-invalid pointer-dangling pointer-escape evidence-invalid
+//                  evidence-dangling
+//   Records        scope-invalid consult-count consult-cap total-cap-superseded
+//                  append-only-record archive-not-ready
+//   (a `graph` failure carries graph.mjs error codes - for example DEF_FIELD_MISSING or
+//   TYPE_DANGLING - as its violation rules)
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { CORE_STATE_FIELDS, PLUGIN_CATALOG, PROJECT_CATALOG, loadRegistry, resolveField } from './types.mjs';
+import { validateDefinition } from './graph.mjs';
 
 const MIN_NODE_MAJOR = 20;
-const SCHEMA_VERSION = '1.0.0';
+const SCHEMA_VERSION = '2.0.0';
+const TAIL_CHARS = 2000;
 
 const EXIT = {
   internal: 1,
@@ -73,6 +147,8 @@ const EXIT = {
   graph: 8,
   id_collision: 9,
   remote_unreachable: 10,
+  already_green: 11,
+  not_runnable: 12,
 };
 
 class Fail extends Error {
@@ -129,11 +205,6 @@ const EVENT_SOURCE = {
 const ACTORS = ['worker', 'reviewer', 'advisor'];
 const APPROVAL_DECISIONS = ['approved', 'send-back', 'not-needed'];
 const ESCALATION_DECISIONS = ['retry', 'move-back', 'end'];
-const CORE_FIELDS = [
-  'schema_version', 'id', 'created_at', 'updated_at', 'trigger', 'current_node',
-  'phase', 'walked_path', 'blocked_at', 'fail_counters', 'advisor_consults',
-  'reviews', 'human_decisions', 'outcome', 'outcome_reason',
-];
 
 // ---------------------------------------------------------------------------
 // violation collection
@@ -152,9 +223,7 @@ function failState(violations, what) {
 }
 
 // ---------------------------------------------------------------------------
-// graph definition: load and compile what the gate needs
-
-const PLACEHOLDER_RE = /^(\{\{.*\}\}|<.*>|\[.*\]|\{.*\}|\$\{?\w+\}?)$/;
+// graph definition: load, validate, and compile what the gate needs
 
 function tokenize(cmd) {
   const tokens = [];
@@ -164,128 +233,88 @@ function tokenize(cmd) {
   return tokens;
 }
 
-// A mount is a plain command (covers exactly itself), a string family with a
-// placeholder token (base = the tokens before it), or {base, args}.
-function compileMount(entry) {
-  if (typeof entry === 'string') {
-    const tokens = tokenize(entry);
-    const idx = tokens.findIndex(function (t) { return PLACEHOLDER_RE.test(t); });
-    if (idx === -1) return { base: tokens, family: false };
-    const base = tokens.slice(0, idx);
-    while (base.length && base[base.length - 1] === '--') base.pop(); // `--` introduces the argument pattern
-    return { base: base, family: true };
-  }
-  if (isPlainObject(entry) && typeof (entry.base || entry.command) === 'string') {
-    return { base: tokenize(entry.base || entry.command), family: true };
-  }
-  return null;
-}
-
-function mountCovers(mount, invocation) {
+// A state-sourced family covers an invocation whose token prefix equals the family tokens.
+function familyCovers(familyTokens, invocation) {
   const tokens = tokenize(invocation);
-  if (mount.base.length === 0 || tokens.length < mount.base.length) return false;
-  for (let i = 0; i < mount.base.length; i++) if (tokens[i] !== mount.base[i]) return false;
-  return mount.family || tokens.length === mount.base.length;
+  if (familyTokens.length === 0 || tokens.length < familyTokens.length) return false;
+  for (let i = 0; i < familyTokens.length; i++) if (tokens[i] !== familyTokens[i]) return false;
+  return true;
 }
 
-function terminalKind(node) {
-  if (node.outcome === 'shipped' || node.outcome === 'ended') return node.outcome;
-  const k = node.terminal || node.kind;
-  if (k === 'success' || k === 'shipped') return 'shipped';
-  if (k === 'abandonment' || k === 'abandon' || k === 'ended') return 'ended';
-  return node.id === 'end' || /^abandon/.test(node.id) ? 'ended' : 'shipped';
+function stateRefs(list) {
+  return (Array.isArray(list) ? list : []).filter(function (e) { return typeof e === 'string' && e.indexOf('state:') === 0; }).map(function (e) { return e.slice(6); });
 }
 
-function compileGraph(raw, label) {
-  const errs = [];
-  const bad = function (m) { errs.push(m); };
-  if (!isPlainObject(raw)) throw new Fail('graph', label + ': top level must be an object');
-  const nodes = Array.isArray(raw.nodes) ? raw.nodes : null;
-  if (!nodes) bad('nodes must be an array');
+// `def` has already passed validateDefinition, so its structure is well-formed.
+function compileGraph(def, registry) {
   const nodesById = {};
-  let entry = null;
+  const pipelines = {};
   const terminals = {};
-  (nodes || []).forEach(function (n, i) {
-    if (!isPlainObject(n) || typeof n.id !== 'string' || !n.id) { bad('nodes[' + i + '] needs a string id'); return; }
-    if (n.id in nodesById) { bad('duplicate node id "' + n.id + '"'); return; }
+  let entry = null;
+  def.nodes.forEach(function (n) {
     nodesById[n.id] = n;
-    if (n.type === 'entry') {
-      if (entry !== null) bad('more than one entry node');
-      entry = n.id;
+    pipelines[n.id] = Array.isArray(n.pipeline) ? n.pipeline.map(function (p) { return p.use; }) : [];
+    if (n.kind === 'entry') entry = n.id;
+    if (n.kind === 'terminal') terminals[n.id] = n.terminal_kind === 'success' ? 'shipped' : 'ended';
+  });
+  const entryEdge = def.edges.find(function (e) { return e.from === entry; });
+  const phaseEntry = resolveField(registry, 'phase').entry;
+  const tasks = def.tasks;
+
+  const reentry = [];
+  def.nodes.forEach(function (n) {
+    if (isPlainObject(n.re_entry)) {
+      reentry.push({ node: n.id, list_field: n.re_entry.list_field, order: n.re_entry.order, progress_field: n.re_entry.progress_field, items_field: n.re_entry.items_field });
     }
-    if (n.type === 'terminal') terminals[n.id] = terminalKind(n);
-  });
-  if (nodes && entry === null) bad('no entry node (type "entry")');
-  if (nodes && Object.keys(terminals).length === 0) bad('no terminal node (type "terminal")');
-
-  const edges = Array.isArray(raw.edges) ? raw.edges : [];
-  edges.forEach(function (e, i) {
-    if (!isPlainObject(e) || typeof e.from !== 'string' || typeof e.to !== 'string') bad('edges[' + i + '] needs string from/to');
   });
 
-  const caps = isPlainObject(raw.caps) ? raw.caps : {};
-  const consultCap = [caps.consultation, caps.consultations, caps.advisor_consultations].find(Number.isInteger);
-  if (!Number.isInteger(consultCap) || consultCap < 0) bad('caps must declare a non-negative integer consultation cap');
-
-  const phaseDecl = isPlainObject(raw.phase) ? raw.phase : isPlainObject(raw.phases) ? raw.phases : null;
-  const phases = {};
-  let firstNode = null;
-  if (!phaseDecl) bad('phase vocabulary missing (key "phase")');
-  else {
-    if (!('maintenance' in phaseDecl)) bad('phase vocabulary must declare "maintenance"');
-    Object.keys(phaseDecl).forEach(function (name) {
-      const p = phaseDecl[name];
-      if (!isPlainObject(p) || !Array.isArray(p.path) || p.path.length === 0) { bad('phase "' + name + '" needs a non-empty path'); return; }
-      p.path.forEach(function (id) { if (!(id in nodesById)) bad('phase "' + name + '" path names undeclared node "' + id + '"'); });
-      if (firstNode === null) firstNode = p.path[0];
-      else if (p.path[0] !== firstNode) bad('phase "' + name + '" does not share the first node "' + firstNode + '"');
-      phases[name] = { path: p.path.slice() };
+  const sources = [];
+  Object.keys(tasks).forEach(function (id) {
+    const eq = tasks[id].equipment;
+    (isPlainObject(eq) && Array.isArray(eq.commands) ? eq.commands : []).forEach(function (c) {
+      if (isPlainObject(c) && typeof c.source === 'string' && c.source.indexOf('state:') === 0) {
+        sources.push({ task: id, path: c.source.slice(6), family: c.family, tokens: tokenize(c.family) });
+      }
     });
-  }
+  });
 
   const fields = [];
-  const decls = isPlainObject(raw.state_fields) ? raw.state_fields : {};
-  Object.keys(decls).forEach(function (name) {
-    if (CORE_FIELDS.indexOf(name) !== -1) return; // the core contract wins
-    const d = decls[name];
-    if (!isPlainObject(d)) { bad('state_fields.' + name + ' must be an object'); return; }
-    const hasNode = typeof d.node === 'string';
-    const hasPhases = Array.isArray(d.phases);
-    if (hasNode === hasPhases) { bad('state_fields.' + name + ' must bind exactly one of "node" or "phases"'); return; }
-    if (hasNode && !(d.node in nodesById)) bad('state_fields.' + name + ' binds undeclared node "' + d.node + '"');
-    if (hasPhases) d.phases.forEach(function (p) { if (phaseDecl && !(p in phases)) bad('state_fields.' + name + ' binds undeclared phase "' + p + '"'); });
-    if (d.executes !== undefined && !(d.executes in nodesById)) bad('state_fields.' + name + '.executes names undeclared node "' + d.executes + '"');
-    if (d.scope_kind !== undefined && (typeof d.scope_kind !== 'string' || !ID_RE.test(d.scope_kind) || d.scope_kind === 'node' || d.scope_kind === 'edge' || d.type !== 'list')) {
-      bad('state_fields.' + name + '.scope_kind must be an id-like name (not node/edge) on a list field');
-    }
-    const field = { name: name, spec: d, node: hasNode ? d.node : null, phases: hasPhases ? d.phases : null, scope_kind: d.scope_kind || null, executes: d.executes || null };
-    if (!('default' in d)) {
-      if (d.nullable) field.def = null;
-      else if (d.type === 'list') field.def = [];
-      else bad('state_fields.' + name + ' has no default');
-    } else field.def = clone(d.default);
-    fields.push(field);
+  const byName = {};
+  Object.keys(tasks).forEach(function (id) {
+    stateRefs(tasks[id].produces).forEach(function (name) {
+      if (CORE_STATE_FIELDS.indexOf(name) !== -1 || name in byName) return;
+      const r = resolveField(registry, name);
+      const f = { name: name, entry: r.entry, def: clone(r.entry.default), producers: [] };
+      byName[name] = f;
+      fields.push(f);
+    });
   });
-  // Declared defaults must satisfy their own declaration (pointers excluded).
   fields.forEach(function (f) {
-    if (f.def === undefined) return;
-    const probe = makeCollector();
-    checkSpec(f.def, f.spec, f.name + '.default', probe, null, true);
-    probe.list.forEach(function (x) { bad(x.message); });
+    def.nodes.forEach(function (n) {
+      if (pipelines[n.id].some(function (t) { return stateRefs(tasks[t].produces).indexOf(f.name) !== -1; })) f.producers.push(n.id);
+    });
   });
 
-  if (errs.length) throw new Fail('graph', label + ': ' + errs.join('; '), { violations: errs.map(function (m) { return { rule: 'graph-definition', message: m }; }) });
-
-  const mounts = {};
-  Object.keys(nodesById).forEach(function (id) {
-    const m = nodesById[id].mounts;
-    const cmds = isPlainObject(m) && Array.isArray(m.commands) ? m.commands : [];
-    mounts[id] = cmds.map(compileMount).filter(Boolean);
-  });
-  return { nodesById: nodesById, entry: entry, terminals: terminals, edges: edges, consultCap: consultCap, phases: phases, firstNode: firstNode, fields: fields, mounts: mounts };
+  return {
+    nodesById: nodesById,
+    entry: entry,
+    terminals: terminals,
+    edges: def.edges,
+    consultCap: def.caps.advisor_consultations,
+    tasks: tasks,
+    pipelines: pipelines,
+    firstNode: entryEdge.to,
+    phases: phaseEntry.values.slice(),
+    phaseDefault: phaseEntry.default,
+    reentry: reentry,
+    sources: sources,
+    fields: fields,
+    fieldsByName: byName,
+  };
 }
 
-function loadGraph(file) {
+function loadGraph(flags) {
+  const file = flags['--graph'];
   if (!file) throw new Fail('usage', '--graph is required');
   let text;
   try {
@@ -299,19 +328,21 @@ function loadGraph(file) {
   } catch (e) {
     throw new Fail('graph', 'graph definition ' + file + ': invalid JSON: ' + e.message);
   }
-  return compileGraph(raw, 'graph definition ' + file);
+  const loaded = loadRegistry({ pluginPath: flags['--plugin-types'] || PLUGIN_CATALOG, projectPath: flags['--types'] || PROJECT_CATALOG });
+  const res = validateDefinition(raw, { registry: loaded.registry, catalogErrors: loaded.errors });
+  if (res.errors.length) {
+    const violations = res.errors.map(function (e) { return { rule: e.code, message: e.message }; });
+    throw new Fail('graph', 'graph definition ' + file + ' rejected: ' + violations.length + ' error(s); first: [' + violations[0].rule + '] ' + violations[0].message, { violations: violations });
+  }
+  return compileGraph(raw, loaded.registry);
 }
 
 // ---------------------------------------------------------------------------
 // applicability: one definition shared by materialization and validation
 
 function isApplicable(G, field, state) {
-  const phase = typeof state.phase === 'string' ? state.phase : null;
-  if (field.phases) return phase !== null && field.phases.indexOf(phase) !== -1;
   const walked = Array.isArray(state.walked_path) ? state.walked_path : [];
-  const reached = walked.indexOf(field.node) !== -1 || state.current_node === field.node;
-  if (!reached) return false;
-  return phase === null || (G.phases[phase] !== undefined && G.phases[phase].path.indexOf(field.node) !== -1);
+  return field.producers.some(function (n) { return walked.indexOf(n) !== -1 || state.current_node === n; });
 }
 
 // ---------------------------------------------------------------------------
@@ -323,14 +354,12 @@ function isIso(v) {
     && !Number.isNaN(Date.parse(v));
 }
 
-// ctx: {G, unitDir, logIds} - pointers/evidence need the folder; when ctx is
-// null (graph default probing) pointer-like checks are skipped.
+// ctx: {G, unitDir, logIds} - pointers/evidence need the folder.
 function checkPointer(p, where, v, ctx) {
   if (typeof p !== 'string' || p === '') { v('pointer-invalid', where + ' must be a non-empty folder-relative path'); return; }
   if (path.isAbsolute(p) || p.startsWith('/') || /^[A-Za-z]:/.test(p) || p.indexOf('\\') !== -1) { v('pointer-invalid', where + ' must be folder-relative: ' + p); return; }
   const segs = p.split('/');
   if (segs.indexOf('..') !== -1 || segs.indexOf('.') !== -1 || segs.indexOf('') !== -1) { v('pointer-invalid', where + ' must be a normalized path inside the folder: ' + p); return; }
-  if (!ctx) return;
   if (!(p === 'handoff.md' || (segs.length >= 2 && segs[0] in ctx.G.nodesById))) {
     v('pointer-invalid', where + ' must name handoff.md or a file under a stage directory (a declared node id): ' + p);
     return;
@@ -355,51 +384,68 @@ function checkEvidence(ref, where, v, ctx) {
   if (EVIDENCE_KINDS.indexOf(ref.kind) === -1) { v('evidence-invalid', where + '.kind must be one of: ' + EVIDENCE_KINDS.join(', ')); return; }
   if (typeof ref.ref !== 'string' || ref.ref === '') { v('evidence-invalid', where + '.ref must be a non-empty string'); return; }
   if (ref.kind === 'path' && !ref.ref.startsWith('repo:')) checkPointer(ref.ref, where + '.ref', v, ctx);
-  if (ref.kind === 'log' && ctx && !ctx.logIds[ref.ref]) v('evidence-dangling', where + '.ref names no log line: ' + ref.ref);
+  if (ref.kind === 'log' && !ctx.logIds[ref.ref]) v('evidence-dangling', where + '.ref names no log line: ' + ref.ref);
 }
 
-// Validates `value` against a field spec. `invocations` (array|null) collects
-// command-marked strings. `noFiles` skips folder-dependent checks.
-function checkSpec(value, spec, where, v, ctx, noFiles, invocations) {
+// Validates `value` against a resolved catalog entry (types.mjs shape): the catalog type
+// decides the check, `values` is a membership list. A `command` is a non-empty string; its
+// execution coverage is checked separately against the consuming tasks' equipment.
+function checkEntry(value, entry, where, v, ctx) {
   if (value === null) {
-    if (!spec.nullable) v('type-mismatch', where + ' must not be null');
+    if (!entry.nullable) v('type-mismatch', where + ' must not be null');
     return;
   }
-  const t = spec.type;
+  const t = entry.type;
   if (t === 'string') {
     if (typeof value !== 'string') { v('type-mismatch', where + ' must be a string'); return; }
-    if (spec.pointer && !noFiles) checkPointer(value, where, v, ctx);
-    if (spec.command && invocations) invocations.push({ where: where, value: value });
   } else if (t === 'integer') {
     if (!Number.isInteger(value)) { v('type-mismatch', where + ' must be an integer'); return; }
   } else if (t === 'number') {
     if (typeof value !== 'number' || !Number.isFinite(value)) { v('type-mismatch', where + ' must be a number'); return; }
   } else if (t === 'boolean') {
     if (typeof value !== 'boolean') { v('type-mismatch', where + ' must be a boolean'); return; }
+  } else if (t === 'command') {
+    if (typeof value !== 'string' || value.trim() === '') { v('type-mismatch', where + ' must be a non-empty command string'); return; }
+  } else if (t === 'pointer') {
+    if (typeof value !== 'string') { v('type-mismatch', where + ' must be a folder-relative pointer string'); return; }
+    checkPointer(value, where, v, ctx);
+  } else if (t === 'evidence-ref') {
+    checkEvidence(value, where, v, ctx);
   } else if (t === 'object') {
     if (!isPlainObject(value)) { v('type-mismatch', where + ' must be an object'); return; }
-    if (spec.evidence && !noFiles) checkEvidence(value, where, v, ctx);
-    if (isPlainObject(spec.fields)) {
-      Object.keys(value).forEach(function (k) { if (!(k in spec.fields)) v('undeclared-field', where + ' has undeclared key "' + k + '"'); });
-      Object.keys(spec.fields).forEach(function (k) {
-        if (!(k in value)) { if (!spec.fields[k].optional) v('type-mismatch', where + '.' + k + ' is required'); return; }
-        checkSpec(value[k], spec.fields[k], where + '.' + k, v, ctx, noFiles, invocations);
+    if (isPlainObject(entry.fields)) {
+      Object.keys(value).forEach(function (k) { if (!(k in entry.fields)) v('undeclared-field', where + ' has undeclared key "' + k + '"'); });
+      Object.keys(entry.fields).forEach(function (k) {
+        if (!(k in value)) { v('type-mismatch', where + '.' + k + ' is required'); return; }
+        checkEntry(value[k], entry.fields[k], where + '.' + k, v, ctx);
       });
     }
   } else if (t === 'list') {
     if (!Array.isArray(value)) { v('type-mismatch', where + ' must be a list'); return; }
-    value.forEach(function (item, i) {
-      if (spec.items) checkSpec(item, spec.items, where + '[' + i + ']', v, ctx, noFiles, invocations);
-      else if (Array.isArray(spec.values) && spec.values.indexOf(item) === -1) v('value-not-allowed', where + '[' + i + '] must be one of: ' + spec.values.join(', '));
-    });
-    return;
+    if (entry.items) value.forEach(function (item, i) { checkEntry(item, entry.items, where + '[' + i + ']', v, ctx); });
   } else {
-    v('type-mismatch', where + ' has unsupported declared type "' + t + '"');
+    v('type-mismatch', where + ' has unsupported catalog type "' + t + '"');
     return;
   }
-  if (Array.isArray(spec.values) && t !== 'object' && spec.values.indexOf(value) === -1) {
-    v('value-not-allowed', where + ' must be one of: ' + spec.values.join(', '));
+  if (Array.isArray(entry.values) && !entry.values.some(function (x) { return deepEqual(x, value); })) {
+    v('value-not-allowed', where + ' must be one of: ' + entry.values.map(function (x) { return typeof x === 'string' ? x : JSON.stringify(x); }).join(', '));
   }
+}
+
+// The values a state-sourced equipment path reaches in the state: lists are walked, so
+// `tickets.verification_command` yields each tickets[i].verification_command.
+function valuesAt(state, segments) {
+  const out = [];
+  (function walk(val, i, where) {
+    if (Array.isArray(val)) {
+      val.forEach(function (x, j) { walk(x, i, where + '[' + j + ']'); });
+    } else if (i === segments.length) {
+      out.push({ where: where, value: val });
+    } else if (isPlainObject(val) && segments[i] in val) {
+      walk(val[segments[i]], i + 1, where + '.' + segments[i]);
+    }
+  })(state[segments[0]], 1, segments[0]);
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -463,11 +509,11 @@ function checkLog(G, lines, v, ctx) {
 // ---------------------------------------------------------------------------
 // scopes
 
-function scopeValid(G, state, scope) {
-  let m = /^node:(.+)$/.exec(scope);
-  if (m) return m[1] in G.nodesById ? null : 'scope "' + scope + '" names an undeclared node';
-  m = /^edge:(.+)$/.exec(scope);
+// Returns null for a valid scope, else the reason. `edges` allows the edge:<from>-<to> form.
+function scopeError(G, state, scope, edges) {
+  let m = /^edge:(.+)$/.exec(scope);
   if (m) {
+    if (!edges) return 'scope "' + scope + '" must be <node>.<task>[:<item-id>] (an edge scope is not allowed here)';
     const body = m[1];
     for (let i = 0; i < body.length; i++) {
       if (body[i] !== '-') continue;
@@ -477,15 +523,21 @@ function scopeValid(G, state, scope) {
     }
     return 'scope "' + scope + '" names no declared edge';
   }
-  m = /^([a-z0-9][a-z0-9-]*):(.+)$/.exec(scope);
-  if (m) {
-    const kinds = G.fields.filter(function (f) { return f.scope_kind === m[1]; });
-    if (kinds.length === 0) return 'scope kind "' + m[1] + '" is not declared by the graph';
-    const live = kinds.filter(function (f) { return Array.isArray(state[f.name]) && state[f.name].some(function (it) { return isPlainObject(it) && it.id === m[2]; }); });
-    if (live.length === 0) return 'scope "' + scope + '" names no existing ' + m[1] + ' (a scope exists only where its concept does)';
-    return null;
-  }
-  return 'scope "' + scope + '" is not node:<id>, edge:<from>-<to>, or a declared <kind>:<id>';
+  m = /^([a-z0-9][a-z0-9-]*)\.([a-z0-9][a-z0-9-]*)(?::(.+))?$/.exec(scope);
+  if (!m) return 'scope "' + scope + '" is not <node>.<task>[:<item-id>]' + (edges ? ' or edge:<from>-<to>' : '');
+  const node = m[1];
+  const task = m[2];
+  const item = m[3];
+  if (!(node in G.nodesById)) return 'scope "' + scope + '" names an undeclared node "' + node + '"';
+  if (G.pipelines[node].indexOf(task) === -1) return 'scope "' + scope + '": task "' + task + '" is not in the pipeline of node "' + node + '"';
+  if (item === undefined) return null;
+  const rules = G.reentry.filter(function (R) { return stateRefs(G.tasks[task].reads).indexOf(R.progress_field) !== -1; });
+  if (rules.length === 0) return 'scope "' + scope + '" names an item, but task "' + task + '" reads no re-entry progress field (a scope exists only where its concept does)';
+  const live = rules.some(function (R) {
+    return Array.isArray(state[R.items_field]) && state[R.items_field].some(function (it) { return isPlainObject(it) && it.id === item; });
+  });
+  if (!live) return 'scope "' + scope + '" names no existing record "' + item + '" (a scope exists only where its concept does)';
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -496,15 +548,13 @@ function checkState(G, state, prev, lines, unitDir, v) {
   const logIds = {};
   lines.forEach(function (l) { if (isPlainObject(l) && typeof l.id === 'string') logIds[l.id] = true; });
   const ctx = { G: G, unitDir: unitDir, logIds: logIds };
-  const declared = {};
-  G.fields.forEach(function (f) { declared[f.name] = f; });
 
   // top-level fields: core, or declared by the graph and applicable
   Object.keys(state).forEach(function (k) {
-    if (CORE_FIELDS.indexOf(k) !== -1) return;
-    if (!(k in declared)) v('undeclared-field', 'top-level field "' + k + '" is neither in the core contract nor declared by the graph');
+    if (CORE_STATE_FIELDS.indexOf(k) !== -1) return;
+    if (!(k in G.fieldsByName)) v('undeclared-field', 'top-level field "' + k + '" is neither in the core contract nor declared by the graph');
   });
-  CORE_FIELDS.forEach(function (k) { if (!(k in state)) v('state-invalid', 'state.json is missing core field "' + k + '"'); });
+  CORE_STATE_FIELDS.forEach(function (k) { if (!(k in state)) v('state-invalid', 'state.json is missing core field "' + k + '"'); });
 
   // identity and timestamps
   if (state.schema_version !== SCHEMA_VERSION) v('state-invalid', 'schema_version must be "' + SCHEMA_VERSION + '"');
@@ -527,8 +577,14 @@ function checkState(G, state, prev, lines, unitDir, v) {
     if ('branch' in trig && trig.branch !== null && (typeof trig.branch !== 'string' || trig.branch === '')) v('state-invalid', 'trigger.branch must be null or a non-empty string');
   }
 
-  // current node, walked path
+  // current node, pipeline position, walked path
   if (typeof state.current_node !== 'string' || !(state.current_node in G.nodesById)) v('node-undeclared', 'current_node must be a node id declared by the graph');
+  if (state.current_task !== null && state.current_task !== undefined) {
+    const pipe = typeof state.current_node === 'string' && state.current_node in G.pipelines ? G.pipelines[state.current_node] : [];
+    if (typeof state.current_task !== 'string' || pipe.indexOf(state.current_task) === -1) {
+      v('task-invalid', 'current_task must be null or a task in the pipeline of current_node "' + state.current_node + '", got ' + JSON.stringify(state.current_task));
+    }
+  }
   if (!Array.isArray(state.walked_path)) v('state-invalid', 'walked_path must be a list of node ids');
   else {
     state.walked_path.forEach(function (id, i) { if (!(id in G.nodesById)) v('node-undeclared', 'walked_path[' + i + '] names an undeclared node: ' + id); });
@@ -540,21 +596,12 @@ function checkState(G, state, prev, lines, unitDir, v) {
 
   // phase
   const phase = state.phase;
-  if (phase !== null && (typeof phase !== 'string' || !(phase in G.phases))) v('phase-undeclared', 'phase must be null or a key of the graph phase vocabulary');
+  if (phase !== null && (typeof phase !== 'string' || G.phases.indexOf(phase) === -1)) v('phase-undeclared', 'phase must be null or a value of the instantiated phase type: ' + G.phases.join(', '));
   else if (phase === null && prev && prev.phase !== null) v('phase-immutable', 'the recorded phase cannot be cleared');
   if (prev && prev.phase !== null && phase !== prev.phase) v('phase-immutable', 'the phase is immutable once recorded (was "' + prev.phase + '", draft has ' + JSON.stringify(phase) + ')');
   if (isPlainObject(trig)) {
     if (phase === 'maintenance' && trig.source !== 'maintenance-due') v('maintenance-binding', 'the maintenance phase may only be recorded on a unit with trigger source maintenance-due');
     if (trig.source === 'maintenance-due' && phase !== null && phase !== 'maintenance') v('maintenance-binding', 'a maintenance-due unit may record no phase other than maintenance');
-  }
-  if (typeof state.current_node === 'string' && state.current_node in G.nodesById) {
-    const cn = state.current_node;
-    const abandon = G.terminals[cn] === 'ended';
-    if (typeof phase === 'string' && phase in G.phases) {
-      if (G.phases[phase].path.indexOf(cn) === -1 && !abandon && cn !== G.entry) v('node-off-path', 'current_node "' + cn + '" is neither on the path of phase "' + phase + '" nor the abandonment terminal');
-    } else if (phase === null && cn !== G.entry && cn !== G.firstNode && !abandon) {
-      v('node-off-path', 'before the phase is recorded, current_node must be the entry node, the shared first node, or the abandonment terminal');
-    }
   }
 
   // outcome pairs with a terminal current node
@@ -572,12 +619,11 @@ function checkState(G, state, prev, lines, unitDir, v) {
   G.fields.forEach(function (f) {
     const present = f.name in state;
     const applicable = isApplicable(G, f, state);
-    if (present && !applicable) v('field-inapplicable', 'field "' + f.name + '" exists outside its applicability (' + (f.node ? 'node "' + f.node + '" not on the unit\'s approved path or not reached' : 'phases ' + f.phases.join('/') + ' not approved') + ')');
+    if (present && !applicable) v('field-inapplicable', 'field "' + f.name + '" exists outside its applicability (no node producing it is in walked_path or is current_node: ' + f.producers.join(', ') + ')');
     else if (!present && applicable) v('field-missing', 'field "' + f.name + '" is applicable and must be present');
     else if (present) {
-      const invocations = [];
-      checkSpec(state[f.name], f.spec, f.name, v, ctx, false, invocations);
-      if (f.spec.type === 'list' && f.scope_kind && Array.isArray(state[f.name])) {
+      checkEntry(state[f.name], f.entry, f.name, v, ctx);
+      if (G.reentry.some(function (R) { return R.items_field === f.name; }) && Array.isArray(state[f.name])) {
         const seen = {};
         state[f.name].forEach(function (it, i) {
           if (!isPlainObject(it) || typeof it.id !== 'string' || it.id === '') { v('scope-id-invalid', f.name + '[' + i + '] needs a non-empty string id'); return; }
@@ -585,20 +631,22 @@ function checkState(G, state, prev, lines, unitDir, v) {
           seen[it.id] = true;
         });
       }
-      if (f.executes) {
-        const probe = invocations.length === 0 && f.spec.type === 'string' && typeof state[f.name] === 'string' ? [{ where: f.name, value: state[f.name] }] : invocations;
-        probe.forEach(function (inv) {
-          if (!G.mounts[f.executes].some(function (m) { return mountCovers(m, inv.value); })) v('command-not-mounted', inv.where + ' invocation "' + inv.value + '" is not covered by the mounts of node "' + f.executes + '"');
-        });
-      }
     }
+  });
+  G.sources.forEach(function (src) {
+    valuesAt(state, src.path.split('.')).forEach(function (hit) {
+      if (typeof hit.value !== 'string' || hit.value.trim() === '') return;
+      if (!familyCovers(src.tokens, hit.value)) {
+        v('command-not-mounted', hit.where + ' invocation "' + hit.value + '" is not covered by the family "' + src.family + '" that task "' + src.task + '" mounts for state:' + src.path);
+      }
+    });
   });
 
   // fail counters
   if (!isPlainObject(state.fail_counters)) v('state-invalid', 'fail_counters must be an object keyed by scope');
   else {
     Object.keys(state.fail_counters).forEach(function (scope) {
-      const bad = scopeValid(G, state, scope);
+      const bad = scopeError(G, state, scope, true);
       if (bad) v('scope-invalid', 'fail_counters: ' + bad);
       const c = state.fail_counters[scope];
       const where = 'fail_counters["' + scope + '"]';
@@ -625,7 +673,7 @@ function checkState(G, state, prev, lines, unitDir, v) {
       if (p.problem_key in byKey) v('state-invalid', where + '.problem_key duplicates "' + p.problem_key + '"');
       byKey[p.problem_key] = p;
       if (typeof p.scope !== 'string' || p.problem_key.slice(0, p.problem_key.lastIndexOf('#')) !== p.scope) v('state-invalid', where + '.scope must equal the problem_key prefix');
-      else { const bad = scopeValid(G, state, p.scope); if (bad) v('scope-invalid', where + ': ' + bad); }
+      else { const bad = scopeError(G, state, p.scope, true); if (bad) v('scope-invalid', where + ': ' + bad); }
       if (typeof p.signature !== 'string' || p.signature === '') v('state-invalid', where + '.signature must be a non-empty failure signature');
       if (PROBLEM_OPENERS.indexOf(p.opened_by) === -1) v('state-invalid', where + '.opened_by must be one of: ' + PROBLEM_OPENERS.join(', '));
       if (typeof p.blocked_node !== 'string' || !(p.blocked_node in G.nodesById)) v('node-undeclared', where + '.blocked_node must be a declared node id');
@@ -683,13 +731,12 @@ function checkState(G, state, prev, lines, unitDir, v) {
     state.reviews.forEach(function (r, i) {
       const where = 'reviews[' + i + ']';
       if (!isPlainObject(r)) { v('state-invalid', where + ' must be an object'); return; }
-      Object.keys(r).forEach(function (k) { if (['id', 'node', 'target', 'verdict', 'dimensions', 'evidence_refs', 'file', 'date'].indexOf(k) === -1) v('state-invalid', where + ' has unknown key "' + k + '"'); });
+      Object.keys(r).forEach(function (k) { if (['id', 'node', 'scope', 'verdict', 'dimensions', 'evidence_refs', 'file', 'date'].indexOf(k) === -1) v('state-invalid', where + ' has unknown key "' + k + '"'); });
       if (typeof r.id !== 'string' || r.id === '') v('state-invalid', where + '.id must be a non-empty string');
       else { if (r.id in seen) v('state-invalid', where + '.id duplicates "' + r.id + '"'); seen[r.id] = true; }
       if (typeof r.node !== 'string' || !(r.node in G.nodesById)) v('node-undeclared', where + '.node must be a declared node id');
-      if (!isPlainObject(r.target) || typeof r.target.type !== 'string' || typeof r.target.id !== 'string') v('state-invalid', where + '.target must be {type, id}');
-      else if (r.target.type === 'stage') { if (!(r.target.id in G.nodesById)) v('node-undeclared', where + '.target.id must be a declared node id'); }
-      else { const bad = scopeValid(G, state, r.target.type + ':' + r.target.id); if (bad) v('scope-invalid', where + '.target: ' + bad); }
+      if (typeof r.scope !== 'string' || r.scope === '') v('state-invalid', where + '.scope must be a <node>.<task>[:<item-id>] scope');
+      else { const bad = scopeError(G, state, r.scope, false); if (bad) v('scope-invalid', where + '.scope: ' + bad); }
       if (r.verdict !== 'pass' && r.verdict !== 'fail') v('state-invalid', where + '.verdict must be "pass" or "fail"');
       if (!Array.isArray(r.dimensions)) v('state-invalid', where + '.dimensions must be a list');
       else {
@@ -723,7 +770,7 @@ function checkState(G, state, prev, lines, unitDir, v) {
       if (typeof h.node !== 'string' || !(h.node in G.nodesById)) v('node-undeclared', where + '.node must be a declared node id');
       if (h.phase !== null && h.phase !== undefined) {
         if (h.kind !== 'approval' || h.decision !== 'approved') v('state-invalid', where + '.phase is only allowed on an approved approval');
-        else if (typeof h.phase !== 'string' || !(h.phase in G.phases)) v('phase-undeclared', where + '.phase must be a declared phase');
+        else if (typeof h.phase !== 'string' || G.phases.indexOf(h.phase) === -1) v('phase-undeclared', where + '.phase must be a declared phase');
         else if (h.node !== G.firstNode) v('state-invalid', where + ': the phase is recorded at the shared first node "' + G.firstNode + '"');
       }
       if (h.target !== null && h.target !== undefined && (typeof h.target !== 'string' || !(h.target in G.nodesById))) v('node-undeclared', where + '.target must be null or a declared node id');
@@ -743,6 +790,82 @@ function checkState(G, state, prev, lines, unitDir, v) {
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// write authorization (design D9): a changed graph-declared field (or `phase`) needs the
+// task in flight to produce it, unless it is re-entry bookkeeping
+
+function containsCommand(entry) {
+  if (!isPlainObject(entry)) return false;
+  if (entry.type === 'command') return true;
+  if (entry.type === 'list') return containsCommand(entry.items);
+  if (entry.type === 'object' && isPlainObject(entry.fields)) return Object.keys(entry.fields).some(function (k) { return containsCommand(entry.fields[k]); });
+  return false;
+}
+
+// The stored value of a field, or its catalog default when the field is new (materialization).
+function baselineOf(G, prev, name) {
+  if (name in prev) return prev[name];
+  return name === 'phase' ? G.phaseDefault : clone(G.fieldsByName[name].def);
+}
+
+// Selection step of a re_entry rule. Returns null when `draft` is a valid selection, else why not.
+function selectionProblem(G, R, prev, draft) {
+  const base = baselineOf(G, prev, R.list_field);
+  const next = draft[R.list_field];
+  const picked = draft[R.progress_field];
+  if (!Array.isArray(base) || !Array.isArray(next)) return R.list_field + ' must be a list';
+  const at = [];
+  base.forEach(function (x, i) { if (deepEqual(x, picked)) at.push(i); });
+  if (at.length === 0) return R.progress_field + ' ' + JSON.stringify(picked) + ' is not an element of the stored ' + R.list_field;
+  if (R.order === 'declared' && at[0] !== 0) return 'under declared order ' + R.progress_field + ' must take the first element of ' + R.list_field + ' (' + JSON.stringify(base[0]) + ')';
+  const candidates = R.order === 'declared' ? [0] : at;
+  const ok = candidates.some(function (i) { return deepEqual(base.filter(function (_, j) { return j !== i; }), next); });
+  return ok ? null : R.list_field + ' must equal the stored list with exactly the selected element removed';
+}
+
+// Update of existing items_field records. Returns null when no record was added, removed, or
+// reordered and no id or command-typed field changed, else why not.
+function itemsProblem(G, R, prev, draft) {
+  const base = baselineOf(G, prev, R.items_field);
+  const next = draft[R.items_field];
+  if (!Array.isArray(base) || !Array.isArray(next)) return R.items_field + ' must be a list';
+  if (base.length !== next.length) return 'a record was added or removed (' + base.length + ' stored, ' + next.length + ' in the draft)';
+  const recFields = G.fieldsByName[R.items_field].entry.items.fields;
+  const commandKeys = Object.keys(recFields).filter(function (k) { return containsCommand(recFields[k]); });
+  for (let i = 0; i < base.length; i++) {
+    const a = base[i];
+    const b = next[i];
+    if (!isPlainObject(a) || !isPlainObject(b)) return R.items_field + '[' + i + '] must be an object';
+    if (a.id !== b.id) return R.items_field + '[' + i + '].id changed or the records were reordered (' + JSON.stringify(a.id) + ' became ' + JSON.stringify(b.id) + ')';
+    for (let j = 0; j < commandKeys.length; j++) {
+      if (!deepEqual(a[commandKeys[j]], b[commandKeys[j]])) return R.items_field + '[' + i + '].' + commandKeys[j] + ' is command-typed and cannot change without a producing task';
+    }
+  }
+  return null;
+}
+
+function checkAuthorization(G, prev, draft, v) {
+  const inflightId = typeof prev.current_task === 'string' ? prev.current_task : null;
+  const inflight = inflightId !== null && isPlainObject(G.tasks[inflightId]) ? G.tasks[inflightId] : null;
+  const produced = inflight ? stateRefs(inflight.produces) : [];
+  ['phase'].concat(G.fields.map(function (f) { return f.name; })).forEach(function (name) {
+    if (!(name in draft) || deepEqual(draft[name], baselineOf(G, prev, name))) return;
+    if (produced.indexOf(name) !== -1) return;
+    const reasons = [];
+    let bookkeeping = false;
+    G.reentry.forEach(function (R) {
+      let why = null;
+      if (name === R.list_field || name === R.progress_field) why = selectionProblem(G, R, prev, draft);
+      else if (name === R.items_field) why = itemsProblem(G, R, prev, draft);
+      else return;
+      if (why === null) bookkeeping = true;
+      else reasons.push('not re-entry bookkeeping of node "' + R.node + '": ' + why);
+    });
+    if (bookkeeping) return;
+    v('write-unauthorized', 'field "' + name + '" changed ' + (inflightId === null ? 'with no task in flight' : 'with task "' + inflightId + '" in flight, which does not produce state:' + name) + (reasons.length ? ' (' + reasons.join('; ') + ')' : ''));
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -880,7 +1003,7 @@ function checkRemote(id, remoteFlag) {
 
 function cmdCreate(flags) {
   need(flags, ['--graph', '--units', '--id', '--source', '--request']);
-  const G = loadGraph(flags['--graph']);
+  const G = loadGraph(flags);
   const id = flags['--id'];
   if (!ID_RE.test(id)) throw new Fail('usage', '--id must match ^[a-z0-9][a-z0-9-]*$');
   if (TRIGGER_SOURCES.indexOf(flags['--source']) === -1) throw new Fail('usage', '--source must be one of: ' + TRIGGER_SOURCES.join(', '));
@@ -901,6 +1024,7 @@ function cmdCreate(flags) {
     updated_at: t,
     trigger: { source: flags['--source'], request: flags['--request'], branch: flags['--branch'] || null },
     current_node: G.entry,
+    current_task: null,
     phase: null,
     walked_path: [G.entry],
     blocked_at: null,
@@ -946,7 +1070,7 @@ function cmdCreate(flags) {
 
 function cmdValidate(flags) {
   need(flags, ['--graph', '--unit']);
-  const G = loadGraph(flags['--graph']);
+  const G = loadGraph(flags);
   const r = validateStored(G, flags['--unit']);
   return { ok: true, action: 'valid', id: r.unit.state.id, current_node: r.unit.state.current_node, phase: r.unit.state.phase, log_lines: r.lines.length };
 }
@@ -954,7 +1078,7 @@ function cmdValidate(flags) {
 function cmdWrite(flags) {
   need(flags, ['--graph', '--unit', '--state']);
   if (!!flags['--log'] === !!flags['--log-full']) throw new Fail('usage', 'exactly one of --log or --log-full is required');
-  const G = loadGraph(flags['--graph']);
+  const G = loadGraph(flags);
   const unitDir = flags['--unit'];
   const cur = readUnit(unitDir);
   const curLog = parseLog(cur.logBuf);
@@ -1005,6 +1129,7 @@ function cmdWrite(flags) {
     if (!deepEqual(draft.trigger, cur.state.trigger)) v('identity-changed', 'trigger must not change for the life of the work unit');
   }
   checkState(G, draft, cur.state, full.lines, unitDir, v);
+  if (isPlainObject(draft) && isPlainObject(cur.state)) checkAuthorization(G, cur.state, draft, v);
   if (isPlainObject(draft) && draft.outcome === null) {
     const hasArchive = full.lines.some(function (l) { return isPlainObject(l) && l.event_type === 'archive'; });
     if (hasArchive) v('state-invalid', 'an archive log line requires the outcome to be set');
@@ -1017,7 +1142,7 @@ function cmdWrite(flags) {
 
 function cmdArchive(flags) {
   need(flags, ['--graph', '--unit']);
-  const G = loadGraph(flags['--graph']);
+  const G = loadGraph(flags);
   const unitDir = path.resolve(flags['--unit']);
   const r = validateStored(G, unitDir);
   const v = makeCollector();
@@ -1038,14 +1163,140 @@ function cmdArchive(flags) {
   return { ok: true, action: 'archived', id: r.unit.state.id, path: target };
 }
 
+// ---------------------------------------------------------------------------
+// red-check surface: land-tests and expect-red
+
+// The re_entry rule whose items_field holds the ticket, and the record.
+function findTicket(G, unitDir, ticket) {
+  if (!fs.existsSync(unitDir) || !fs.statSync(unitDir).isDirectory()) throw new Fail('not_found', 'work-unit folder not found: ' + unitDir);
+  const state = readJsonFile(path.join(unitDir, 'state.json'), 'state.json');
+  for (let i = 0; i < G.reentry.length; i++) {
+    const R = G.reentry[i];
+    const items = isPlainObject(state) ? state[R.items_field] : null;
+    const record = Array.isArray(items) ? items.find(function (it) { return isPlainObject(it) && it.id === ticket; }) : undefined;
+    if (record) return { rule: R, record: record };
+  }
+  throw new Fail('state', 'no re_entry items field of the unit holds a record with id "' + ticket + '"', { ticket: ticket });
+}
+
+function requireDir(dir, label) {
+  let st = null;
+  try {
+    st = fs.statSync(dir);
+  } catch (_) { /* reported below */ }
+  if (!st || !st.isDirectory()) throw new Fail('not_found', label + ' is not an existing directory: ' + dir);
+  return dir;
+}
+
+function lstatOrNull(p) {
+  try {
+    return fs.lstatSync(p);
+  } catch (_) {
+    return null;
+  }
+}
+
+// Every regular file under `root`, as sorted '/'-joined relative paths. A symlink or any entry
+// that is neither a regular file nor a directory is refused.
+function listFiles(root) {
+  const out = [];
+  (function walk(dir, rel) {
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      const full = path.join(dir, e.name);
+      const r = rel ? rel + '/' + e.name : e.name;
+      const st = fs.lstatSync(full);
+      if (st.isSymbolicLink()) throw new Fail('state', 'declared test tree holds a symlink, which is refused: ' + full);
+      if (st.isDirectory()) walk(full, r);
+      else if (st.isFile()) out.push(r);
+      else throw new Fail('state', 'declared test tree holds an entry that is neither a regular file nor a directory: ' + full);
+    });
+  })(root, '');
+  return out.sort();
+}
+
+// Plans one destination: every existing path component inside the worktree must be a real
+// directory (never a symlink), and the file itself, if present, a regular file.
+function checkDestination(wtReal, rel) {
+  const segs = rel.split('/');
+  let cur = wtReal;
+  for (let i = 0; i < segs.length; i++) {
+    cur = path.join(cur, segs[i]);
+    const st = lstatOrNull(cur);
+    if (!st) return;
+    const last = i === segs.length - 1;
+    if (st.isSymbolicLink()) throw new Fail('write_failed', 'destination ' + cur + ' is a symlink, which is refused (it could lead outside the worktree)');
+    if (!last && !st.isDirectory()) throw new Fail('write_failed', 'destination ' + cur + ' is not a directory, so ' + rel + ' cannot be landed');
+    if (last && !st.isFile()) throw new Fail('write_failed', 'destination ' + cur + ' exists and is not a regular file');
+  }
+}
+
+function cmdLandTests(flags) {
+  need(flags, ['--graph', '--unit', '--worktree', '--ticket']);
+  const G = loadGraph(flags);
+  const ticket = flags['--ticket'];
+  const found = findTicket(G, flags['--unit'], ticket);
+  if (ticket === '.' || ticket === '..' || /[\\/\0]/.test(ticket)) throw new Fail('state', 'ticket id "' + ticket + '" is not a single safe path segment');
+  const worktree = requireDir(flags['--worktree'], 'worktree');
+  const stage = path.join(flags['--unit'], found.rule.node);
+  const testsDir = path.join(stage, 'tests');
+  const source = path.join(testsDir, ticket);
+  [stage, testsDir, source].forEach(function (p) {
+    const st = lstatOrNull(p);
+    if (st && st.isSymbolicLink()) throw new Fail('state', 'stage path ' + p + ' is a symlink, which is refused');
+  });
+  const sst = lstatOrNull(source);
+  if (!sst || !sst.isDirectory()) throw new Fail('not_found', 'no declared test files for ticket "' + ticket + '": ' + source + ' does not exist');
+  const files = listFiles(source);
+  if (files.length === 0) throw new Fail('not_found', 'no declared test files for ticket "' + ticket + '": ' + source + ' holds no regular file');
+  const wtReal = fs.realpathSync(worktree);
+  files.forEach(function (rel) { checkDestination(wtReal, rel); });
+  try {
+    files.forEach(function (rel) {
+      const dest = path.join(wtReal, rel);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(path.join(source, rel), dest);
+    });
+  } catch (e) {
+    throw new Fail('write_failed', 'cannot land the declared test files in ' + worktree + ': ' + e.message);
+  }
+  return { ok: true, action: 'tests-landed', ticket: ticket, source: source, files: files };
+}
+
+function cmdExpectRed(flags) {
+  need(flags, ['--graph', '--unit', '--worktree', '--ticket']);
+  const G = loadGraph(flags);
+  const ticket = flags['--ticket'];
+  const found = findTicket(G, flags['--unit'], ticket);
+  const recFields = G.fieldsByName[found.rule.items_field].entry.items.fields;
+  const commandKeys = Object.keys(recFields).filter(function (k) { return recFields[k].type === 'command'; });
+  if (commandKeys.length !== 1) {
+    throw new Fail('graph', 'the records of "' + found.rule.items_field + '" must carry exactly one command-typed field for expect-red, found ' + commandKeys.length + (commandKeys.length ? ': ' + commandKeys.join(', ') : ''));
+  }
+  const command = found.record[commandKeys[0]];
+  if (typeof command !== 'string' || command.trim() === '') throw new Fail('state', 'ticket "' + ticket + '" has no runnable ' + commandKeys[0], { ticket: ticket });
+  const worktree = requireDir(flags['--worktree'], 'worktree');
+  const r = spawnSync(command, { shell: true, cwd: worktree, env: process.env, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const tail = ((r.stdout || '') + (r.stderr || '')).slice(-TAIL_CHARS);
+  const body = { ticket: ticket, command: command, exit_status: r.status === null || r.status === undefined ? null : r.status, signal: r.signal || null, output_tail: tail };
+  if (r.error || r.signal || r.status === null || r.status === 126 || r.status === 127) {
+    const why = r.error ? 'spawn error: ' + r.error.message : r.signal ? 'killed by signal ' + r.signal : 'exit status ' + r.status;
+    throw new Fail('not_runnable', 'ticket "' + ticket + '": the verification command could not run (' + why + '); a command that cannot run is a defect, not red', body);
+  }
+  if (r.status === 0) throw new Fail('already_green', 'ticket "' + ticket + '": the verification command exited 0 before any implementation, so the ticket is already green', body);
+  return Object.assign({ ok: true, action: 'red-observed' }, body);
+}
+
+const TYPES_FLAGS = ['--types', '--plugin-types'];
 const COMMANDS = {
-  create: { run: cmdCreate, flags: ['--graph', '--units', '--id', '--source', '--request', '--branch', '--archive', '--remote'] },
-  validate: { run: cmdValidate, flags: ['--graph', '--unit'] },
-  write: { run: cmdWrite, flags: ['--graph', '--unit', '--state', '--log', '--log-full'] },
-  archive: { run: cmdArchive, flags: ['--graph', '--unit', '--to'] },
+  create: { run: cmdCreate, flags: ['--graph', '--units', '--id', '--source', '--request', '--branch', '--archive', '--remote'].concat(TYPES_FLAGS) },
+  validate: { run: cmdValidate, flags: ['--graph', '--unit'].concat(TYPES_FLAGS) },
+  write: { run: cmdWrite, flags: ['--graph', '--unit', '--state', '--log', '--log-full'].concat(TYPES_FLAGS) },
+  archive: { run: cmdArchive, flags: ['--graph', '--unit', '--to'].concat(TYPES_FLAGS) },
+  'land-tests': { run: cmdLandTests, flags: ['--graph', '--unit', '--worktree', '--ticket'].concat(TYPES_FLAGS) },
+  'expect-red': { run: cmdExpectRed, flags: ['--graph', '--unit', '--worktree', '--ticket'].concat(TYPES_FLAGS) },
 };
 
-const USAGE = 'work-unit.mjs create|validate|write|archive --graph <graph.json> ... (see the header comment)';
+const USAGE = 'work-unit.mjs create|validate|write|archive|land-tests|expect-red --graph <graph.json> ... (see the header comment)';
 
 function run(argv) {
   const sub = argv[0];

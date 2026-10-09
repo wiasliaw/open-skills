@@ -1,0 +1,12 @@
+{
+  "id": "review",
+  "kind": "work",
+  "purpose": "Independent review of the whole change; the verdict is the node's routable outcome.",
+  "pipeline": [
+    {
+      "use": "review-change",
+      "on": { "pass": "pass", "fail": "fail" }
+    }
+  ],
+  "outcomes": ["pass", "fail"]
+}

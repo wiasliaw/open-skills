@@ -1,0 +1,24 @@
+{
+  "executor": "validator",
+  "runner": "reviewer",
+  "purpose": "Independent check of the close-out before delivery.",
+  "instructions": "Run every declared command yourself in the unit's worktree. Pass means: the test suite is green in the worktree, delta entries validate, no temporary or debugging residue remains, and the handoff states what was done, what was decided, and what remains. No current-truth document changed and no workflow tool is left mid-flight. Report pass or fail.",
+  "equipment": {
+    "skills": [],
+    "commands": [
+      "{{test_command}}",
+      "node \"$CLAUDE_PLUGIN_ROOT/scripts/memory.mjs\" validate --root \"$WU_WORKTREE\""
+    ],
+    "mcp": []
+  },
+  "reads": ["worktree", "handoff", "memory"],
+  "produces": ["review-report"],
+  "restrictions": [
+    "MUST NOT modify the repository, the worktree, or any deliverable.",
+    "MUST write exactly one report file, review-<n>.md, into the dispatched stage directory as its only write."
+  ],
+  "exit": {
+    "outcomes": ["pass", "fail"],
+    "artifact": "review-<n>.md"
+  }
+}

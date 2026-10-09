@@ -1,0 +1,23 @@
+{
+  "executor": "llm",
+  "purpose": "Decompose the approved contract into tickets, each defined by an executable test authored before any implementation.",
+  "instructions": "Write the full ticket text, including each test, as artifacts in the stage directory, and hand the routing entries (id, status, verification command) to the orchestrator. Place each ticket's test files under tests/<ticket-id>/ in the stage directory, laid out at their repo-relative target paths (tests/T-1/test/foo.test.js lands at test/foo.test.js); the orchestrator lands that tree and runs the red check before any build dispatch. Report spec-contradiction when the contract contradicts itself or cannot be satisfied, recording the contradiction in the stage directory. When a build report of ticket-invalid returns here, revise or drop the named ticket.",
+  "equipment": {
+    "skills": ["open-skills:ticket"],
+    "commands": [],
+    "mcp": []
+  },
+  "reads": ["state:contract_ref", "contract", "codebase"],
+  "produces": ["tickets", "state:tickets", "state:pending_tickets", "state:current_ticket"],
+  "restrictions": [
+    "MUST NOT modify the repository or the main checkout.",
+    "MUST NOT write .harness/ or any long-term memory.",
+    "MUST NOT write routing state (state.json) or the event log (log.ndjson).",
+    "MUST NOT write outside its stage directory.",
+    "MUST NOT decompose a contract that is not approved."
+  ],
+  "exit": {
+    "outcomes": ["tickets-produced", "spec-contradiction"],
+    "artifact": "tickets.md"
+  }
+}

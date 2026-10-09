@@ -1,0 +1,28 @@
+{
+  "id": "wrap",
+  "kind": "work",
+  "purpose": "Close-out and delivery: ledger deltas, handoff, commit, push, open the delivery channel, remove the worktree.",
+  "pipeline": [
+    {
+      "use": "provision-worktree",
+      "on": { "ok": "next", "failed": "escalate" }
+    },
+    {
+      "use": "close-out",
+      "on": { "done": "next" }
+    },
+    {
+      "use": "verify-wrap",
+      "on": { "pass": "next", "fail": "goto:close-out" }
+    },
+    {
+      "use": "commit-work",
+      "on": { "ok": "next", "failed": "escalate" }
+    },
+    {
+      "use": "deliver",
+      "on": { "ok": "handed-off", "failed": "escalate" }
+    }
+  ],
+  "outcomes": ["handed-off"]
+}

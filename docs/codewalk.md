@@ -23,7 +23,7 @@ me". Two modes are inferred from what you say:
 
 codewalk is interactive only: it needs you to reply in the
 conversation, and it will not run under an orchestrator or be mounted
-on a graph node. For a single-fact question just ask it directly; to
+on a graph task. For a single-fact question just ask it directly; to
 find defects use request-code-review.
 
 ## What happens

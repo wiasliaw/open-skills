@@ -1,0 +1,28 @@
+{
+  "id": "build",
+  "kind": "work",
+  "purpose": "Implement the current ticket inside the unit's worktree, red before green.",
+  "pipeline": [
+    {
+      "use": "provision-worktree",
+      "on": { "ok": "next", "failed": "escalate" }
+    },
+    {
+      "use": "red-check",
+      "on": { "ok": "next", "failed": "escalate", "ticket-invalid": "ticket-invalid" }
+    },
+    {
+      "use": "implement-ticket",
+      "on": { "done": "next", "ticket-invalid": "ticket-invalid" }
+    },
+    {
+      "use": "verify-build",
+      "on": { "pass": "next", "fail": "goto:implement-ticket" }
+    },
+    {
+      "use": "commit-work",
+      "on": { "ok": "ticket-done", "failed": "escalate" }
+    }
+  ],
+  "outcomes": ["ticket-done", "ticket-invalid"]
+}

@@ -24,7 +24,7 @@ Most direct source first; always prefer original comments over a summary.
     is missing and ask the user to paste the review text. Never reconstruct it
     from memory or a summary.
 - Pasted text or a file path: use as given.
-- Nothing provided (and not mounted on a node): ask where the review is.
+- Nothing provided (and not mounted on a task): ask where the review is.
 
 ## Step 2: Restate every item
 
@@ -59,8 +59,8 @@ say so and propose the structural fix.
 
 One item at a time, blocking issues first, then simple fixes, then complex
 changes. After each, run the declared verification (the project's tests or the
-node's verification commands). An adopted item with no corresponding change, or
-a change that fails verification, is a triage error: fix it or re-triage.
+mounted task's declared commands). An adopted item with no corresponding change,
+or a change that fails verification, is a triage error: fix it or re-triage.
 
 Do not implement while a clarification item might change another item's fix.
 
@@ -73,7 +73,7 @@ Do not implement while a clarification item might change another item's fix.
   GitLab: `glab mr note create <n> --reply <discussion-id>` (experimental; else
   POST via `glab api` to `.../discussions/<id>/notes`).
 
-## Graph profile (when mounted on a node)
+## Graph profile (when mounted on a task)
 
 In addition to the steps above:
 

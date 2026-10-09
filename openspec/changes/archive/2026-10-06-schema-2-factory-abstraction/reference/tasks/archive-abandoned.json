@@ -1,0 +1,14 @@
+{
+  "executor": "script",
+  "purpose": "Force-remove any live worktree, confirm the orchestrator wrote the handoff naming unmerged drafts, archive the folder.",
+  "run": [
+    "test ! -d \"$WU_WORKTREE\" || git worktree remove --force \"$WU_WORKTREE\"",
+    "test -f \"$WU_FOLDER/handoff.md\"",
+    "test ! -d \"$WU_FOLDER\" || node \"$CLAUDE_PLUGIN_ROOT/scripts/work-unit.mjs\" archive --graph .harness/graph.json --unit \"$WU_FOLDER\""
+  ],
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": [],
+  "produces": [],
+  "restrictions": [],
+  "exit": { "outcomes": ["ok", "failed"] }
+}

@@ -1,0 +1,13 @@
+{
+  "executor": "human",
+  "purpose": "Mandatory phase approval for every unit; the answer fixes the unit's phase for good.",
+  "instructions": "Approve the proposed phase, send the proposal back with feedback, or judge the work not needed. A fix approval also confirms the existing contract the proposal names.",
+  "equipment": { "skills": [], "commands": [], "mcp": [] },
+  "reads": ["phase-proposal"],
+  "produces": ["state:phase", "state:contract_ref"],
+  "restrictions": [],
+  "exit": {
+    "outcomes": ["approved", "send-back", "not-needed"],
+    "artifact": "decision-<n>.md"
+  }
+}

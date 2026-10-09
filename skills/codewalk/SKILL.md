@@ -14,7 +14,7 @@ it matters, what will trip you up — not in listing files.
 
 - **Interactive only.** The walk needs a reader who replies in this
   conversation. Never run under orchestrator dispatch (for example
-  from graph-run) and never mount it on a graph node. If no reader can
+  from graph-run) and never mount it on a graph task. If no reader can
   reply, say so and stop — do not even create the worktree.
 - **Reading record, not a deliverable.** The landed file records this
   walkthrough. It is not a project deliverable and never a spec.

@@ -11,12 +11,12 @@ Isolate a line of work in its own git worktree, with the risky git mechanics han
 ## When to use it
 
 - You want a task to run in isolation from your main checkout.
-- A graph build node needs to write repository files.
+- A graph task (such as a build or close-out task) needs to write repository files.
 - You want a read-only worktree pinned at a commit (`ensure --detach <sha>`).
 
 ## How it is invoked
 
-Ask Claude to work in a worktree for a unit, or let a graph run mount it on a build node. The skill runs:
+Ask Claude to work in a worktree for a unit, or let a graph run mount it on a task that writes repository files. The skill runs:
 
 ```
 node "${CLAUDE_PLUGIN_ROOT}/scripts/worktree.mjs" ensure --branch wu/<id>
@@ -29,7 +29,7 @@ Setup commands and file copies come from the `worktree_setup` section of `.harne
 
 ## Graph profile
 
-When mounted on a node that writes to the repository:
+When mounted on a task that writes to the repository:
 
 - The orchestrator runs `ensure` and `setup` before dispatching the worker, and again whenever the recorded worktree is gone. It passes the path in the dispatch.
 - The worker runs no VCS commands and writes only inside that path (plus its stage directory). It records the branch and path in `worktree.md`.
