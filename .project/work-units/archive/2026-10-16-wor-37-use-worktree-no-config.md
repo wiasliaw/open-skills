@@ -33,7 +33,7 @@ Run from the repo root of the feature worktree, in order; all must succeed:
 4. `! grep -n -i -E 'config\.json|worktree_setup|default_branch|schema_version|\bsetup\b' skills/use-worktree/SKILL.md docs/use-worktree.md`
 5. `! grep -n -i -E 'graph|orchestrator|stage director|close-out|fix unit|trigger|abandon|post-review|worker|dispatch' skills/use-worktree/SKILL.md docs/use-worktree.md`
 6. `S="$PWD/scripts/worktree.mjs"; T=$(mktemp -d) && git -C "$T" init -q -b main && git -C "$T" -c user.email=t@e -c user.name=t commit -q --allow-empty -m init && mkdir -p "$T/.harness" && printf '{bad' > "$T/.harness/config.json" && (cd "$T" && node "$S" ensure --branch wu/demo-1) | grep -q '"ok":true' && test -d "$T/.project/worktrees/demo-1" && [ "$(git -C "$T" rev-parse wu/demo-1)" = "$(git -C "$T" rev-parse HEAD)" ] && (cd "$T" && node "$S" setup --worktree x) | grep -q '"error":"usage"' && rm -rf "$T"` — config ignored, fixed location, `HEAD` base, `setup` gone.
-7. `grep -q '^name: use-worktree$' skills/use-worktree/SKILL.md && grep -q 'git worktree remove' skills/use-worktree/SKILL.md && grep -q 'never symlink a mutable file or directory' skills/use-worktree/SKILL.md && grep -q '.project/worktrees' skills/use-worktree/SKILL.md && grep -q '.project/worktrees' docs/use-worktree.md`
+7. `grep -q '^name: use-worktree$' skills/use-worktree/SKILL.md && grep -q 'git worktree remove' skills/use-worktree/SKILL.md && grep -qi 'never symlink a mutable file or directory' skills/use-worktree/SKILL.md && grep -q '.project/worktrees' skills/use-worktree/SKILL.md && grep -q '.project/worktrees' docs/use-worktree.md`
 8. `grep -q 'open-skills:use-worktree' README.md && ! grep 'docs/use-worktree.md' README.md | grep -q -i 'setup'`
 9. `git status --porcelain --untracked-files=all -- . ':!.project' | awk '{print $2}' | sort` lists only paths among: `README.md`, `docs/use-worktree.md`, `scripts/worktree.mjs`, `scripts/worktree.test.mjs`, `skills/use-worktree/SKILL.md`.
 
@@ -47,10 +47,14 @@ Run from the repo root of the feature worktree, in order; all must succeed:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | use-worktree needs no configuration: the script reads no config file and has no `setup` subcommand, worktrees branch from `HEAD` at `.project/worktrees/<id>`, and the skill page, doc, and README say so | Verification Standards 1–9 | active |
+| 1 | use-worktree needs no configuration: the script reads no config file and has no `setup` subcommand, worktrees branch from `HEAD` at `.project/worktrees/<id>`, and the skill page, doc, and README say so | Verification Standards 1–9 | passed (F-007) |
 
 ## Review Log
+
+- 2026-10-16 — feature 1, round 1: pass — Standards 1–9 all pass (23/23 tests, temp-repo check: invalid config ignored, `.project/worktrees/demo-1` at `HEAD`, `setup` → `usage`; five scoped paths); script diff removes only config/setup code, no dead code, exit codes keep their numbers, policy preserved.
 
 ## Notes
 
 - 2026-10-16 — Opened after the user rejected the previous unit's config direction (decision B was read as "keep the config mechanism"; the intent was a config-free plugin). The previous unit (archived `2026-10-16-wor-37-use-worktree`) stays as history; this unit's merge moment supersedes F-006 and D-004.
+- 2026-10-16 — Implementor round 1 reported `ready-for-review`. Before review: Verification Standard 7 was case-sensitive and forced the unnatural line "Policy: never symlink…" (attribution: verification) — made case-insensitive. Relayed back: restore natural phrasing, and delete the doc's `## Configuration` heading that was kept as "None." (Scope item 4 says delete the section).
+- 2026-10-16 — Merge moment: F-007 (supersedes F-006, archived), D-005 (supersedes D-004, archived), ARCHITECTURE.md key boundary for `scripts/worktree.mjs` updated. Work unit closed and archived.
