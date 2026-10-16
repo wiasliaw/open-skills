@@ -16,7 +16,11 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 │   ├── codewalk.md
 │   ├── harness.md                # one page covering init, harness-flow, and handoff
 │   ├── receive-code-review.md
-│   └── request-code-review.md
+│   ├── request-code-review.md
+│   └── use-worktree.md
+├── scripts/                      # zero-dependency Node.js scripts shipped by the plugin
+│   ├── worktree.mjs
+│   └── worktree.test.mjs
 ├── skills/
 │   ├── codewalk/
 │   │   ├── SKILL.md
@@ -35,9 +39,11 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 │   │   └── templates/            # CLAUDE.md, .harness/ files, and D-/F- entry templates
 │   ├── receive-code-review/
 │   │   └── SKILL.md
-│   └── request-code-review/
-│       ├── SKILL.md
-│       └── reviewer-prompt.md
+│   ├── request-code-review/
+│   │   ├── SKILL.md
+│   │   └── reviewer-prompt.md
+│   └── use-worktree/
+│       └── SKILL.md
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -45,7 +51,8 @@ Load the `open-skills:harness-flow` skill before producing or modifying any deli
 
 ## Development Environment
 
-- Toolchain: Claude Code CLI (for `claude plugin validate`); no language runtime or package manager.
+- Toolchain: Claude Code CLI (for `claude plugin validate`); no package manager.
+- Node.js >= 20 for `scripts/` and its `node:test` suite.
 - External services and environment variables: none.
 
 ## Version Control
@@ -56,8 +63,8 @@ This project uses GitHub flow — feature branches merged into `main` via pull r
 
 | Phase | How |
 |---|---|
-| edit | Edit `skills/`, `agents/`, `docs/` directly |
-| verify | `claude plugin validate .`; eval: TBD |
+| edit | Edit `skills/`, `agents/`, `docs/`, `scripts/` directly |
+| verify | `claude plugin validate .`; `node --test scripts/*.test.mjs`; eval: TBD |
 
 ## Harness
 
