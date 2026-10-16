@@ -25,7 +25,7 @@ Run from the repo root of the feature worktree, in order; all must succeed:
 
 1. `claude plugin validate .`
 2. `node --test scripts/*.test.mjs` — all tests pass.
-3. `git diff --exit-code ccc74cf -- scripts/worktree.mjs scripts/worktree.test.mjs` — script and test byte-identical to milestone.
+3. `for f in scripts/worktree.mjs scripts/worktree.test.mjs; do git show "ccc74cf:$f" | cmp - "$f" || exit 1; done` — script and test byte-identical to milestone.
 4. `! grep -n -i -E 'graph|orchestrator|stage director|close-out|fix unit|trigger|abandon|post-review|worker|dispatch' skills/use-worktree/SKILL.md docs/use-worktree.md` — no graph-engineering vocabulary.
 5. `grep -q '^name: use-worktree$' skills/use-worktree/SKILL.md && grep -q 'scripts/worktree.mjs' skills/use-worktree/SKILL.md && grep -q 'git worktree remove' skills/use-worktree/SKILL.md`
 6. `grep -q '.harness/config.json' docs/use-worktree.md && grep -q 'worktree_setup' docs/use-worktree.md && grep -q 'default_branch' docs/use-worktree.md`
@@ -47,11 +47,15 @@ Run from the repo root of the feature worktree, in order; all must succeed:
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | use-worktree ships on main as a standalone skill with its byte-identical zero-dependency script, a graph-free skill page and doc, and README/CLAUDE.md wiring | Verification Standards 1–9 | active |
+| 1 | use-worktree ships on main as a standalone skill with its byte-identical zero-dependency script, a graph-free skill page and doc, and README/CLAUDE.md wiring | Verification Standards 1–9 | passed (F-006) |
 
 ## Review Log
+
+- 2026-10-16 — feature 1, round 1: pass — Standards 1–9 all exit 0 (31/31 tests, script byte-identical, six scoped paths); policy preserved, config docs match the script; three non-blocking doc observations recorded in F-006.
 
 ## Notes
 
 - 2026-10-16 — Worktrees provisioned with the milestone `worktree.mjs` itself: milestone at `.project/worktrees/graph-engineering`, feature at `.project/worktrees/wor-37-use-worktree` (branch `feature/wor-37-use-worktree` from `c12e339`). Clock-in: `claude plugin validate .` passed (pre-existing root CLAUDE.md warning); no in-flight work unit, no handoff.
 - 2026-10-16 — Pre-check: milestone `worktree.mjs` + test run standalone outside the milestone tree, 31/31 pass on Node v24.12.0.
+- 2026-10-16 — Implementor round 1 reported `ready-for-review`. Verification Standard 3 was defective (attribution: verification): `git diff <rev> -- <untracked paths>` reports untracked files as deleted. Replaced with a `git show | cmp` byte comparison; intent unchanged.
+- 2026-10-16 — Merge moment: F-006, D-004, ARCHITECTURE.md (module map, layering, key boundary for `scripts/worktree.mjs`). Work unit closed and archived.
