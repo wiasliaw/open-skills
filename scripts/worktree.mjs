@@ -1,23 +1,18 @@
 // worktree.mjs - owns the dangerous git worktree mechanics for the
-// use-worktree skill: create, reuse, reopen, recover, pin, and set up.
+// use-worktree skill: create, reuse, reopen, recover, and pin.
 //
 // Usage (always run through node, with the consumer project as the cwd):
 //   node worktree.mjs ensure --branch <branch> [--id <id>]
 //   node worktree.mjs ensure --detach <full-sha>
-//   node worktree.mjs setup --worktree <path>
 //   node worktree.mjs --help
 //
 // Requirements: Node.js >= 20, git, macOS or Linux. Only Node.js built-in
-// modules are used; external programs are git, cp (setup copies), and the
-// shell that runs project-declared setup commands.
+// modules are used; the only external program is git. No configuration file
+// is read.
 //
-// Configuration: .harness/config.json in the main checkout (optional for
-// ensure; sections used: vcs.default_branch | vcs.remote,
-// locations.worktrees default ".project/worktrees", and worktree_setup for
-// setup). schema_version must have major version 1.
-//
-// Paths: branch worktrees live at <main>/<worktrees-location>/<id>; detach
-// pins at <main>/<worktrees-location>/pin-<short-sha>. <id> is derived from
+// Paths: branch worktrees live at <main>/.project/worktrees/<id>; detach
+// pins at <main>/.project/worktrees/pin-<short-sha>. A new wu/<id> branch
+// starts at the main checkout's HEAD. <id> is derived from
 // a wu/<id> branch; a fix unit that passes an existing non-wu branch must also
 // pass --id (the path is always derived from the unit's own id).
 //
@@ -30,16 +25,14 @@
 // coarse signal):
 //   0   ok
 //   1   internal              unexpected exception inside the script
-//   2   usage | config        usage error, or invalid .harness/config.json
+//   2   usage                 usage error
 //   3   collision             path or branch occupied by something else
 //   4   stale_with_directory  registration unusable but its directory exists
 //   5   probe_failure         detach worktree unusable / cannot be created
 //   6   not_a_git_repository  no repository, bare repository, or no commits
 //   7   node_version          Node.js older than 20
-//   8   setup_failed          a setup command or copy failed
 //   9   git_failed            any other git failure
 //   10  branch_not_found      non-wu branch named by ensure does not exist
-//   11  base_ref_missing      the configured base ref cannot be resolved
 //
 // Subcommands are idempotent. There is deliberately NO remove subcommand and
 // the script never runs global `git worktree prune`; the only removals are
@@ -50,25 +43,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const MIN_NODE_MAJOR = 20;
-const CONFIG_REL = path.join('.harness', 'config.json');
 const DEFAULT_LOCATION = '.project/worktrees';
-const SUPPORTED_SCHEMA_MAJOR = 1;
 const SCRIPT = 'worktree.mjs';
 
 const EXIT = {
   ok: 0,
   internal: 1,
   usage: 2,
-  config: 2,
   collision: 3,
   stale_with_directory: 4,
   probe_failure: 5,
   not_a_git_repository: 6,
   node_version: 7,
-  setup_failed: 8,
   git_failed: 9,
   branch_not_found: 10,
-  base_ref_missing: 11,
 };
 
 class Fail extends Error {
@@ -190,73 +178,6 @@ function ok(fields) {
 }
 
 // ---------------------------------------------------------------------------
-// config
-
-function configError(message) {
-  return new Fail('config', CONFIG_REL + ': ' + message);
-}
-
-// Returns the parsed config object or null when the file does not exist.
-function readConfig(main) {
-  let text;
-  try {
-    text = fs.readFileSync(path.join(main, CONFIG_REL), 'utf8');
-  } catch (e) {
-    if (e.code === 'ENOENT') return null;
-    throw configError('cannot read: ' + e.message);
-  }
-  let cfg;
-  try {
-    cfg = JSON.parse(text);
-  } catch (e) {
-    throw configError('invalid JSON: ' + e.message);
-  }
-  if (cfg === null || typeof cfg !== 'object' || Array.isArray(cfg)) throw configError('top level must be an object');
-  const v = cfg.schema_version;
-  const m = typeof v === 'string' ? /^(\d+)\.(\d+)\.(\d+)$/.exec(v) : null;
-  if (!m) throw configError('schema_version must be a semver string');
-  if (Number(m[1]) !== SUPPORTED_SCHEMA_MAJOR) {
-    throw configError('unsupported schema_version ' + v + ' (this script supports major ' + SUPPORTED_SCHEMA_MAJOR + ')');
-  }
-  return cfg;
-}
-
-// A repo-relative path with no traversal, no absolute form, no .git target.
-function safeRelPath(p, what) {
-  if (typeof p !== 'string' || p === '') throw configError(what + ' must be a non-empty string');
-  if (p.indexOf('\0') !== -1) throw configError(what + ' contains a NUL byte');
-  if (path.isAbsolute(p) || /^[A-Za-z]:/.test(p)) throw configError(what + ' must be relative: ' + p);
-  const parts = p.split(/[\\/]+/).filter(function (s) { return s !== '' && s !== '.'; });
-  if (parts.length === 0) throw configError(what + ' resolves to the project root: ' + p);
-  if (parts.indexOf('..') !== -1) throw configError(what + ' must not contain traversal: ' + p);
-  if (parts[0] === '.git') throw configError(what + ' must not target .git: ' + p);
-  return parts.join('/');
-}
-
-function worktreesLocation(cfg) {
-  const loc = cfg && cfg.locations ? cfg.locations.worktrees : undefined;
-  if (loc === undefined) return DEFAULT_LOCATION;
-  return safeRelPath(loc, 'locations.worktrees');
-}
-
-function validateWorktreeSetup(cfg) {
-  const s = cfg.worktree_setup;
-  if (s === null || typeof s !== 'object' || Array.isArray(s)) {
-    throw configError('worktree_setup section is required (write {"setup": [], "copy": []} when empty)');
-  }
-  if (!Array.isArray(s.setup) || s.setup.some(function (c) { return typeof c !== 'string' || c.trim() === ''; })) {
-    throw configError('worktree_setup.setup must be an array of non-empty command strings');
-  }
-  if (!Array.isArray(s.copy)) throw configError('worktree_setup.copy must be an array');
-  const copy = s.copy.map(function (item, i) {
-    if (item === null || typeof item !== 'object' || Array.isArray(item)) throw configError('worktree_setup.copy[' + i + '] must be an object');
-    if (typeof item.readonly !== 'boolean') throw configError('worktree_setup.copy[' + i + '].readonly must be a boolean');
-    return { path: safeRelPath(item.path, 'worktree_setup.copy[' + i + '].path'), readonly: item.readonly };
-  });
-  return { setup: s.setup, copy: copy };
-}
-
-// ---------------------------------------------------------------------------
 // info/exclude
 
 // Appends "/<location>/" to the repository's info/exclude once. Creates parent
@@ -289,22 +210,11 @@ function branchExistsLocal(main, branch) {
   return runGit(['show-ref', '--verify', '--quiet', 'refs/heads/' + branch], { cwd: main }).ok;
 }
 
-// Resolves the start point for a brand-new branch from the config's vcs section.
-function resolveBase(main, cfg) {
-  const vcs = (cfg && cfg.vcs) || {};
-  const declared = typeof vcs.default_branch === 'string' && vcs.default_branch !== '' ? vcs.default_branch : null;
-  if (declared === null) {
-    const h = runGit(['rev-parse', '--verify', '--quiet', 'HEAD^{commit}'], { cwd: main });
-    if (!h.ok) throw new Fail('not_a_git_repository', 'main checkout has no commits: ' + main);
-    return { sha: h.out, ref: 'HEAD' };
-  }
-  const remote = typeof vcs.remote === 'string' && vcs.remote !== '' ? vcs.remote : 'origin';
-  const candidates = [declared, 'refs/heads/' + declared, 'refs/remotes/' + remote + '/' + declared];
-  for (const c of candidates) {
-    const r = runGit(['rev-parse', '--verify', '--quiet', c + '^{commit}'], { cwd: main });
-    if (r.ok) return { sha: r.out, ref: declared };
-  }
-  throw new Fail('base_ref_missing', 'base ref "' + declared + '" declared in config vcs section cannot be resolved');
+// Start point for a brand-new wu/<id> branch: the main checkout's HEAD.
+function resolveBase(main) {
+  const h = runGit(['rev-parse', '--verify', '--quiet', 'HEAD^{commit}'], { cwd: main });
+  if (!h.ok) throw new Fail('not_a_git_repository', 'main checkout has no commits: ' + main);
+  return h.out;
 }
 
 function ensureBranch(branch, idFlag) {
@@ -330,8 +240,7 @@ function ensureBranch(branch, idFlag) {
 
   const found = resolveMain();
   const main = found.main;
-  const cfg = readConfig(main);
-  const location = worktreesLocation(cfg);
+  const location = DEFAULT_LOCATION;
   const target = path.join(main, location, id);
   const targetCanon = canon(target);
   const ref = 'refs/heads/' + branch;
@@ -340,9 +249,9 @@ function ensureBranch(branch, idFlag) {
   let startPoint = null;
   if (!existsLocal) {
     if (wu) {
-      startPoint = resolveBase(main, cfg).sha;
+      startPoint = resolveBase(main);
     } else {
-      const remote = cfg && cfg.vcs && typeof cfg.vcs.remote === 'string' && cfg.vcs.remote ? cfg.vcs.remote : 'origin';
+      const remote = 'origin';
       const rr = runGit(['rev-parse', '--verify', '--quiet', 'refs/remotes/' + remote + '/' + branch + '^{commit}'], { cwd: main });
       if (!rr.ok) throw new Fail('branch_not_found', 'branch does not exist locally or on ' + remote + ': ' + branch);
       startPoint = rr.out;
@@ -426,8 +335,7 @@ function ensureDetach(sha) {
   if (!runGit(['cat-file', '-e', sha + '^{commit}'], { cwd: main }).ok) {
     throw new Fail('probe_failure', 'commit not found in repository: ' + sha);
   }
-  const cfg = readConfig(main);
-  const location = worktreesLocation(cfg);
+  const location = DEFAULT_LOCATION;
 
   const short = runGit(['rev-parse', '--short', sha], { cwd: main });
   const shortSha = short.ok && short.out ? short.out : sha.slice(0, 7);
@@ -467,122 +375,6 @@ function ensureDetach(sha) {
 }
 
 // ---------------------------------------------------------------------------
-// setup
-
-function copyTree(src, dst, isDir) {
-  const base = isDir ? ['-R'] : [];
-  const from = isDir ? src + path.sep + '.' : src;
-  const to = isDir ? dst + path.sep : dst;
-  const attempts = [];
-  if (process.platform === 'darwin') attempts.push(['-c'].concat(base));
-  else if (process.platform === 'linux') attempts.push(['--reflink=auto'].concat(base));
-  attempts.push(base);
-  let last = '';
-  for (const flags of attempts) {
-    const r = spawnSync('cp', flags.concat([from, to]), { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' });
-    if (r.error) {
-      last = r.error.message;
-      continue;
-    }
-    if (r.status === 0) return null;
-    last = (r.stderr || '').trim() || 'cp exited with ' + r.status;
-  }
-  return last;
-}
-
-function within(root, p) {
-  const rel = path.relative(root, p);
-  return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
-}
-
-function runSetup(worktreeArg) {
-  if (typeof worktreeArg !== 'string' || worktreeArg === '') throw new Fail('usage', 'setup requires --worktree <path>');
-  const found = resolveMain();
-  const main = found.main;
-  const mainCanon = canon(main);
-  const wtPath = canon(path.resolve(process.cwd(), worktreeArg));
-
-  if (wtPath === mainCanon) throw new Fail('usage', 'setup refuses the main checkout: ' + wtPath);
-  const entry = listWorktrees(main).find(function (w) { return canon(w.path) === wtPath; });
-  if (!entry) throw new Fail('usage', wtPath + ' is not a registered worktree of this repository');
-  if (entry.detached || !entry.branch) throw new Fail('usage', 'setup refuses detached-HEAD worktrees (read-only pins never run project code): ' + wtPath);
-  if (!pathExists(wtPath) || unusable(entry)) throw new Fail('usage', wtPath + ' is not a usable worktree directory');
-
-  const cfg = readConfig(main);
-  if (cfg === null) return ok({ action: 'noop', mode: 'setup', path: wtPath, ran: 0, copied: [], symlinked: [] });
-  const decl = validateWorktreeSetup(cfg);
-
-  // Validate and resolve every copy entry before running anything.
-  for (const item of decl.copy) {
-    let real;
-    try {
-      real = fs.realpathSync(path.join(main, item.path));
-    } catch (e) {
-      throw new Fail('setup_failed', 'copy source missing in main checkout: ' + item.path);
-    }
-    if (!within(mainCanon, real)) throw new Fail('setup_failed', 'copy source resolves outside the main checkout: ' + item.path);
-  }
-
-  let ran = 0;
-  for (let i = 0; i < decl.setup.length; i++) {
-    note('setup[' + i + ']: ' + decl.setup[i]);
-    const r = spawnSync('sh', ['-c', decl.setup[i]], {
-      cwd: wtPath,
-      env: Object.assign({}, process.env, { GIT_TERMINAL_PROMPT: '0' }),
-      stdio: ['ignore', 2, 2],
-    });
-    if (r.error || r.status !== 0) {
-      const why = r.error ? r.error.message : r.signal ? 'killed by ' + r.signal : 'exit code ' + r.status;
-      throw new Fail('setup_failed', 'setup[' + i + '] failed (' + why + '): ' + decl.setup[i]);
-    }
-    ran++;
-  }
-
-  const copied = [];
-  const symlinked = [];
-  for (const item of decl.copy) {
-    const src = path.join(main, item.path);
-    const dst = path.join(wtPath, item.path);
-    const st = fs.lstatSync(src);
-    // Guard the destination against escaping the worktree through a symlinked parent.
-    const parentCanon = canon(path.dirname(dst));
-    if (parentCanon !== wtPath && !within(wtPath, parentCanon)) {
-      throw new Fail('setup_failed', 'copy ' + item.path + ': destination escapes the worktree');
-    }
-    try {
-      fs.mkdirSync(path.dirname(dst), { recursive: true });
-    } catch (e) {
-      throw new Fail('setup_failed', 'copy ' + item.path + ': cannot create destination directory: ' + e.message);
-    }
-    if (item.readonly) {
-      let dstStat = null;
-      try { dstStat = fs.lstatSync(dst); } catch (e) { dstStat = null; }
-      if (dstStat) {
-        if (!dstStat.isSymbolicLink()) throw new Fail('setup_failed', 'symlink ' + item.path + ': destination exists and is not a symlink');
-        fs.unlinkSync(dst);
-      }
-      try {
-        fs.symlinkSync(src, dst);
-      } catch (e) {
-        throw new Fail('setup_failed', 'symlink ' + item.path + ' failed: ' + e.message);
-      }
-      symlinked.push(item.path);
-      continue;
-    }
-    // Mutable entry: always a real copy, never a symlink.
-    let dstStat = null;
-    try { dstStat = fs.lstatSync(dst); } catch (e) { dstStat = null; }
-    if (dstStat && dstStat.isSymbolicLink()) fs.unlinkSync(dst);
-    const isDir = st.isDirectory();
-    if (isDir) fs.mkdirSync(dst, { recursive: true });
-    const problem = copyTree(src, dst, isDir);
-    if (problem) throw new Fail('setup_failed', 'copy ' + item.path + ' failed: ' + problem);
-    copied.push(item.path);
-  }
-  return ok({ action: 'configured', mode: 'setup', path: wtPath, ran: ran, copied: copied, symlinked: symlinked });
-}
-
-// ---------------------------------------------------------------------------
 // argument parsing and dispatch
 
 function parseFlags(args, allowed) {
@@ -599,7 +391,7 @@ function parseFlags(args, allowed) {
   return flags;
 }
 
-const USAGE = 'worktree.mjs ensure --branch <branch> [--id <id>] | ensure --detach <sha> | setup --worktree <path>';
+const USAGE = 'worktree.mjs ensure --branch <branch> [--id <id>] | ensure --detach <sha>';
 
 function run(argv) {
   const sub = argv[0];
@@ -621,10 +413,6 @@ function run(argv) {
       }
     }
     return ensureBranch(flags['--branch'], flags['--id']);
-  }
-  if (sub === 'setup') {
-    const flags = parseFlags(argv.slice(1), ['--worktree']);
-    return runSetup(flags['--worktree']);
   }
   throw new Fail('usage', USAGE + (sub ? ' (unknown subcommand: ' + sub + ')' : ''));
 }

@@ -14,7 +14,7 @@ function git(cwd, ...args) {
   return r.stdout.trim();
 }
 
-function makeRepo(config) {
+function makeRepo() {
   const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'wt-test-')));
   git(dir, 'init', '-q', '-b', 'main');
   git(dir, 'config', 'user.email', 't@example.com');
@@ -22,13 +22,7 @@ function makeRepo(config) {
   fs.writeFileSync(path.join(dir, 'a.txt'), 'hello\n');
   git(dir, 'add', '.');
   git(dir, 'commit', '-q', '-m', 'init');
-  if (config) writeConfig(dir, config);
   return dir;
-}
-
-function writeConfig(dir, cfg) {
-  fs.mkdirSync(path.join(dir, '.harness'), { recursive: true });
-  fs.writeFileSync(path.join(dir, '.harness', 'config.json'), typeof cfg === 'string' ? cfg : JSON.stringify(cfg));
 }
 
 function run(cwd, ...args) {
@@ -41,8 +35,6 @@ function runEnv(cwd, env, ...args) {
   assert.equal(lines.length, 1, 'exactly one stdout line, got: ' + r.stdout);
   return { code: r.status, json: JSON.parse(lines[0]) };
 }
-
-const cfg = (extra) => Object.assign({ schema_version: '1.0.0' }, extra);
 
 test('help prints one JSON object and exits 0', () => {
   const r = run(os.tmpdir(), '--help');
@@ -93,23 +85,31 @@ test('ensure --branch creates at deterministic path with default location', () =
   assert.equal(git(repo, 'status', '--porcelain'), '', 'worktrees area excluded from git');
 });
 
-test('ensure uses locations.worktrees and base ref from config', () => {
-  const repo = makeRepo(cfg({ locations: { worktrees: 'wt/area' }, vcs: { default_branch: 'trunk' } }));
+test('ensure ignores .harness/config.json and branches from HEAD', () => {
+  const repo = makeRepo();
   git(repo, 'branch', 'trunk');
   fs.writeFileSync(path.join(repo, 'b.txt'), 'b\n');
   git(repo, 'add', '.');
   git(repo, 'commit', '-q', '-m', 'second');
-  const r = run(repo, 'ensure', '--branch', 'wu/one');
-  assert.equal(r.json.path, path.join(repo, 'wt/area/one'));
-  assert.equal(git(r.json.path, 'rev-parse', 'HEAD'), git(repo, 'rev-parse', 'trunk'));
-  assert.equal(fs.existsSync(path.join(r.json.path, 'b.txt')), false);
+  const configFile = path.join(repo, '.harness', 'config.json');
+  fs.mkdirSync(path.dirname(configFile), { recursive: true });
+  for (const body of ['{bad', JSON.stringify({ schema_version: '1.0.0', locations: { worktrees: 'wt/area' }, vcs: { default_branch: 'trunk' } })]) {
+    fs.writeFileSync(configFile, body);
+    const id = body === '{bad' ? 'one' : 'two';
+    const r = run(repo, 'ensure', '--branch', 'wu/' + id);
+    assert.equal(r.code, 0);
+    assert.equal(r.json.path, path.join(repo, '.project/worktrees', id));
+    assert.equal(git(r.json.path, 'rev-parse', 'HEAD'), git(repo, 'rev-parse', 'HEAD'));
+    assert.equal(fs.existsSync(path.join(r.json.path, 'b.txt')), true);
+  }
 });
 
-test('missing declared base ref fails distinctly', () => {
-  const repo = makeRepo(cfg({ vcs: { default_branch: 'nope' } }));
-  const r = run(repo, 'ensure', '--branch', 'wu/x');
-  assert.equal(r.code, 11);
-  assert.equal(r.json.error, 'base_ref_missing');
+test('setup is an unknown subcommand', () => {
+  const repo = makeRepo();
+  const r = run(repo, 'setup', '--worktree', repo);
+  assert.equal(r.code, 2);
+  assert.equal(r.json.error, 'usage');
+  assert.match(r.json.message, /unknown subcommand: setup/);
 });
 
 test('ensure is idempotent: second call reuses', () => {
@@ -266,102 +266,4 @@ test('no remove subcommand and prune is never run', () => {
   fs.rmSync(other, { recursive: true, force: true });
   run(repo, 'ensure', '--branch', 'wu/a');
   assert.match(git(repo, 'worktree', 'list'), /other-wt/);
-});
-
-function setupRepo(setupCfg) {
-  const repo = makeRepo(cfg({ worktree_setup: setupCfg }));
-  const wt = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  return { repo, wt };
-}
-
-test('setup runs commands, copies mutable, symlinks readonly', () => {
-  const repo = makeRepo();
-  fs.writeFileSync(path.join(repo, '.env'), 'SECRET=1\n');
-  fs.mkdirSync(path.join(repo, 'data'));
-  fs.writeFileSync(path.join(repo, 'data/fx.db'), 'db');
-  writeConfig(repo, cfg({ worktree_setup: {
-    setup: ['touch setup-ran'],
-    copy: [{ path: '.env', readonly: false }, { path: 'data/fx.db', readonly: true }],
-  } }));
-  const wt = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  const r = run(repo, 'setup', '--worktree', wt);
-  assert.equal(r.code, 0);
-  assert.equal(r.json.ran, 1);
-  assert.deepEqual(r.json.copied, ['.env']);
-  assert.deepEqual(r.json.symlinked, ['data/fx.db']);
-  assert.ok(fs.existsSync(path.join(wt, 'setup-ran')));
-  assert.equal(fs.lstatSync(path.join(wt, '.env')).isSymbolicLink(), false);
-  assert.equal(fs.readFileSync(path.join(wt, '.env'), 'utf8'), 'SECRET=1\n');
-  assert.equal(fs.lstatSync(path.join(wt, 'data/fx.db')).isSymbolicLink(), true);
-  // idempotent
-  assert.equal(run(repo, 'setup', '--worktree', wt).code, 0);
-});
-
-test('setup with no config file is a noop', () => {
-  const repo = makeRepo();
-  const wt = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  const r = run(repo, 'setup', '--worktree', wt);
-  assert.equal(r.code, 0);
-  assert.equal(r.json.action, 'noop');
-});
-
-test('setup rejects traversal and absolute copy paths', () => {
-  for (const p of ['../outside', 'a/../../x', '/etc/passwd', '.git/config']) {
-    const { wt } = setupRepo({ setup: [], copy: [{ path: p, readonly: false }] });
-    const r = run(wt, 'setup', '--worktree', wt);
-    assert.equal(r.code, 2, p);
-    assert.equal(r.json.error, 'config', p);
-  }
-});
-
-test('setup rejects unsupported schema version and invalid shapes', () => {
-  const repo = makeRepo({ schema_version: '2.0.0', worktree_setup: { setup: [], copy: [] } });
-  const wt = run(repo, 'ensure', '--branch', 'wu/s');
-  assert.equal(wt.json.error, 'config');
-  writeConfig(repo, cfg({ worktree_setup: { setup: [], copy: [] } }));
-  const p = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  writeConfig(repo, cfg({}));
-  assert.equal(run(repo, 'setup', '--worktree', p).json.error, 'config');
-  writeConfig(repo, cfg({ worktree_setup: { setup: [], copy: [{ path: 'x' }] } }));
-  assert.equal(run(repo, 'setup', '--worktree', p).json.error, 'config');
-  writeConfig(repo, '{not json');
-  assert.equal(run(repo, 'setup', '--worktree', p).json.error, 'config');
-});
-
-test('setup rejects a copy source that symlinks outside the main checkout', () => {
-  const repo = makeRepo();
-  const outside = path.join(os.tmpdir(), 'wt-outside-' + process.pid);
-  fs.writeFileSync(outside, 'x');
-  fs.symlinkSync(outside, path.join(repo, 'link'));
-  writeConfig(repo, cfg({ worktree_setup: { setup: [], copy: [{ path: 'link', readonly: false }] } }));
-  const wt = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  const r = run(repo, 'setup', '--worktree', wt);
-  assert.equal(r.code, 8);
-  assert.equal(r.json.error, 'setup_failed');
-});
-
-test('setup failure classes: failing command and missing source', () => {
-  let { wt } = setupRepo({ setup: ['exit 3'], copy: [] });
-  assert.equal(run(wt, 'setup', '--worktree', wt).code, 8);
-  ({ wt } = setupRepo({ setup: [], copy: [{ path: 'missing.txt', readonly: false }] }));
-  assert.equal(run(wt, 'setup', '--worktree', wt).json.error, 'setup_failed');
-});
-
-test('setup refuses main checkout, detached pins, and unregistered paths', () => {
-  const repo = makeRepo(cfg({ worktree_setup: { setup: [], copy: [] } }));
-  assert.equal(run(repo, 'setup', '--worktree', repo).json.error, 'usage');
-  const pin = run(repo, 'ensure', '--detach', git(repo, 'rev-parse', 'HEAD')).json.path;
-  assert.equal(run(repo, 'setup', '--worktree', pin).json.error, 'usage');
-  assert.equal(run(repo, 'setup', '--worktree', os.tmpdir()).json.error, 'usage');
-});
-
-test('setup after reopen runs again', () => {
-  const repo = makeRepo(cfg({ worktree_setup: { setup: ['touch marker'], copy: [] } }));
-  const p = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  run(repo, 'setup', '--worktree', p);
-  git(repo, 'worktree', 'remove', '--force', p);
-  const p2 = run(repo, 'ensure', '--branch', 'wu/s').json.path;
-  assert.equal(fs.existsSync(path.join(p2, 'marker')), false);
-  run(repo, 'setup', '--worktree', p2);
-  assert.ok(fs.existsSync(path.join(p2, 'marker')));
 });
