@@ -13,3 +13,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | D-001 | 2026-09-27 | Adapt the thermo-nuclear rubric into Lens 2, not import it |
 | D-002 | 2026-09-30 | codewalk resolves git paths dynamically instead of using WOR-31's literal path wording |
 | D-003 | 2026-09-30 | Walkthrough template pins per walk in the header only, dropping WOR-31's per-stop SHA |
+| D-005 | 2026-10-16 | use-worktree is config-free on main — no config file, no setup subcommand, fixed HEAD base and .project/worktrees location |
