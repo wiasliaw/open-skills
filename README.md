@@ -20,6 +20,7 @@ Inside Claude Code:
 | [codewalk](./docs/codewalk.md) | Interactive guided walkthrough of a codebase or one execution path, one verified `file:line` stop at a time, pinned to a commit and landed as a reading record. |
 | [harness](./docs/harness.md) | Project harness: `init` scaffolds a CLAUDE.md plus `.harness/` long-term memory, `harness-flow` runs a reviewer-gated implementor/reviewer loop, `handoff` persists in-flight context across sessions. |
 | [use-worktree](./docs/use-worktree.md) | Isolates a line of work in its own git worktree on branch `wu/<id>`, with a deterministic script handling create, reuse, and recovery. |
+| [pm](./docs/pm.md) | Runs work through a kanban board: you wish and decide, agents pull cards, work them, and hand them back for review under a lease and a one-card-per-project limit. |
 
 Invoke by slash command or by asking in plain words:
 
@@ -31,6 +32,7 @@ Invoke by slash command or by asking in plain words:
 /open-skills:harness-flow
 /open-skills:handoff
 /open-skills:use-worktree
+/open-skills:pm
 ```
 
 ### External tools
@@ -42,6 +44,8 @@ Invoke by slash command or by asking in plain words:
   and reuse worktrees; without it the skill reports blocked.
 - Node.js >= 20 — used by use-worktree to run its bundled script;
   without it the skill reports blocked.
+- Linear MCP server — used by pm to read and write cards and comments
+  on the board; without it the skill cannot reach the cards.
 - `gh` (GitHub) or `glab` (GitLab) — used by receive-code-review to
   fetch PR/MR comments; without them, paste the review text instead.
 
