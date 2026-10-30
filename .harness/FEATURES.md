@@ -16,3 +16,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-004 | codewalk SKILL.md defines the stop record once and carries no duplicate mode/fallback sections | 2026-09-30-wor-31-codewalk-structural |
 | F-005 | codewalk skill carries no question cap, no per-stop pin, one docs degraded-mode statement, and an execution-ordered worktree lifecycle | 2026-09-30-wor-31-codewalk-polish |
 | F-007 | use-worktree needs no configuration — the script reads no config file and has no setup subcommand, worktrees branch from HEAD at .project/worktrees/<id>, and the skill page, doc, and README say so | 2026-10-16-wor-37-use-worktree-no-config |
+| F-008 | pm skill ships a shared human and agent Linear board protocol — SKILL.md at most 100 lines and usable alone, public policy defaults, five references, docs page and README wiring | 2026-10-30-wor-73-pm-skill |

@@ -16,6 +16,7 @@ When: seeded here at init from the project survey and interview; updated at a me
 - `skills/harness-flow/` — orchestrator loop (clock-in, dispatch, reviewer gate, merge moment, clock-out); owns the work-unit state template.
 - `skills/handoff/` — session-memory snapshot; owns the handoff template.
 - `skills/use-worktree/` — worktree policy (naming `wu/<id>`, reuse, fail-closed, user-owned removal); standalone, not wired into harness-flow; delegates all worktree mechanics to `scripts/worktree.mjs`.
+- `skills/pm/` — protocol for a Linear board shared by a human and agents (five actions: Wish, Pull, Take over, Hand back, Tidy); standalone, not wired into harness-flow; `policy.md` holds public defaults, `references/` hold detail, and only `references/linear.md` names concrete tools.
 - `scripts/` — zero-dependency Node.js (>= 20) scripts, each with a `node:test` suite; currently only `worktree.mjs`.
 - `agents/` — `implementor` and `reviewer` subagents dispatched by harness-flow.
 - `docs/` — user-facing documentation, linked from README.
@@ -33,4 +34,5 @@ When: seeded here at init from the project survey and interview; updated at a me
 - Skill/agent names and `/open-skills:<name>` commands — public surface; renaming breaks user invocations and the load directives init writes into consuming projects.
 - The CLAUDE.md shape defined by `skills/init/templates/CLAUDE.md.template` — a contract between init (producer, including update-mode migrations) and harness-flow/handoff (consumers); changing it requires updating both sides together.
 - `docs/` + README vs. `skills/`/`agents/` — the former is user-facing, the latter agent-facing instructions.
+- `skills/pm/policy.md` vs. the Linear project charter — `policy.md` carries public defaults only; workspace and project values live in the charter and override it (D-006). `SKILL.md` must work without the references (C-003).
 - `scripts/worktree.mjs` interface — `ensure` subcommand forms, one JSON object on stdout, stable `error` codes, exit codes in the script header (numbers never reused), and the fixed `HEAD` base and `.project/worktrees/<id>` location with no config file; a contract between the script, `skills/use-worktree/`, and `docs/use-worktree.md` (D-005).
