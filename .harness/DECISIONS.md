@@ -19,3 +19,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | D-009 | 2026-11-10 | use-loop covers change-waits inside one session only — periodic and cross-session work is pointed elsewhere |
 | D-010 | 2026-11-10 | The use-loop journal location is a default with a stated override rule, resolved once per loop |
 | D-011 | 2026-11-11 | The sentinel is read-only by a tool denylist plus prose rules, and the orchestrator alone writes the loop journal |
+| D-012 | 2026-11-11 | use-loop journals are session state kept out of version control by default via .git/info/exclude |
