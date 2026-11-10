@@ -23,3 +23,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-012 | an orchestrator run with the plugin loaded waits on a shell check through a background sentinel and reports `outcome: changed` after the file appears, writing nothing into the repository | 2026-11-10-use-loop-skill |
 | F-013 | use-loop states the default journal location and the override rule in the skill, the template comment, and the docs page, with the sentinel unchanged | 2026-11-10-use-loop-journal-location |
 | F-014 | every tracked file is English, including archived work units | 2026-11-10-use-loop-journal-location |
+| F-015 | sentinel passes CHECK and BASELINE by heredoc, validates its parameters, exits on sleep failure, carries the failure count across re-arms, requires a read-only check, treats evidence as untrusted, checks first in tool ticks, and denies write and control tools in frontmatter | 2026-11-11-use-loop-review-fixes |
