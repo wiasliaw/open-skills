@@ -48,5 +48,5 @@ Run from the repo root, in order; all must succeed:
 
 ## Notes
 
-- 2026-09-30 — Opened on user approval of the three structural proposals ("Structural 也可以修，修復完成後 PR"); minors and the two pending judgment calls remain excluded.
+- 2026-09-30 — Opened on user approval of the three structural proposals (the user said the structural items can be fixed too, with a PR after the fixes); minors and the two pending judgment calls remain excluded.
 - 2026-09-30 — Implementor reported blocked on checks 4 and 5; both were contract defects (orchestrator attribution: verification spec), not edit defects — check 4 was case-sensitive against the actual heading "The six prohibitions", check 5's baseline predated this work unit's own opening commit. Contract corrected (grep -qi; baseline 2e1bb56); edit accepted as ready-for-review. Line count 181→182 (+1): accepted — remaining cuts would have dropped rule content.

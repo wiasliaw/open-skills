@@ -68,15 +68,17 @@ test -z "$(git ls-files -z | xargs -0 perl -CSD -ne 'if (/\p{Han}/) { print "$AR
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
 | 1 | use-loop states the default journal location and the override rule in the skill, the template comment, and the docs page, with the sentinel unchanged | `claude plugin validate . && grep -q '^## Journal location' skills/use-loop/SKILL.md && grep -qi 'default' skills/use-loop/SKILL.md && grep -qi 'before the first write' skills/use-loop/SKILL.md && grep -qi 'default' skills/use-loop/templates/LOOP.md.template && grep -qi 'default' docs/use-loop.md && git diff --quiet HEAD -- agents/sentinel.md` | passed (F-013) |
-| 2 | every tracked file is English, including archived work units | `test -z "$(git ls-files -z \| xargs -0 perl -CSD -ne 'if (/\p{Han}/) { print "$ARGV\n"; close ARGV }')"` | active |
+| 2 | every tracked file is English, including archived work units | `test -z "$(git ls-files -z \| xargs -0 perl -CSD -ne 'if (/\p{Han}/) { print "$ARGV\n"; close ARGV }')"` | passed (F-014) |
 
 ## Review Log
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
 - 2026-11-10 — feature 1, round 1: pass — reviewer ran feature chain, validate, node tests (23/23), contract greps; four Journal location points present; all .project/loops mentions read as default; five steps kept; sentinel unchanged; diff confined to the three scoped files.
+- 2026-11-10 — feature 2, round 1: pass — reviewer ran the all-tracked-files Han scan (exit 0), validate, node tests (23/23); numstat 2/2 and 1/1 on the two archive files, three lines, decisions preserved; no other file differs from HEAD.
 
 ## Notes
 
 - 2026-11-10 — Opened on the user's two decisions after the acceptance probe: (1) the probe's orchestrator wrote the journal under `~/.local/state/claude/<slug>/` because the user's global CLAUDE.md maps plugin state there, so the skill must state the default and the override rule; (2) three Chinese quotes remain in archived work units from 2026-09-30, to be rewritten in English. Branch `research-use-loop-skill-spec`, PR #12 open. Implementor and reviewer run as `general-purpose` subagents following `agents/implementor.md` and `agents/reviewer.md`, since the plugin is not installed in this session. Feature 2 is an orchestrator edit (work-unit state has one writer) verified by the reviewer.
 - 2026-11-10 — Feature 1 passed review. Merge moment wrote F-013, D-010, and index rows. Feature 2 set to active; orchestrator rewrites the three quoted lines next.
+- 2026-11-10 — Feature 2 passed review. Merge moment wrote F-014 and its index row. Both features passed; work unit closed and archived.
