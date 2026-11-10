@@ -94,7 +94,7 @@ test -z "$(find agents skills docs README.md -type f | xargs perl -CSD -ne 'if (
 Acceptance probe (executable, spends tokens, run once before the reviewer verdict):
 
 ```
-REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)" && (sleep 120; touch /tmp/use-loop-eval) & claude -p --plugin-dir "$REPO" --permission-mode bypassPermissions --max-turns 12 --output-format json "Use the open-skills:use-loop skill. Loop id use-loop-eval. Condition: the file /tmp/use-loop-eval exists. Check kind shell. Interval 2s. Deadline 5 minutes. When the handoff arrives, print the handoff's outcome line and stop." | jq -r '.result' | grep -q 'outcome: changed'
+REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)"; (sleep 120; touch /tmp/use-loop-eval) & claude -p --plugin-dir "$REPO" --permission-mode bypassPermissions --max-turns 12 --output-format json "Use the open-skills:use-loop skill. Loop id use-loop-eval. Condition: the file /tmp/use-loop-eval exists. Check kind shell. Interval 2s. Deadline 5 minutes. When the handoff arrives, print the handoff's outcome line and stop." | jq -r '.result' | grep -q 'outcome: changed'
 ```
 
 ### Exclusions
