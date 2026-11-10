@@ -113,8 +113,8 @@ rm -f /tmp/use-loop-eval; (sleep 30; touch /tmp/use-loop-eval) & claude -p --plu
 
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
-| 1 | `agents/sentinel.md` defines the read-only one-shot sentinel with foreground-only waits, the three-failure error rule, and the fixed handoff format | `claude plugin validate . && grep -q '^name: sentinel$' agents/sentinel.md && grep -q 'run_in_background' agents/sentinel.md && grep -qF 'outcome: changed' agents/sentinel.md` | not_started |
-| 2 | `skills/use-loop/SKILL.md` and `templates/LOOP.md.template` carry the five-step orchestrator protocol, journal ownership, one-sentinel-per-loop, deadline requirement, clock-out rule, and out-of-scope pointers | `claude plugin validate . && grep -q 'LOOP.md.template' skills/use-loop/SKILL.md && grep -q 'TaskStop' skills/use-loop/SKILL.md && test -f skills/use-loop/templates/LOOP.md.template` | not_started |
+| 1 | `agents/sentinel.md` defines the read-only one-shot sentinel with foreground-only waits, the three-failure error rule, and the fixed handoff format | `claude plugin validate . && grep -q '^name: sentinel$' agents/sentinel.md && grep -q 'run_in_background' agents/sentinel.md && grep -qF 'outcome: changed' agents/sentinel.md` | passed (F-009) |
+| 2 | `skills/use-loop/SKILL.md` and `templates/LOOP.md.template` carry the five-step orchestrator protocol, journal ownership, one-sentinel-per-loop, deadline requirement, clock-out rule, and out-of-scope pointers | `claude plugin validate . && grep -q 'LOOP.md.template' skills/use-loop/SKILL.md && grep -q 'TaskStop' skills/use-loop/SKILL.md && test -f skills/use-loop/templates/LOOP.md.template` | active |
 | 3 | `docs/use-loop.md` and README wiring exist and all tracked text is English | `test -f docs/use-loop.md && grep -qF '[use-loop](./docs/use-loop.md)' README.md && grep -q '^/open-skills:use-loop$' README.md && test -z "$(perl -CSD -ne 'if (/\p{Han}/) { print "$ARGV\n"; close ARGV }' $(find agents skills docs README.md -type f))"` | not_started |
 | 4 | End-to-end: an orchestrator run with the plugin loaded waits on a `shell` check through a sentinel and prints `outcome: changed` after the file appears | the acceptance probe under Verification Standards | not_started |
 
@@ -122,9 +122,13 @@ rm -f /tmp/use-loop-eval; (sleep 30; touch /tmp/use-loop-eval) & claude -p --plu
 
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
+- 2026-11-10 — feature 1, round 1: pass — reviewer ran feature command, validate, node tests (23/23), contract greps, English check, and executed the shell wait snippet end to end; diff confined to agents/sentinel.md.
+
 ## Notes
 
 - 2026-11-10 — Research-and-planning session. No implementor dispatched. This file is the spec; implementation starts in the next session at Feature 1.
+- 2026-11-10 — Implementation started in the same session on branch `research-use-loop-skill-spec`. The open-skills plugin is not installed in this session, so implementor and reviewer run as `general-purpose` subagents instructed to read and follow `agents/implementor.md` and `agents/reviewer.md` verbatim. Feature 1 set to active and dispatched.
+- 2026-11-10 — Feature 1 passed review. Merge moment wrote F-009, D-007, index rows, and the agents/ line in ARCHITECTURE. Feature 2 set to active.
 
 ### Design summary
 
