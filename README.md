@@ -21,6 +21,7 @@ Inside Claude Code:
 | [harness](./docs/harness.md) | Project harness: `init` scaffolds a CLAUDE.md plus `.harness/` long-term memory, `harness-flow` runs a reviewer-gated implementor/reviewer loop, `handoff` persists in-flight context across sessions. |
 | [use-worktree](./docs/use-worktree.md) | Isolates a line of work in its own git worktree on branch `wu/<id>`, with a deterministic script handling create, reuse, and recovery. |
 | [pm](./docs/pm.md) | Runs work through a kanban board: you wish and decide, agents pull cards, work them, and hand them back for review under a lease and a one-card-per-project limit. |
+| [use-loop](./docs/use-loop.md) | Waits for a state change in a one-shot background sentinel subagent, so the main session spends no context during the wait and journals each round in `.project/loops/`. |
 
 Invoke by slash command or by asking in plain words:
 
@@ -33,6 +34,7 @@ Invoke by slash command or by asking in plain words:
 /open-skills:handoff
 /open-skills:use-worktree
 /open-skills:pm
+/open-skills:use-loop
 ```
 
 ### External tools

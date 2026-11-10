@@ -19,3 +19,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-008 | pm skill ships a shared human and agent Linear board protocol — SKILL.md at most 100 lines and usable alone, public policy defaults, five references, docs page and README wiring | 2026-10-30-wor-73-pm-skill |
 | F-009 | sentinel agent waits for one state change in foreground Bash only, stays read-only, and ends with one fixed-format handoff | 2026-11-10-use-loop-skill |
 | F-010 | use-loop skill carries the five-step orchestrator protocol, journal ownership, one-sentinel-per-loop, deadline requirement, clock-out rule, and out-of-scope pointers, with a LOOP journal template | 2026-11-10-use-loop-skill |
+| F-011 | use-loop ships a docs page and README wiring, and every tracked agent, skill, docs, and README file is English | 2026-11-10-use-loop-skill |
