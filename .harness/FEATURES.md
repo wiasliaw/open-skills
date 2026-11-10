@@ -18,3 +18,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-007 | use-worktree needs no configuration — the script reads no config file and has no setup subcommand, worktrees branch from HEAD at .project/worktrees/<id>, and the skill page, doc, and README say so | 2026-10-16-wor-37-use-worktree-no-config |
 | F-008 | pm skill ships a shared human and agent Linear board protocol — SKILL.md at most 100 lines and usable alone, public policy defaults, five references, docs page and README wiring | 2026-10-30-wor-73-pm-skill |
 | F-009 | sentinel agent waits for one state change in foreground Bash only, stays read-only, and ends with one fixed-format handoff | 2026-11-10-use-loop-skill |
+| F-010 | use-loop skill carries the five-step orchestrator protocol, journal ownership, one-sentinel-per-loop, deadline requirement, clock-out rule, and out-of-scope pointers, with a LOOP journal template | 2026-11-10-use-loop-skill |

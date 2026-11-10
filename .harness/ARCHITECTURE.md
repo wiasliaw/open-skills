@@ -17,6 +17,7 @@ When: seeded here at init from the project survey and interview; updated at a me
 - `skills/handoff/` — session-memory snapshot; owns the handoff template.
 - `skills/use-worktree/` — worktree policy (naming `wu/<id>`, reuse, fail-closed, user-owned removal); standalone, not wired into harness-flow; delegates all worktree mechanics to `scripts/worktree.mjs`.
 - `skills/pm/` — protocol for a Linear board shared by a human and agents (five actions: Wish, Pull, Take over, Hand back, Tidy); standalone, not wired into harness-flow; `policy.md` holds public defaults, `references/` hold detail, and only `references/linear.md` names concrete tools.
+- `skills/use-loop/` — context-isolated waits: an orchestrator protocol that dispatches the one-shot `sentinel` agent and owns the loop journal at `.project/loops/<id>.md`; standalone, not wired into harness-flow; owns the LOOP journal template.
 - `scripts/` — zero-dependency Node.js (>= 20) scripts, each with a `node:test` suite; currently only `worktree.mjs`.
 - `agents/` — `implementor` and `reviewer` subagents dispatched by harness-flow; `sentinel`, a read-only one-shot wait agent dispatched by use-loop.
 - `docs/` — user-facing documentation, linked from README.
@@ -28,6 +29,7 @@ When: seeded here at init from the project survey and interview; updated at a me
 - `skills/harness-flow/` → `skills/init/templates/` — merge moments write D-/F- entries from init's entry templates.
 - `skills/harness-flow/`, `skills/handoff/` → CLAUDE.md shape produced by `skills/init/` — they read the Workflow table and Harness bullets.
 - `skills/use-worktree/` → `scripts/worktree.mjs` — the skill runs the script via `${CLAUDE_PLUGIN_ROOT}/scripts/worktree.mjs` and branches on its JSON `error` code; it never runs raw `git worktree`.
+- `skills/use-loop/` → `agents/sentinel.md` — use-loop dispatches the sentinel in the background; the sentinel writes nothing and the orchestrator alone writes the loop journal.
 
 ## Key Boundaries
 
