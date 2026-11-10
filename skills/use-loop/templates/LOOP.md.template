@@ -3,7 +3,7 @@
 <!--
 Purpose: the journal of one loop — one named wait for a state change. It holds the loop record handed to each sentinel round and one block per handoff.
 Written by: the orchestrator (main session) only. The sentinel is read-only and never writes it.
-Location: `.project/loops/<id>.md`, where `<id>` matches `^[a-z0-9][a-z0-9-]*$`; moved to `.project/loops/archive/` when the loop closes.
+Location: by default `.project/loops/<id>.md`, where `<id>` matches `^[a-z0-9][a-z0-9-]*$`; moved to `.project/loops/archive/` when the loop closes. The location the orchestrator resolved at loop creation applies in place of the default.
 -->
 
 - **Id**: {{id}}

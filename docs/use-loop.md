@@ -7,9 +7,9 @@ Wait for a state change in a one-shot background subagent, so the main session s
 - Hands one named wait, called a loop, to a one-shot `open-skills:sentinel` subagent. The sentinel waits in its own context and ends with one handoff.
 - Keeps the main session cheap. The orchestrator pays one dispatch and one handoff per round, and nothing during the wait.
 - Forms a loop by dispatching a new round after each handoff. One round is one sentinel dispatch. It waits for one change or one deadline.
-- Keeps a journal for each loop at `.project/loops/<id>.md`. Only the orchestrator writes it. The sentinel is read-only and never writes a file, runs version-control commands, or changes an external system.
+- Keeps a journal for each loop. The default path is `.project/loops/<id>.md`. If a CLAUDE.md or you map plugin state or the `.project/` directory to another root, the journal goes to that root instead. The orchestrator tells you the resolved path before the first write. Only the orchestrator writes it. The sentinel is read-only and never writes a file, runs version-control commands, or changes an external system.
 - Requires a deadline on every round. A round without a deadline is not dispatched.
-- Moves a closed loop's journal to `.project/loops/archive/`.
+- Moves a closed loop's journal to `archive/` in the same root, by default `.project/loops/archive/`.
 
 ## When to use it
 

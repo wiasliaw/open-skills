@@ -18,3 +18,4 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | D-007 | 2026-11-10 | The sentinel waits only inside foreground Bash calls, re-armed under a 9-minute timeout |
 | D-008 | 2026-11-10 | The sentinel is read-only and the orchestrator alone writes the loop journal |
 | D-009 | 2026-11-10 | use-loop covers change-waits inside one session only — periodic and cross-session work is pointed elsewhere |
+| D-010 | 2026-11-10 | The use-loop journal location is a default with a stated override rule, resolved once per loop |

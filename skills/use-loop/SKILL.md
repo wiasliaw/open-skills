@@ -1,6 +1,6 @@
 ---
 name: use-loop
-description: Use when the user asks to wait for, watch, poll, or react to a state change — a build, CI run, deploy, pull request, issue, file, log, or MCP-readable state — or runs /open-skills:use-loop. Dispatches a one-shot open-skills:sentinel subagent in the background to wait for the change, so the orchestrator spends no context during the wait, and journals each round in .project/loops/<id>.md. Does not cover periodic jobs with no change condition or waits that outlive the session.
+description: Use when the user asks to wait for, watch, poll, or react to a state change — a build, CI run, deploy, pull request, issue, file, log, or MCP-readable state — or runs /open-skills:use-loop. Dispatches a one-shot open-skills:sentinel subagent in the background to wait for the change, so the orchestrator spends no context during the wait, and journals each round in a loop journal (default .project/loops/<id>.md). Does not cover periodic jobs with no change condition or waits that outlive the session.
 ---
 
 # use-loop
@@ -19,7 +19,7 @@ Context rule: the orchestrator pays one dispatch and one handoff per round, and 
 
 ## Procedure
 
-1. Write `.project/loops/<id>.md` from `${CLAUDE_PLUGIN_ROOT}/skills/use-loop/templates/LOOP.md.template`. `<id>` matches `^[a-z0-9][a-z0-9-]*$`. Run the check once and record its output as the baseline before you write the file. Set Status to `open`.
+1. Resolve the journal location (see Journal location). Write the journal at the resolved location, by default `.project/loops/<id>.md`, from `${CLAUDE_PLUGIN_ROOT}/skills/use-loop/templates/LOOP.md.template`. `<id>` matches `^[a-z0-9][a-z0-9-]*$`. Run the check once and record its output as the baseline before you write the file. Set Status to `open`.
 2. Dispatch `open-skills:sentinel` with `run_in_background: true`. Give it the loop record: id, condition, check kind, check, interval, deadline, baseline. Record the round start in the journal.
 3. Continue other work. Do not poll the sentinel.
 4. On the completion notification, append the handoff to the journal's Rounds section verbatim. Then act on the outcome:
@@ -27,7 +27,14 @@ Context rule: the orchestrator pays one dispatch and one handoff per round, and 
    - `deadline`: inform the user, then start a new round or close the loop, as the user asked.
    - `error`: inform the user with the `evidence` lines. Fix the loop record, or close the loop.
    Record the action under the round.
-5. Close the loop when the user says so or the awaited outcome is reached. Set Status to `closed` and move the journal to `.project/loops/archive/`.
+5. Close the loop when the user says so or the awaited outcome is reached. Set Status to `closed` and move the journal to the `archive/` directory in the same root, by default `.project/loops/archive/`.
+
+## Journal location
+
+- Default: `.project/loops/<id>.md` under the project root. A closed loop moves to `.project/loops/archive/` in the same root.
+- Override: an instruction in effect for the session can map plugin state or the `.project/` directory to another root. The instruction can be a user-level or project-level CLAUDE.md, or the user in conversation. When one applies, resolve the journal location per that instruction at loop creation.
+- Tell the user the resolved path before the first write. Use that one location for the loop's whole life, including the archive. Put nothing about the location in the sentinel dispatch, because the sentinel never reads or writes the journal.
+- Clock-out and clock-in list open loops from the resolved location, not only from the default.
 
 ## Rules
 
@@ -114,7 +121,7 @@ Then call `mcp__plugin_linear_linear__get_issue` with `id: LIN-123` and compare 
 
 A loop is not a feature. It has no sprint contract, no reviewer gate, and no `.harness/` entry. The orchestrator can hold a live sentinel while it runs the harness-flow loop.
 
-Clock-out adds two checks to the harness-flow clock-out: no sentinel is live, and every open loop journal records its last round.
+Clock-out adds two checks to the harness-flow clock-out: no sentinel is live, and every open loop journal, listed from the resolved location, records its last round.
 
 ## Out of scope
 

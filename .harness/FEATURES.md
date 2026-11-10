@@ -21,3 +21,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-010 | use-loop skill carries the five-step orchestrator protocol, journal ownership, one-sentinel-per-loop, deadline requirement, clock-out rule, and out-of-scope pointers, with a LOOP journal template | 2026-11-10-use-loop-skill |
 | F-011 | use-loop ships a docs page and README wiring, and every tracked agent, skill, docs, and README file is English | 2026-11-10-use-loop-skill |
 | F-012 | an orchestrator run with the plugin loaded waits on a shell check through a background sentinel and reports `outcome: changed` after the file appears, writing nothing into the repository | 2026-11-10-use-loop-skill |
+| F-013 | use-loop states the default journal location and the override rule in the skill, the template comment, and the docs page, with the sentinel unchanged | 2026-11-10-use-loop-journal-location |
