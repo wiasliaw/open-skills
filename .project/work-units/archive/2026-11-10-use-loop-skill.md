@@ -94,7 +94,7 @@ test -z "$(find agents skills docs README.md -type f | xargs perl -CSD -ne 'if (
 Acceptance probe (executable, spends tokens, run once before the reviewer verdict):
 
 ```
-REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)"; (sleep 120; touch /tmp/use-loop-eval) & claude -p --plugin-dir "$REPO" --permission-mode bypassPermissions --max-turns 12 --output-format json "Use the open-skills:use-loop skill. Loop id use-loop-eval. Condition: the file /tmp/use-loop-eval exists. Check kind shell. Interval 2s. Deadline 5 minutes. When the handoff arrives, print the handoff's outcome line and stop." | jq -r '.result' | grep -q 'outcome: changed'
+REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)"; (sleep 120; touch /tmp/use-loop-eval) & claude -p --plugin-dir "$REPO" --permission-mode bypassPermissions --max-turns 12 --output-format json "Use the open-skills:use-loop skill. Loop id use-loop-eval. Condition: the file /tmp/use-loop-eval exists. Check kind shell. Interval 2s. Deadline 5 minutes. When the handoff arrives, print the handoff's outcome line and stop." | jq -r 'if type == "array" then .[] | select(.type == "result") | .result else .result end' | grep -q 'outcome: changed'
 ```
 
 ### Exclusions
@@ -116,7 +116,7 @@ REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)"; (sleep 120; touch /tmp
 | 1 | `agents/sentinel.md` defines the read-only one-shot sentinel with foreground-only waits, the three-failure error rule, and the fixed handoff format | `claude plugin validate . && grep -q '^name: sentinel$' agents/sentinel.md && grep -q 'run_in_background' agents/sentinel.md && grep -qF 'outcome: changed' agents/sentinel.md` | passed (F-009) |
 | 2 | `skills/use-loop/SKILL.md` and `templates/LOOP.md.template` carry the five-step orchestrator protocol, journal ownership, one-sentinel-per-loop, deadline requirement, clock-out rule, and out-of-scope pointers | `claude plugin validate . && grep -q 'LOOP.md.template' skills/use-loop/SKILL.md && grep -q 'TaskStop' skills/use-loop/SKILL.md && test -f skills/use-loop/templates/LOOP.md.template` | passed (F-010) |
 | 3 | `docs/use-loop.md` and README wiring exist and all tracked text is English | `test -f docs/use-loop.md && grep -qF '[use-loop](./docs/use-loop.md)' README.md && grep -q '^/open-skills:use-loop$' README.md && test -z "$(perl -CSD -ne 'if (/\p{Han}/) { print "$ARGV\n"; close ARGV }' $(find agents skills docs README.md -type f))"` | passed (F-011) |
-| 4 | End-to-end: an orchestrator run with the plugin loaded waits on a `shell` check through a sentinel and prints `outcome: changed` after the file appears | the acceptance probe under Verification Standards | active |
+| 4 | End-to-end: an orchestrator run with the plugin loaded waits on a `shell` check through a sentinel and prints `outcome: changed` after the file appears | the acceptance probe under Verification Standards | passed (F-012) |
 
 ## Review Log
 
@@ -125,6 +125,8 @@ REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)"; (sleep 120; touch /tmp
 - 2026-11-10 — feature 1, round 1: pass — reviewer ran feature command, validate, node tests (23/23), contract greps, English check, and executed the shell wait snippet end to end; diff confined to agents/sentinel.md.
 - 2026-11-10 — feature 2, round 1: pass — reviewer ran feature chain, validate, node tests (23/23), contract greps, English check; template fields match the sentinel input; diff confined to skills/use-loop/. Non-blocking note: shortened shell snippet omits failure branches and points to the agent file.
 - 2026-11-10 — feature 3, round 1: pass — reviewer ran feature chain, validate, node tests (23/23), README grep; handoff block diff BLOCK_SAME; README diff is exactly two added lines; no contradiction with skill, template, or agent.
+- 2026-11-10 — feature 4, round 1: pass on behavior, fail on the literal probe pipeline — `jq -r .result` cannot index the event array that `--output-format json` returns in 2.1.321; `outcome: changed` present in the second result object; sentinel dispatched in background; journal complete; repository clean. Orchestrator corrected the probe filter.
+- 2026-11-10 — feature 4, round 2: pass — corrected probe exited 0 (PROBE_RC=0), 6 dispatch turns and 2 post-handoff turns, cumulative cost 0.235 USD, repository clean, validate and node tests pass.
 
 ## Notes
 
@@ -133,6 +135,8 @@ REPO="$PWD"; rm -f /tmp/use-loop-eval; cd "$(mktemp -d)"; (sleep 120; touch /tmp
 - 2026-11-10 — Feature 1 passed review. Merge moment wrote F-009, D-007, index rows, and the agents/ line in ARCHITECTURE. Feature 2 set to active.
 - 2026-11-10 — Feature 2 passed review. Merge moment wrote F-010, D-008, D-009, index rows, and the skills/use-loop lines in ARCHITECTURE. Feature 3 set to active.
 - 2026-11-10 — Feature 3 passed review. Merge moment wrote F-011 and its index row. Feature 4 set to active. Clarified the acceptance probe: it runs from a temp directory with `--plugin-dir` pointing at this repository, so the probe journal does not land in the tracked tree, and the trigger file appears after 120 s with a 5-minute deadline to remove the race between baseline capture and file creation. Feature 4 has nothing to build, so the reviewer is dispatched directly; an implementor round follows only on a fail.
+- 2026-11-10 — Feature 4 round 1: the plugin behavior passed (second result object holds `outcome: changed`, sentinel dispatched in background, journal shows the five-step protocol, repository clean) but the probe pipeline as written exited 1 because `--output-format json` returns an array of events in Claude Code 2.1.321 and `jq -r .result` cannot index it. Contract probe corrected to select the `result` objects. Reviewer asked to re-run the corrected probe before the pass is recorded. Observation: the orchestrator-in-probe wrote the journal under `~/.local/state/claude/<slug>/.project/loops/`, following the user's global CLAUDE.md plugin-state rule; the repository stayed clean.
+- 2026-11-10 — Feature 4 passed review on round 2. Merge moment wrote F-012 and its index row. All four features passed; work unit closed and archived.
 
 ### Design summary
 
