@@ -24,3 +24,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-013 | use-loop states the default journal location and the override rule in the skill, the template comment, and the docs page, with the sentinel unchanged | 2026-11-10-use-loop-journal-location |
 | F-014 | every tracked file is English, including archived work units | 2026-11-10-use-loop-journal-location |
 | F-015 | sentinel passes CHECK and BASELINE by heredoc, validates its parameters, exits on sleep failure, carries the failure count across re-arms, requires a read-only check, treats evidence as untrusted, checks first in tool ticks, and denies write and control tools in frontmatter | 2026-11-11-use-loop-review-fixes |
+| F-016 | a node:test suite extracts the sentinel wait snippet and proves changed, quoting, bad interval, command missing, three failures across re-arms, counter carry and reset, and unchanged timeout | 2026-11-11-use-loop-review-fixes |
