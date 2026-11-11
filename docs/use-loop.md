@@ -12,7 +12,7 @@ Wait for a state change in a one-shot background subagent, so the main session s
 - Defines the condition as always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch.
 - Requires a deadline on every round. A round without a deadline is not dispatched.
 - Moves a closed loop's journal to `archive/` in the same root, by default `.project/loops/archive/`.
-- Does not commit journals. They are session state. At the first loop creation in a project, the orchestrator appends the loops directory to `.git/info/exclude` when it lies inside the repository. The line is the path relative to the repository root with a trailing slash, by default `.project/loops/`. The orchestrator appends it only when `grep -qxF '.project/loops/' .git/info/exclude` fails. It never edits a tracked `.gitignore` for this. If the project's declared VCS strategy says to commit journals, that declaration wins.
+- Does not commit journals. They are session state. At the first loop creation in a project, the orchestrator appends the loops directory to the exclude file when it lies inside the repository. It resolves that file with `git rev-parse --git-path info/exclude`, because in a linked worktree `.git` is a file and the literal path `.git/info/exclude` fails. The line is the path relative to the repository root with a trailing slash, by default `.project/loops/`. The orchestrator appends it only when the resolved file does not already contain that line. It never edits a tracked `.gitignore` for this. If the project's declared VCS strategy says to commit journals, that declaration wins.
 
 ## When to use it
 
@@ -33,7 +33,17 @@ The check is the probe that reads the current state. The loop compares it with t
 
 Use when a command reads the state. The sentinel waits inside a foreground `until` loop, so the wait costs zero model turns. The check must exit 0 on a successful read and print the state on stdout.
 
+Only stdout is compared with the baseline. Stderr appears only in failure evidence. A check that starts with an environment assignment is written as `env FOO=1 cmd`.
+
 Examples: a file that appears, or the output of `gh pr checks 123 --json name,state`.
+
+Example: wait until all checks on a pull request finish. The check prints one of three words and the baseline is `pending`. The `bucket` field has the values `pass`, `fail`, `pending`, `skipping`, and `cancel`.
+
+```bash
+gh pr checks 123 --json bucket --jq 'if any(.[]; .bucket == "pending") then "pending" elif all(.[]; .bucket == "pass" or .bucket == "skipping") then "pass" else "fail" end'
+```
+
+Terminal-baseline rule: when the baseline observed before dispatch is already `pass` or `fail`, the orchestrator reports it to you and does not dispatch.
 
 ### `tool`
 

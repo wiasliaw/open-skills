@@ -81,7 +81,7 @@ Snippet behavior checks (the reviewer runs them by extracting the body as the te
 |---|---|---|---|
 | 1 | sentinel bounds each sleep by the time left, compares stdout only with stderr shown only in failure evidence, documents the `env FOO=1 cmd` form, and carries a three-state CI example with a terminal-baseline rule | `claude plugin validate . && node --test scripts/sentinel-snippet.test.mjs && grep -q 'bucket' agents/sentinel.md && grep -q 'env FOO=1' agents/sentinel.md && ! grep -qF 'all(.[]; .state == "SUCCESS")' agents/sentinel.md && ! grep -q 'out=\$(bash -c "\$CHECK" 2>&1)' agents/sentinel.md` | passed (F-020) |
 | 2 | the snippet test proves bounded sleep, stderr-insensitive comparison, and stderr evidence ordering on failure, with the earlier seven cases still green | `node --test scripts/sentinel-snippet.test.mjs` | passed (F-021) |
-| 3 | use-loop resolves the exclude file with `git rev-parse --git-path`, carries the three-state CI example and the terminal-baseline rule, states stdout-only comparison and the `env` form, with docs in sync | `claude plugin validate . && grep -q 'git rev-parse --git-path info/exclude' skills/use-loop/SKILL.md && grep -q 'git rev-parse --git-path info/exclude' docs/use-loop.md && grep -q 'bucket' skills/use-loop/SKILL.md && grep -q 'bucket' docs/use-loop.md && grep -q 'env FOO=1' skills/use-loop/SKILL.md && ! grep -qF 'all(.[]; .state == "SUCCESS")' skills/use-loop/SKILL.md docs/use-loop.md` | active |
+| 3 | use-loop resolves the exclude file with `git rev-parse --git-path`, carries the three-state CI example and the terminal-baseline rule, states stdout-only comparison and the `env` form, with docs in sync | `claude plugin validate . && grep -q 'git rev-parse --git-path info/exclude' skills/use-loop/SKILL.md && grep -q 'git rev-parse --git-path info/exclude' docs/use-loop.md && grep -q 'bucket' skills/use-loop/SKILL.md && grep -q 'bucket' docs/use-loop.md && grep -q 'env FOO=1' skills/use-loop/SKILL.md && ! grep -qF 'all(.[]; .state == "SUCCESS")' skills/use-loop/SKILL.md docs/use-loop.md` | passed (F-022) |
 
 ## Review Log
 
@@ -89,9 +89,11 @@ Snippet behavior checks (the reviewer runs them by extracting the body as the te
 
 - 2026-11-11 — feature 1, round 1: pass — reviewer ran feature chain, all tests (30/30), exclusion diff, Han check; five snippet body runs (bounded sleep 2029 ms, stderr-insensitive, failure evidence order, changed, missing command); hunks confined to capture, failure paths, sleep lines.
 - 2026-11-11 — feature 2, round 1: pass — reviewer ran the suite (10/10), validate, all tests (33/33), TIMEOUT count 4, exclusion diff, Han check; one additive hunk; cases 1 to 7 unchanged; macOS `date +%N` caveat noted and still valid.
+- 2026-11-11 — feature 3, round 1: pass — reviewer ran feature chain, validate, all tests (33/33), absence greps, exclusion diff, Han check; exclude command run twice in a temp linked worktree (exit 0, resolved to the main .git/info/exclude, one line, idempotent); docs mirror; consistent with agents/sentinel.md.
 
 ## Notes
 
 - 2026-11-11 — Opened from the third external review of PR #12. Four items and one suggestion verified and accepted. Item 1 reproduces in this worktree: `.git` is a file and `git rev-parse --git-path info/exclude` resolves to the main checkout. `gh pr checks --help` confirms `bucket` values `pass`, `fail`, `pending`, `skipping`, `cancel`. Branch `research-use-loop-skill-spec`. Implementor and reviewer run as `general-purpose` subagents following `agents/implementor.md` and `agents/reviewer.md`.
 - 2026-11-11 — Feature 1 passed review. Merge moment wrote F-020 and its index row. Feature 2 set to active.
 - 2026-11-11 — Feature 2 passed review. Merge moment wrote F-021 and its index row. Feature 3 set to active.
+- 2026-11-11 — Feature 3 passed review. Merge moment wrote F-022 and its index row. All three features passed; work unit closed and archived. Reply posted on PR #12 by the orchestrator.
