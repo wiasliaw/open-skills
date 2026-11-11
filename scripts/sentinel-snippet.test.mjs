@@ -137,3 +137,44 @@ test('7. unchanged for the whole limit', () => {
   assert.equal(r.status, 0);
   assert.equal(r.out.trim(), 'SENTINEL_TIMEOUT: still unchanged fails=0');
 });
+
+test('8. bounded sleep: the last wait is cut to the seconds left', () => {
+  const r = runSnippet({ check: 'echo same', baseline: 'same', interval: '5', limit: '2' });
+  assert.equal(r.status, 0);
+  assert.ok(
+    r.out.trim().endsWith('SENTINEL_TIMEOUT: still unchanged fails=0'),
+    'unexpected output: ' + r.out,
+  );
+  assert.ok(r.ms < 4000, `took ${r.ms} ms`);
+});
+
+test('9. stderr is ignored when stdout equals the baseline', () => {
+  const r = runSnippet({
+    check: 'echo stable; date +%s%N >&2',
+    baseline: 'stable',
+    interval: '1',
+    limit: '3',
+  });
+  assert.equal(r.status, 0);
+  assert.ok(!r.out.includes('SENTINEL_CHANGED'), 'stderr change was reported: ' + r.out);
+  assert.ok(
+    r.out.trim().endsWith('SENTINEL_TIMEOUT: still unchanged fails=0'),
+    'unexpected output: ' + r.out,
+  );
+});
+
+test('10. failure prints stdout lines, then stderr evidence', () => {
+  const r = runSnippet({
+    check: 'echo out; echo err >&2; exit 1',
+    baseline: 'x',
+    fails: '2',
+    interval: '1',
+    limit: '3',
+  });
+  assert.equal(r.status, 0);
+  assert.deepEqual(lines(r.out), [
+    'SENTINEL_FAILED: three consecutive non-zero exits (last 1)',
+    'out',
+    'err',
+  ]);
+});
