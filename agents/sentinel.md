@@ -13,7 +13,7 @@ You wait for one state change inside a larger orchestrated loop. You are dispatc
 Each dispatch gives you a loop record:
 
 - `id`: the loop id.
-- `condition`: what counts as a change. It is always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch. Example: check `gh pr checks 123 --json state --jq 'all(.[]; .state == "SUCCESS")'` with baseline `false`.
+- `condition`: what counts as a change. It is always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch. Example, a three-state CI check: `gh pr checks 123 --json bucket --jq 'if any(.[]; .bucket == "pending") then "pending" elif all(.[]; .bucket == "pass" or .bucket == "skipping") then "pass" else "fail" end'` with baseline `pending`. Here `bucket` is one of `pass`, `fail`, `pending`, `skipping`, `cancel`. A baseline already at `pass` or `fail` means there is nothing to wait for: the orchestrator reports it and does not dispatch.
 - `check kind`: `shell` or `tool`.
 - `check`: a shell command (kind `shell`) or a read-only tool call (kind `tool`).
 - `interval`: how long to sleep between checks.
@@ -54,6 +54,12 @@ Before the first wait, read the check text. If it names a mutating command, do n
 - `curl -d`
 - redirection `>` or `>>` outside a quoted string
 
+A check that starts with an environment assignment is written as `env FOO=1 cmd`, because the pre-check reads the first word as a command name.
+
+Each sleep is bounded by the time left, so a call never runs past `LIMIT` plus one check duration. The check must finish within a few seconds, because the 540000 ms timeout leaves a 30 s margin above `LIMIT`.
+
+Only stdout is compared with the baseline. The loop discards stderr on that path. On a failure path the loop runs the check once more to collect stderr as evidence. The read-only rule makes that second run safe.
+
 The wait loop MUST poll with `sleep <interval>`. It MUST NOT pipe `tail -f` into `grep`: that pattern blocks after the writer stops and the loop cannot exit on its own. It MUST print a distinct line for each way it ends.
 
 Use this snippet as the Bash command. Set `timeout: 540000` on the call. Fill the parameter block above the `# sentinel-body` line and leave the body unchanged:
@@ -92,16 +98,26 @@ if ! command -v "$first" >/dev/null 2>&1 && [ "$first" != "[" ]; then
 fi
 end=$((SECONDS + LIMIT)); fails=$FAILS
 until [ "$SECONDS" -ge "$end" ]; do
-  out=$(bash -c "$CHECK" 2>&1); rc=$?
-  if [ "$rc" -eq 127 ]; then echo "SENTINEL_FAILED: command missing"; echo "$out" | head -n 10; exit 0; fi
+  out=$(bash -c "$CHECK" 2>/dev/null); rc=$?
+  if [ "$rc" -eq 127 ]; then
+    echo "SENTINEL_FAILED: command missing"; echo "$out" | head -n 10
+    err=$(bash -c "$CHECK" 2>&1 >/dev/null); echo "$err" | head -n 10; exit 0
+  fi
   if [ "$rc" -ne 0 ]; then
     fails=$((fails + 1))
-    if [ "$fails" -ge 3 ]; then echo "SENTINEL_FAILED: three consecutive non-zero exits (last $rc)"; echo "$out" | head -n 10; exit 0; fi
+    if [ "$fails" -ge 3 ]; then
+      echo "SENTINEL_FAILED: three consecutive non-zero exits (last $rc)"; echo "$out" | head -n 10
+      err=$(bash -c "$CHECK" 2>&1 >/dev/null); echo "$err" | head -n 10; exit 0
+    fi
   else
     fails=0
     if [ "$out" != "$BASELINE" ]; then echo "SENTINEL_CHANGED"; echo "$out" | head -n 10; exit 0; fi
   fi
-  sleep "$INTERVAL" || { echo "SENTINEL_FAILED: sleep failed"; exit 0; }
+  left=$((end - SECONDS))
+  if [ "$left" -gt 0 ]; then
+    nap=$INTERVAL; [ "$left" -lt "$nap" ] && nap=$left
+    sleep "$nap" || { echo "SENTINEL_FAILED: sleep failed"; exit 0; }
+  fi
 done
 echo "SENTINEL_TIMEOUT: still unchanged fails=$fails"
 ```
