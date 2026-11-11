@@ -12,7 +12,7 @@ Wait for a state change in a one-shot background subagent, so the main session s
 - Defines the condition as always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch.
 - Requires a deadline on every round. A round without a deadline is not dispatched.
 - Moves a closed loop's journal to `archive/` in the same root, by default `.project/loops/archive/`.
-- Does not commit journals. They are session state. At the first loop creation in a project, the orchestrator appends the loops directory to the exclude file when it lies inside the repository. It resolves that file with `git rev-parse --git-path info/exclude`, because in a linked worktree `.git` is a file and the literal path `.git/info/exclude` fails. The line is the path relative to the repository root with a trailing slash, by default `.project/loops/`. The orchestrator appends it only when the resolved file does not already contain that line. It never edits a tracked `.gitignore` for this. If the project's declared VCS strategy says to commit journals, that declaration wins.
+- Does not commit journals. They are session state. At the first loop creation in a project, the orchestrator appends the loops directory to the exclude file when it lies inside the repository. It resolves that file with `git rev-parse --git-path info/exclude`, because in a linked worktree `.git` is a file and the literal path `.git/info/exclude` fails. The line is the path relative to the repository root with a leading and a trailing slash, by default `/.project/loops/`. The leading slash anchors the line to the repository root. The orchestrator appends it only when the resolved file does not already contain that line. The command first runs `mkdir -p` on the parent directory, because `info/` can be missing. It then adds a newline when the file does not end with one, so the new line does not join the last line. It never edits a tracked `.gitignore` for this. If the project's declared VCS strategy says to commit journals, that declaration wins.
 
 ## When to use it
 
@@ -33,17 +33,21 @@ The check is the probe that reads the current state. The loop compares it with t
 
 Use when a command reads the state. The sentinel waits inside a foreground `until` loop, so the wait costs zero model turns. The check must exit 0 on a successful read and print the state on stdout.
 
-Only stdout is compared with the baseline. Stderr appears only in failure evidence. A check that starts with an environment assignment is written as `env FOO=1 cmd`.
+Only stdout is compared with the baseline. The orchestrator captures the baseline from stdout alone and shows you stderr when needed. If the first check run exits non-zero, the orchestrator shows you its stdout and stderr, writes no journal, dispatches nothing, and waits for you to fix the check. Stderr appears only in failure evidence. A check that starts with an environment assignment is written as `env FOO=1 cmd`. A compound check (assignments, `;`, or pipelines) starts with `command -v <tool> >/dev/null || exit 127;` or a separate first line, so a missing tool is reported instead of masked. Redirection to `/dev/null` is allowed, because it writes nothing.
 
 Examples: a file that appears, or the output of `gh pr checks 123 --json name,state`.
 
-Example: wait until all checks on a pull request finish. The check prints one of three words and the baseline is `pending`. The `bucket` field has the values `pass`, `fail`, `pending`, `skipping`, and `cancel`.
+Example: wait until all checks on a pull request finish. The check has three lines, prints one of three words, and the baseline is `pending`. The `bucket` field has the values `pass`, `fail`, `pending`, `skipping`, and `cancel`.
 
 ```bash
-gh pr checks 123 --json bucket --jq 'if any(.[]; .bucket == "pending") then "pending" elif all(.[]; .bucket == "pass" or .bucket == "skipping") then "pass" else "fail" end'
+command -v gh >/dev/null || exit 127
+out=$(gh pr checks 123 --json bucket); [ -n "$out" ] || out='[]'
+printf '%s' "$out" | jq -r 'if length == 0 or any(.[]; .bucket == "pending") then "pending" elif all(.[]; .bucket == "pass" or .bucket == "skipping") then "pass" else "fail" end'
 ```
 
-Terminal-baseline rule: when the baseline observed before dispatch is already `pass` or `fail`, the orchestrator reports it to you and does not dispatch.
+Right after a push, `gh pr checks` exits non-zero with no stdout until the first check registers. The second line turns that empty result into `[]`, and the `length == 0` test reads it as `pending`. The first line reports a missing `gh`.
+
+Terminal-baseline rule: `pass` and `fail` are the stop words of this loop, not final states of the pull request. When the baseline observed before dispatch is already a stop word, the orchestrator reports it to you and does not dispatch. A CI rerun returns the state to `pending`, so the orchestrator can start a new round with baseline `fail` when you want to wait for the rerun.
 
 ### `tool`
 
