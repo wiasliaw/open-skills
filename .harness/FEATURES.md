@@ -34,3 +34,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-023 | sentinel carries a CI example that reads an empty result as pending and surfaces a missing tool, a compound-check prefix rule, and stop-word wording for terminal baselines | 2026-11-11-use-loop-review-fixes-4 |
 | F-024 | snippet test case 9 varies stderr without date +%N and all ten cases pass | 2026-11-11-use-loop-review-fixes-4 |
 | F-025 | use-loop exclude command creates the parent directory, guarantees a trailing newline, and anchors the line; step 2 captures stdout only and stops on a failing check; CI example and stop-word rule match the agent; docs in sync | 2026-11-11-use-loop-review-fixes-4 |
+| F-026 | the sentinel refusal list allows redirection to /dev/null, so the CI example is not refused | 2026-11-11-use-loop-review-fixes-4 |

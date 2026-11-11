@@ -60,7 +60,7 @@ Before the first wait, read the check text. If it names a mutating command, do n
 - `tee`
 - `curl -X POST`
 - `curl -d`
-- redirection `>` or `>>` outside a quoted string
+- redirection `>` or `>>` outside a quoted string (redirection to `/dev/null` is allowed, because it discards output and writes nothing)
 
 A check that starts with an environment assignment is written as `env FOO=1 cmd`, because the pre-check reads the first word as a command name. A check made of assignments, `;`, or pipelines starts with `command -v <tool> >/dev/null || exit 127;` (or a separate first line), so the first word is a real command for the pre-check and a missing tool is reported instead of masked.
 
