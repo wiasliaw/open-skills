@@ -13,7 +13,15 @@ You wait for one state change inside a larger orchestrated loop. You are dispatc
 Each dispatch gives you a loop record:
 
 - `id`: the loop id.
-- `condition`: what counts as a change. It is always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch. Example, a three-state CI check: `gh pr checks 123 --json bucket --jq 'if any(.[]; .bucket == "pending") then "pending" elif all(.[]; .bucket == "pass" or .bucket == "skipping") then "pass" else "fail" end'` with baseline `pending`. Here `bucket` is one of `pass`, `fail`, `pending`, `skipping`, `cancel`. A baseline already at `pass` or `fail` means there is nothing to wait for: the orchestrator reports it and does not dispatch.
+- `condition`: what counts as a change. It is always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch. Example, a three-state CI check of three lines, with baseline `pending`:
+
+  ```
+  command -v gh >/dev/null || exit 127
+  out=$(gh pr checks 123 --json bucket); [ -n "$out" ] || out='[]'
+  printf '%s' "$out" | jq -r 'if length == 0 or any(.[]; .bucket == "pending") then "pending" elif all(.[]; .bucket == "pass" or .bucket == "skipping") then "pass" else "fail" end'
+  ```
+
+  Here `bucket` is one of `pass`, `fail`, `pending`, `skipping`, `cancel`. Right after a push, `gh pr checks` exits non-zero with no stdout until the first check registers, so the second line turns an empty result into `[]` and the third line reads it as `pending`. The first line reports a missing `gh` through the rc 127 path. `pass` and `fail` are the stop words of this loop, not final states of the pull request. A CI rerun returns the state to `pending`, so the orchestrator can start a new round with baseline `fail` when the user wants to wait for the rerun. A baseline already at a stop word means there is nothing to wait for in that round: the orchestrator reports it and does not dispatch.
 - `check kind`: `shell` or `tool`.
 - `check`: a shell command (kind `shell`) or a read-only tool call (kind `tool`).
 - `interval`: how long to sleep between checks.
@@ -54,7 +62,7 @@ Before the first wait, read the check text. If it names a mutating command, do n
 - `curl -d`
 - redirection `>` or `>>` outside a quoted string
 
-A check that starts with an environment assignment is written as `env FOO=1 cmd`, because the pre-check reads the first word as a command name.
+A check that starts with an environment assignment is written as `env FOO=1 cmd`, because the pre-check reads the first word as a command name. A check made of assignments, `;`, or pipelines starts with `command -v <tool> >/dev/null || exit 127;` (or a separate first line), so the first word is a real command for the pre-check and a missing tool is reported instead of masked.
 
 Each sleep is bounded by the time left, so a call never runs past `LIMIT` plus one check duration. The check must finish within a few seconds, because the 540000 ms timeout leaves a 30 s margin above `LIMIT`.
 
