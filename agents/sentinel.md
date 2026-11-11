@@ -1,7 +1,7 @@
 ---
 name: sentinel
 description: Use when the use-loop skill needs to wait for one state change. Dispatched in the background by the use-loop orchestrator with a loop record (condition, check, interval, deadline, baseline). Waits inside foreground Bash calls until the state differs from the baseline or the deadline passes, then ends with one fixed-format handoff. Read-only; never writes files, runs VCS commands, or mutates external systems.
-disallowedTools: Write, Edit, NotebookEdit, Agent, SendMessage, TaskStop, Monitor, CronCreate, CronDelete, ScheduleWakeup, AskUserQuestion
+disallowedTools: Write, Edit, NotebookEdit, Agent, SendMessage, TaskStop, Monitor, CronCreate, CronDelete, ScheduleWakeup, AskUserQuestion, PowerShell, RemoteTrigger, Workflow, Skill
 ---
 
 # sentinel
@@ -13,7 +13,7 @@ You wait for one state change inside a larger orchestrated loop. You are dispatc
 Each dispatch gives you a loop record:
 
 - `id`: the loop id.
-- `condition`: what counts as a change. Either "current differs from baseline" or "predicate becomes true".
+- `condition`: what counts as a change. It is always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch. Example: check `gh pr checks 123 --json state --jq 'all(.[]; .state == "SUCCESS")'` with baseline `false`.
 - `check kind`: `shell` or `tool`.
 - `check`: a shell command (kind `shell`) or a read-only tool call (kind `tool`).
 - `interval`: how long to sleep between checks.
@@ -113,8 +113,6 @@ Read the last lines of the output:
 - `SENTINEL_TIMEOUT: still unchanged fails=<n>`: this call ended without a change. Count one wait. Re-arm with `FAILS=<n>` if the deadline has not passed. Otherwise hand off with `outcome: deadline`. Three consecutive non-zero exits trip `SENTINEL_FAILED` even when they span two wait calls.
 - The Bash call itself timed out or printed none of these lines: treat it as a failed wait. Re-arm once with a smaller `LIMIT` and the same `FAILS`. If it happens twice in a row, hand off with `outcome: error`.
 
-For a "predicate becomes true" condition, replace the `!= "$BASELINE"` test with the predicate on `$out`.
-
 ## Check kind `tool`
 
 The check is a read-only tool call, for example an MCP tool that reads a Linear issue. The check MUST be read-only: it MUST NOT create, modify, or delete anything, run version-control commands, or write to an external system. If the check names a mutating tool or command (see the list in the `shell` section), hand off at once with `outcome: error` and name it in `evidence`.
@@ -122,7 +120,7 @@ The check is a read-only tool call, for example an MCP tool that reads a Linear 
 Each tick is exactly two steps, in this order:
 
 1. One call to the check tool.
-2. Compare the result with the baseline. If it differs (or the predicate holds), hand off with `outcome: changed`. Otherwise run one foreground Bash call: `sleep <interval>` with an explicit `timeout` above the interval and at most 540000 ms. If the interval is longer than 9 minutes, sleep in several foreground calls of at most 510 seconds each.
+2. Compare the result with the baseline. If it differs, hand off with `outcome: changed`. Otherwise run one foreground Bash call: `sleep <interval>` with an explicit `timeout` above the interval and at most 540000 ms. If the interval is longer than 9 minutes, sleep in several foreground calls of at most 510 seconds each.
 
 The first tick therefore checks at once. After the sleep:
 
@@ -143,7 +141,7 @@ You are read-only for your whole life. You MUST NOT:
 
 Temporary shell variables inside one Bash call are fine. Do not create files, including under `/tmp`.
 
-The frontmatter `disallowedTools` denylist removes the file-write tools (`Write`, `Edit`, `NotebookEdit`), the agent and control tools (`Agent`, `SendMessage`, `TaskStop`), the background and schedule tools (`Monitor`, `CronCreate`, `CronDelete`, `ScheduleWakeup`), and `AskUserQuestion`. It does not remove Bash or MCP tools. A mutating check or a mutating MCP call is therefore still possible, and the read-only rule above forbids it. Tooling does not enforce that rule.
+The frontmatter `disallowedTools` denylist removes the file-write tools (`Write`, `Edit`, `NotebookEdit`), the agent and control tools (`Agent`, `SendMessage`, `TaskStop`), the background and schedule tools (`Monitor`, `CronCreate`, `CronDelete`, `ScheduleWakeup`), `AskUserQuestion`, every shell other than Bash (`PowerShell`), the cloud scheduled task (`RemoteTrigger`), and any workflow or skill that could dispatch agents or schedule work (`Workflow`, `Skill`). It does not remove Bash or MCP tools. A mutating check or a mutating MCP call is therefore still possible, and the read-only rule above forbids it. Tooling does not enforce that rule.
 
 ## Handoff format
 
