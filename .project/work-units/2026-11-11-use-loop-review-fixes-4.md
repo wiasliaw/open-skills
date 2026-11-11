@@ -90,8 +90,8 @@ Step 2 ordering (contract from work unit 2) still holds: review in step 1, first
 | # | Behavior | Verification command | Status |
 |---|---|---|---|
 | 1 | sentinel carries a CI example that reads an empty result as pending and surfaces a missing tool, a compound-check prefix rule, and stop-word wording for terminal baselines | `claude plugin validate . && node --test scripts/sentinel-snippet.test.mjs && grep -q 'command -v gh >/dev/null \|\| exit 127' agents/sentinel.md && grep -q 'length == 0' agents/sentinel.md && grep -qi 'stop word' agents/sentinel.md` | passed (F-023) |
-| 2 | snippet test case 9 varies stderr without `date +%N` and all ten cases pass | `node --test scripts/sentinel-snippet.test.mjs && ! grep -q 'date +%s%N' scripts/sentinel-snippet.test.mjs` | active |
-| 3 | use-loop's exclude command creates the parent directory, guarantees a trailing newline, and anchors the line; step 2 captures stdout only and stops on a failing check; the CI example and stop-word rule match the agent; docs in sync | `claude plugin validate . && grep -qF "'/.project/loops/'" skills/use-loop/SKILL.md && grep -q 'mkdir -p' skills/use-loop/SKILL.md && grep -q 'tail -c1' skills/use-loop/SKILL.md && grep -q 'command -v gh >/dev/null \|\| exit 127' skills/use-loop/SKILL.md && grep -qi 'stop word' docs/use-loop.md && grep -qF '/.project/loops/' docs/use-loop.md` | not_started |
+| 2 | snippet test case 9 varies stderr without `date +%N` and all ten cases pass | `node --test scripts/sentinel-snippet.test.mjs && ! grep -q 'date +%s%N' scripts/sentinel-snippet.test.mjs` | passed (F-024) |
+| 3 | use-loop's exclude command creates the parent directory, guarantees a trailing newline, and anchors the line; step 2 captures stdout only and stops on a failing check; the CI example and stop-word rule match the agent; docs in sync | `claude plugin validate . && grep -qF "'/.project/loops/'" skills/use-loop/SKILL.md && grep -q 'mkdir -p' skills/use-loop/SKILL.md && grep -q 'tail -c1' skills/use-loop/SKILL.md && grep -q 'command -v gh >/dev/null \|\| exit 127' skills/use-loop/SKILL.md && grep -qi 'stop word' docs/use-loop.md && grep -qF '/.project/loops/' docs/use-loop.md` | active |
 | 4 | the refusal list allows redirection to `/dev/null`, so the CI example is not refused | `grep -qi "redirection to `/dev/null` is allowed" agents/sentinel.md` | not_started |
 
 ## Review Log
@@ -99,8 +99,10 @@ Step 2 ordering (contract from work unit 2) still holds: review in step 1, first
 <!-- One line per reviewer verdict, appended in order. Two consecutive fails for the same feature stop the loop. -->
 
 - 2026-11-11 — feature 1, round 1: pass — reviewer ran feature chain (snippet 10/10), validate, all tests (33/33), exclusion diff, Han check; example run against PR 12 printed pending; through the body ended with TIMEOUT; missing tool ended with command missing. Non-blocking: wrong PR number reads as pending (outside contract); refusal list names `>` while the example uses `>/dev/null` — added as Feature 4.
+- 2026-11-11 — feature 2, round 1: pass — reviewer ran the suite (10/10), validate, all tests (33/33), exclusion diff, Han check; one-line diff at line 153; manual case 9 run ended with TIMEOUT.
 
 ## Notes
 
 - 2026-11-11 — Opened from the fourth (optional) review items on PR #12; the user accepted all and asked to merge to `main` after this work unit. `gh pr checks --help` documents exit code 8 for pending; with no checks the command exits non-zero with empty stdout. Branch `research-use-loop-skill-spec`. Implementor and reviewer run as `general-purpose` subagents following `agents/implementor.md` and `agents/reviewer.md`.
 - 2026-11-11 — Feature 1 passed review. Merge moment wrote F-023 and its index row. Feature 4 added to the contract from the reviewer's finding. Feature 2 set to active.
+- 2026-11-11 — Feature 2 passed review. Merge moment wrote F-024 and its index row. Feature 3 set to active.

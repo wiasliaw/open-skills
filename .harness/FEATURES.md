@@ -32,3 +32,4 @@ Rule: entries are never demoted and evidence is never removed; pre-passing state
 | F-021 | the snippet test proves bounded sleep, stderr-insensitive comparison, and stderr evidence ordering on failure, with the earlier seven cases still green | 2026-11-11-use-loop-review-fixes-3 |
 | F-022 | use-loop resolves the exclude file with git rev-parse --git-path, carries the three-state CI example and the terminal-baseline rule, states stdout-only comparison and the env form, with docs in sync | 2026-11-11-use-loop-review-fixes-3 |
 | F-023 | sentinel carries a CI example that reads an empty result as pending and surfaces a missing tool, a compound-check prefix rule, and stop-word wording for terminal baselines | 2026-11-11-use-loop-review-fixes-4 |
+| F-024 | snippet test case 9 varies stderr without date +%N and all ten cases pass | 2026-11-11-use-loop-review-fixes-4 |

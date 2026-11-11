@@ -150,7 +150,7 @@ test('8. bounded sleep: the last wait is cut to the seconds left', () => {
 
 test('9. stderr is ignored when stdout equals the baseline', () => {
   const r = runSnippet({
-    check: 'echo stable; date +%s%N >&2',
+    check: 'echo stable; echo $RANDOM >&2',
     baseline: 'stable',
     interval: '1',
     limit: '3',
