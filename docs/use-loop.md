@@ -8,10 +8,11 @@ Wait for a state change in a one-shot background subagent, so the main session s
 - Keeps the main session cheap. The orchestrator pays one dispatch and one handoff per round, and nothing during the wait.
 - Forms a loop by dispatching a new round after each handoff. One round is one sentinel dispatch. It waits for one change or one deadline.
 - Keeps a journal for each loop. The default path is `.project/loops/<id>.md`. If a CLAUDE.md or you map plugin state or the `.project/` directory to another root, the journal goes to that root instead. The orchestrator tells you the resolved path before the first write. Only the orchestrator writes it. The sentinel is read-only and never writes a file, runs version-control commands, or changes an external system.
-- Shows you the complete loop record before dispatch: id, condition, check kind, full check text, interval, deadline, and baseline. A check must be read-only. A check that creates, modifies, or deletes anything, runs version-control commands, or writes to an external system is not dispatched.
+- Shows you the complete loop record before any check runs: id, condition, check kind, full check text, interval, and deadline. Only then does it run the check once for the baseline and dispatch. A check must be read-only. A check that creates, modifies, or deletes anything, runs version-control commands, or writes to an external system is not run and not dispatched.
+- Defines the condition as always "current differs from baseline". A predicate is encoded in the check: the check prints one of two distinct words, for example `true` or `false`, and the baseline is the word observed before dispatch.
 - Requires a deadline on every round. A round without a deadline is not dispatched.
 - Moves a closed loop's journal to `archive/` in the same root, by default `.project/loops/archive/`.
-- Does not commit journals. They are session state. At the first loop creation in a project, the orchestrator appends the loops directory to `.git/info/exclude` when it lies inside the repository. If the project's declared VCS strategy says to commit journals, that declaration wins.
+- Does not commit journals. They are session state. At the first loop creation in a project, the orchestrator appends the loops directory to `.git/info/exclude` when it lies inside the repository. The line is the path relative to the repository root with a trailing slash, by default `.project/loops/`. The orchestrator appends it only when `grep -qxF '.project/loops/' .git/info/exclude` fails. It never edits a tracked `.gitignore` for this. If the project's declared VCS strategy says to commit journals, that declaration wins.
 
 ## When to use it
 
@@ -57,7 +58,7 @@ The orchestrator decides only by `outcome` and `baseline-after`. The `evidence` 
 
 ## Safety
 
-The sentinel's frontmatter carries a `disallowedTools` denylist. It removes the file-write tools, the agent and control tools, the background and schedule tools, and user questions. Bash and MCP tools remain available, so the denylist cannot stop a mutating check. The read-only rule for checks rests on the pre-dispatch review of the loop record and on the sentinel's refusal rule, not on tooling.
+The sentinel's frontmatter carries a `disallowedTools` denylist. It lists `Write`, `Edit`, `NotebookEdit`, `Agent`, `SendMessage`, `TaskStop`, `Monitor`, `CronCreate`, `CronDelete`, `ScheduleWakeup`, `AskUserQuestion`, `PowerShell`, `RemoteTrigger`, `Workflow`, and `Skill`. It removes the file-write tools, the agent and control tools, the background and schedule tools, user questions, every shell other than Bash, the cloud scheduled task, and any workflow or skill that could dispatch agents or schedule work. Bash and MCP tools remain available, so the denylist cannot stop a mutating check. The read-only rule for checks rests on the review of the loop record before any check runs and on the sentinel's refusal rule, not on tooling.
 
 ## Out of scope
 

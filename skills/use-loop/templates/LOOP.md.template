@@ -15,7 +15,7 @@ Version control: the journal is session state and is not committed by default; t
 
 <!-- These fields are what the sentinel receives. Every field is required, and the deadline MUST be set before the first dispatch. -->
 
-- **Condition**: {{current_differs_from_baseline_or_predicate_becomes_true}}
+- **Condition**: current differs from baseline
 - **Check kind**: {{shell_or_tool}}
 - **Check**: {{shell_command_or_read_only_tool_call}}
 - **Interval**: {{sleep_between_checks}}
