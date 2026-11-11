@@ -2,7 +2,7 @@
 
 - **Work-unit identifier**: 2026-09-30-wor-31-codewalk-polish
 - **Created**: 2026-09-30
-- **Work-unit tool reference**: none (source: user decisions on the three pending items from `.project/handoff.md` Next Steps at commit 72e1116 — "1. 刪掉 2. Pinned at 去重 3. (a) (b) 都做")
+- **Work-unit tool reference**: none (source: user decisions on the three pending items from `.project/handoff.md` Next Steps at commit 72e1116 — the user decided: 1. remove the question cap; 2. deduplicate the per-stop Pinned at; 3. do both (a) and (b))
 
 ## Contract
 
@@ -50,5 +50,5 @@ Run from the repo root, in order; all must succeed:
 
 ## Notes
 
-- 2026-09-30 — Opened on explicit user decisions resolving all three pending items: question cap 刪掉; per-stop Pinned at 去重; deferred minors (a) docs dedup and (b) numbered lifecycle both approved. The Pinned-at removal deviates from WOR-31's literal per-stop content list on user decision — record as a D entry at the merge moment.
+- 2026-09-30 — Opened on explicit user decisions resolving all three pending items: question cap removed; per-stop Pinned at deduplicated; deferred minors (a) docs dedup and (b) numbered lifecycle both approved. The Pinned-at removal deviates from WOR-31's literal per-stop content list on user decision — record as a D entry at the merge moment.
 - 2026-09-30 — Baseline `72e1116` is the commit before this work unit opened; check 7 excludes `.project/` by pathspec so orchestrator state edits cannot pollute the diff (lesson from the structural round's check-5 caveat).

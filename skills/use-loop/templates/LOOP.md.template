@@ -1,0 +1,41 @@
+# Loop: {{id}}
+
+<!--
+Purpose: the journal of one loop — one named wait for a state change. It holds the loop record handed to each sentinel round and one block per handoff.
+Written by: the orchestrator (main session) only. The sentinel is read-only and never writes it.
+Location: by default `.project/loops/<id>.md`, where `<id>` matches `^[a-z0-9][a-z0-9-]*$`; moved to `.project/loops/archive/` when the loop closes. The location the orchestrator resolved at loop creation applies in place of the default.
+Version control: the journal is session state and is not committed by default; the orchestrator adds the loops directory to `.git/info/exclude` unless the project's declared VCS strategy says to commit journals.
+-->
+
+- **Id**: {{id}}
+- **Created**: {{iso8601_utc_timestamp}}
+- **Status**: {{open_or_closed_or_interrupted}}
+
+## Loop record
+
+<!-- These fields are what the sentinel receives. Every field is required, and the deadline MUST be set before the first dispatch. -->
+
+- **Condition**: current differs from baseline
+- **Check kind**: {{shell_or_tool}}
+- **Check**: {{shell_command_or_read_only_tool_call}}
+- **Interval**: {{sleep_between_checks}}
+- **Deadline**: {{wall_clock_time_for_this_round_iso8601_utc}}
+- **Baseline**: {{state_observed_with_the_same_check_before_dispatch}}
+
+## Rounds
+
+<!-- One block per round, appended in order. Paste the sentinel handoff verbatim, then record the orchestrator's action. Round start is recorded at dispatch; the handoff and action are filled in when the completion notification arrives. -->
+
+### Round {{n}}
+
+- **Started**: {{iso8601_utc_timestamp}}
+- **Baseline**: {{baseline_for_this_round}}
+- **Deadline**: {{deadline_for_this_round}}
+
+Handoff:
+
+```
+{{sentinel_handoff_verbatim}}
+```
+
+Action: {{informed_user_or_dispatched_follow_up_or_started_round_n_plus_1_or_closed_loop}}

@@ -15,3 +15,8 @@ Rule: a detail file's content is never edited. The only permitted change is supe
 | D-003 | 2026-09-30 | Walkthrough template pins per walk in the header only, dropping WOR-31's per-stop SHA |
 | D-005 | 2026-10-16 | use-worktree is config-free on main — no config file, no setup subcommand, fixed HEAD base and .project/worktrees location |
 | D-006 | 2026-10-30 | pm ships public policy defaults only — workspace and project values live in the Linear project charter |
+| D-007 | 2026-11-10 | The sentinel waits only inside foreground Bash calls, re-armed under a 9-minute timeout |
+| D-009 | 2026-11-10 | use-loop covers change-waits inside one session only — periodic and cross-session work is pointed elsewhere |
+| D-010 | 2026-11-10 | The use-loop journal location is a default with a stated override rule, resolved once per loop |
+| D-012 | 2026-11-11 | use-loop journals are session state kept out of version control by default via .git/info/exclude |
+| D-013 | 2026-11-11 | The sentinel denies every write, control, scheduling, and dispatch tool while keeping Bash and MCP; the orchestrator alone writes the loop journal |
